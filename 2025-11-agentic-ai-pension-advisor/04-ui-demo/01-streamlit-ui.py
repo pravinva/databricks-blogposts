@@ -30,17 +30,17 @@ repo_root = os.path.abspath(
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
-from src.ui.tab_base import TabBase
-from src.ui.theme_config import get_theme_config
-from src.ui.html_builder import HTMLBuilder
+from src.ui.theme_config import COUNTRY_COLORS, COUNTRY_FLAGS
+from src.ui import html_builder
+from src.config import COUNTRIES
 
 print("✓ UI modules imported")
 print("\\nUI Architecture:")
 print("  Main app: app.py")
 print("  Theme config: ui/theme_config.py")
 print("  HTML components: ui/html_builder.py")
-print("  Base tab class: ui/tab_base.py")
-print("  Country-specific tabs: ui_components.py")
+print("  Tab implementation: ui_components.py")
+print(f"  Supported countries: {', '.join(COUNTRIES)}")
 
 # COMMAND ----------
 
@@ -50,15 +50,23 @@ print("  Country-specific tabs: ui_components.py")
 # COMMAND ----------
 
 # Each country has its own theme
-from src.config import COUNTRIES
+country_names = {
+    "AU": "Australia",
+    "US": "USA",
+    "UK": "United Kingdom",
+    "IN": "India"
+}
 
 for country_code in COUNTRIES:
-    theme = get_theme_config(country_code)
-    print(f"\\n{country_code} Theme:")
-    print(f"  Primary color: {theme['primary_color']}")
-    print(f"  Secondary color: {theme['secondary_color']}")
-    print(f"  Flag emoji: {theme['flag_emoji']}")
-    print(f"  Full name: {theme['country_name']}")
+    country_name = country_names.get(country_code, country_code)
+    colors = COUNTRY_COLORS.get(country_name, {})
+    flag = COUNTRY_FLAGS.get(country_name, "")
+
+    print(f"\\n{country_code} ({country_name}) Theme:")
+    print(f"  Primary color: {colors.get('primary', 'N/A')}")
+    print(f"  Secondary color: {colors.get('secondary', 'N/A')}")
+    print(f"  Currency: {colors.get('currency', 'N/A')}")
+    print(f"  Flag emoji: {flag}")
 
 # COMMAND ----------
 
@@ -68,39 +76,61 @@ for country_code in COUNTRIES:
 # COMMAND ----------
 
 # Reusable UI components
-builder = HTMLBuilder()
+print("Available HTML Builder Functions:")
+print("  - build_card(): Create styled cards")
+print("  - build_member_card(): Member profile display")
+print("  - build_metric_card(): Performance metrics")
+print("  - build_validation_result_card(): Validation display")
+print("  - build_info_card(): Information panels")
+print("  - build_trust_badge(): Trust indicators")
+print("  - build_system_status_banner(): Status messages")
+print("  - build_activity_item(): Activity history items")
+print("  - build_question_card(): Example query cards")
 
-# Example: Create a styled message box
-message_html = builder.create_message_box(
-    title="Agent Response",
-    content="Based on your member profile, you can access your superannuation without penalties at age 60.",
-    box_type="success"
+# Example: Create a metric card
+example_html = html_builder.build_metric_card(
+    "Response Time",
+    "2.34s",
+    "✓"
 )
 
-print("Sample HTML Component (Message Box):")
-print(message_html[:200] + "...")
+print(f"\\nSample HTML Component (Metric Card):")
+print(example_html[:200] + "...")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Tab Base Class
+# MAGIC ## Tab Implementation
+# MAGIC
+# MAGIC Country-specific tabs are implemented in ui_components.py
 
 # COMMAND ----------
 
-# All country tabs inherit from TabBase
-# This eliminates code duplication (425 lines saved)
+# Country tabs provide consistent UI for each country
+# Each tab handles member selection, query input, and response display
 
-print("TabBase Class Benefits:")
-print("  - Consistent layout across all countries")
-print("  - DRY principle: Define once, use everywhere")
-print("  - Easy to add new countries")
-print("  - Centralized query processing")
-print("\\nShared functionality:")
-print("  - render(): Main tab rendering")
-print("  - display_member_info(): Member profile display")
-print("  - process_query(): Query execution")
-print("  - display_response(): Response formatting")
-print("  - show_citations(): Citation references")
+print("Tab Implementation:")
+print("  File: ui_components.py")
+print("  Purpose: Country-specific UI tabs")
+print("\\nEach tab provides:")
+print("  - Member dropdown selector")
+print("  - Member profile display")
+print("  - Query input text area")
+print("  - Example query buttons")
+print("  - Response display with citations")
+print("  - Performance metrics")
+print("  - Session history")
+print("\\nCountries supported:")
+country_names = {
+    "AU": "Australia",
+    "US": "USA",
+    "UK": "United Kingdom",
+    "IN": "India"
+}
+for country in COUNTRIES:
+    country_name = country_names.get(country, country)
+    flag = COUNTRY_FLAGS.get(country_name, "")
+    print(f"  {flag} {country} - {country_name}")
 
 # COMMAND ----------
 
