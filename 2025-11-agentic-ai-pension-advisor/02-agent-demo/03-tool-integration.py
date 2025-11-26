@@ -40,8 +40,8 @@ tools_data = []
 for tool_name, tool_config in AVAILABLE_TOOLS.items():
     tools_data.append({
         'Tool': tool_name,
-        'Countries': ', '.join(tool_config.get('countries', [])),
-        'UC Function': tool_config.get('uc_function', ''),
+        'Country': tool_config.get('country', ''),
+        'UC Function': tool_config.get('function', ''),
         'Description': tool_config.get('description', '')[:80] + '...'
     })
 
