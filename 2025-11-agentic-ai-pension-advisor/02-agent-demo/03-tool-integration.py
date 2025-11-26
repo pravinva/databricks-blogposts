@@ -64,13 +64,21 @@ with open('../src/tools/tool_config.yaml', 'r') as f:
     tool_config = yaml.safe_load(f)
 
 print("Tool Configuration Structure:")
-print(f"  Total tools: {len(tool_config.get('tools', []))}")
+print(f"  Countries: {list(tool_config.get('countries', {}).keys())}")
 
-# Show one example
-example_tool = tool_config['tools'][0]
-print(f"\nExample Tool: {example_tool['name']}")
+# Count total tools across all countries
+total_tools = sum(len(country_data.get('tools', {})) for country_data in tool_config.get('countries', {}).values())
+print(f"  Total tools: {total_tools}")
+
+# Show one example from AU
+au_tools = tool_config['countries']['AU']['tools']
+example_tool_id = list(au_tools.keys())[0]
+example_tool = au_tools[example_tool_id]
+
+print(f"\nExample Tool: {example_tool_id}")
+print(f"  Name: {example_tool['name']}")
 print(f"  UC Function: {example_tool['uc_function']}")
-print(f"  Parameters: {example_tool['parameters']}")
+print(f"  Authority: {example_tool['authority']}")
 
 # COMMAND ----------
 
