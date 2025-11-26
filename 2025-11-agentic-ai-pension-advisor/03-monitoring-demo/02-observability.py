@@ -87,24 +87,24 @@ display(validation_stats)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Query Type Distribution
+# MAGIC ## Query Volume by Country
 
 # COMMAND ----------
 
-query_types = spark.sql(f"""
+query_volume = spark.sql(f"""
 SELECT
-    query_type,
     country,
     COUNT(*) as query_count,
     AVG(total_time_seconds) as avg_time,
-    AVG(cost) as avg_cost
+    AVG(cost) as avg_cost,
+    MIN(timestamp) as first_query,
+    MAX(timestamp) as last_query
 FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
-WHERE query_type IS NOT NULL
-GROUP BY query_type, country
+GROUP BY country
 ORDER BY query_count DESC
 """)
 
-display(query_types)
+display(query_volume)
 
 # COMMAND ----------
 
@@ -117,7 +117,7 @@ recent_queries = spark.sql(f"""
 SELECT
     timestamp,
     country,
-    query_type,
+    user_id,
     tool_used,
     judge_verdict,
     total_time_seconds,
