@@ -33,6 +33,12 @@ print(f"  Confidence threshold: {LLM_JUDGE_CONFIDENCE_THRESHOLD}")
 
 # MAGIC %md
 # MAGIC ## Validation Prompt Template
+# MAGIC
+# MAGIC The validation prompt evaluates responses based on:
+# MAGIC - Accuracy of information
+# MAGIC - Completeness of answer
+# MAGIC - Country-specific compliance
+# MAGIC - Professional tone
 
 # COMMAND ----------
 
@@ -40,16 +46,13 @@ from src.prompts.template_manager import TemplateManager
 
 tm = TemplateManager()
 
-# Show validation prompt template
-validation_template = tm.render_validation_prompt(
-    query="How much tax will I pay?",
-    response="Based on your age of 65 and withdrawal of $50,000...",
-    country="AU",
-    member_id="AU001"
-)
-
-print("Validation Prompt Structure:")
-print(validation_template[:500] + "...")
+print("Validation uses structured prompts to evaluate:")
+print("  - Response accuracy")
+print("  - Query completeness")
+print("  - Regulatory compliance")
+print("  - Professional tone")
+print("\nValidator: Claude Sonnet 4")
+print(f"Confidence threshold: {LLM_JUDGE_CONFIDENCE_THRESHOLD}")
 
 # COMMAND ----------
 
@@ -78,10 +81,15 @@ validation_result = validate_response(
 )
 
 print("Validation Result:")
-print(f"  Verdict: {validation_result['verdict']}")
-print(f"  Confidence: {validation_result.get('confidence', 0):.2f}")
 print(f"  Passed: {validation_result.get('passed', False)}")
-print(f"\nFeedback: {validation_result.get('feedback', 'N/A')}")
+print(f"  Confidence: {validation_result.get('confidence', 0):.2f}")
+print(f"  Validator: {validation_result.get('_validator_used', 'N/A')}")
+print(f"  Violations: {len(validation_result.get('violations', []))}")
+
+if validation_result.get('violations'):
+    print("\nViolation Details:")
+    for v in validation_result.get('violations', []):
+        print(f"  - {v.get('code', 'N/A')}: {v.get('detail', 'N/A')}")
 
 # COMMAND ----------
 
@@ -120,11 +128,13 @@ test_cases = [
     },
     {
         "name": "Incomplete Response",
+        "query": "What is my super balance?",
         "response": "Your balance is good.",
         "expected_verdict": "Fail or Review"
     },
     {
         "name": "Incorrect Information",
+        "query": "When can I access my super?",
         "response": "You can withdraw your super at age 50 without penalties.",
         "expected_verdict": "Fail"
     }
@@ -170,7 +180,7 @@ test_responses = [
 
 print("JSON Parser Test:")
 for i, response in enumerate(test_responses, 1):
-    result = parser.parse_validation_result(response)
+    result = parser.parse_validation_response(response)
     print(f"\n{i}. Input: {response[:50]}...")
     print(f"   Parsed: {result}")
 
