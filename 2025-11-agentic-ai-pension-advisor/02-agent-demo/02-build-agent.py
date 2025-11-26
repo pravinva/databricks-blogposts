@@ -242,12 +242,12 @@ def ask_agent(query_text, country_code, member_id):
     )
 
     print("RESPONSE:")
-    print(f"{result['response']}\n")
+    print(f"{result.get('answer', 'No response generated')}\n")
 
-    if result.get('citations'):
-        print("CITATIONS:")
-        for citation in result['citations']:
-            print(f"  - {citation}")
+    if result.get('tools_called'):
+        print("TOOLS CALLED:")
+        for tool in result['tools_called']:
+            print(f"  - {tool}")
 
     print(f"\nProcessing time: {result.get('processing_time', 0):.2f}s")
     print(f"Cost: ${result.get('cost', 0):.6f}")
