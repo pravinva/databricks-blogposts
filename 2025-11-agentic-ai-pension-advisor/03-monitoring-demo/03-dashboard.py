@@ -139,8 +139,8 @@ SELECT
     tool_used,
     COUNT(*) as usage_count,
     AVG(total_time_seconds) as avg_execution_time,
-    COUNT(CASE WHEN error_message IS NOT NULL THEN 1 END) as error_count,
-    COUNT(CASE WHEN error_message IS NOT NULL THEN 1 END) * 100.0 / COUNT(*) as error_rate
+    COUNT(CASE WHEN error_info IS NOT NULL THEN 1 END) as error_count,
+    COUNT(CASE WHEN error_info IS NOT NULL THEN 1 END) * 100.0 / COUNT(*) as error_rate
 FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
 WHERE tool_used IS NOT NULL
 GROUP BY country, tool_used
@@ -206,16 +206,16 @@ error_analysis = spark.sql(f"""
 SELECT
     country,
     CASE
-        WHEN error_message LIKE '%timeout%' THEN 'Timeout'
-        WHEN error_message LIKE '%rate limit%' THEN 'Rate Limit'
-        WHEN error_message LIKE '%validation%' THEN 'Validation Error'
-        WHEN error_message LIKE '%tool%' THEN 'Tool Execution Error'
+        WHEN error_info LIKE '%timeout%' THEN 'Timeout'
+        WHEN error_info LIKE '%rate limit%' THEN 'Rate Limit'
+        WHEN error_info LIKE '%validation%' THEN 'Validation Error'
+        WHEN error_info LIKE '%tool%' THEN 'Tool Execution Error'
         ELSE 'Other'
     END as error_category,
     COUNT(*) as error_count,
     AVG(total_time_seconds) as avg_time_before_error
 FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
-WHERE error_message IS NOT NULL
+WHERE error_info IS NOT NULL
 GROUP BY country, error_category
 ORDER BY country, error_count DESC
 """)
@@ -282,7 +282,7 @@ cost_efficiency = spark.sql(f"""
 SELECT
     country,
     CASE
-        WHEN judge_verdict = 'Pass' AND error_message IS NULL THEN 'Success'
+        WHEN judge_verdict = 'Pass' AND error_info IS NULL THEN 'Success'
         WHEN judge_verdict = 'Review' THEN 'Needs Review'
         ELSE 'Failed'
     END as outcome,
@@ -334,7 +334,7 @@ SELECT
     AVG(total_time_seconds) as avg_response_time,
     SUM(cost) as total_cost,
     COUNT(CASE WHEN judge_verdict = 'Pass' THEN 1 END) * 100.0 / COUNT(*) as overall_pass_rate,
-    COUNT(CASE WHEN error_message IS NOT NULL THEN 1 END) * 100.0 / COUNT(*) as error_rate
+    COUNT(CASE WHEN error_info IS NOT NULL THEN 1 END) * 100.0 / COUNT(*) as error_rate
 FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
 WHERE timestamp >= CURRENT_DATE - INTERVAL 7 DAYS
 """)
