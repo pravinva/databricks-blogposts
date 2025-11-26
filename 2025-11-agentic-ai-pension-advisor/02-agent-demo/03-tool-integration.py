@@ -22,11 +22,12 @@ repo_root = os.path.abspath(
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
-from src.tools.tool_executor import ToolExecutor
-from src.tools import AVAILABLE_TOOLS
+from src.tools import AVAILABLE_TOOLS, call_individual_tool
+from src.config import SQL_WAREHOUSE_ID
 import pandas as pd
 
 print("✓ Tool modules imported")
+print(f"  Warehouse ID: {SQL_WAREHOUSE_ID}")
 
 # COMMAND ----------
 
@@ -74,42 +75,30 @@ print(f"  Parameters: {example_tool['parameters']}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Tool Executor
-
-# COMMAND ----------
-
-# Create tool executor instance
-executor = ToolExecutor()
-
-print(f"Tool Executor initialized")
-print(f"  Available tools: {len(executor.tools)}")
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Execute a Tool
 # MAGIC
-# MAGIC Call a UC function via the tool executor
+# MAGIC Call a UC function directly using call_individual_tool
 
 # COMMAND ----------
 
 # Example: Calculate tax for Australian member
-result = executor.execute_tool(
-    tool_name="calculate_tax",
-    parameters={
-        "country": "AU",
-        "member_id": "AU004",
-        "withdrawal_amount": 50000,
-        "age": 65
-    }
+result = call_individual_tool(
+    tool_id="tax",
+    member_id="AU004",
+    withdrawal_amount=50000,
+    country="AU",
+    warehouse_id=SQL_WAREHOUSE_ID
 )
 
 print("Tool Execution Result:")
-print(f"  Success: {result['success']}")
-print(f"  Tool: {result['tool']}")
-print(f"  Duration: {result['duration']:.3f}s")
-print(f"\nResult:")
-print(result['result'])
+if "error" in result:
+    print(f"  Error: {result['error']}")
+else:
+    print(f"  Tool: {result.get('tool_name', 'N/A')}")
+    print(f"  Duration: {result.get('duration', 0):.3f}s")
+    print(f"  Authority: {result.get('authority', 'N/A')}")
+    print(f"\nCalculation Result:")
+    print(f"  {result.get('calculation', 'N/A')}")
 
 # COMMAND ----------
 
@@ -121,49 +110,52 @@ print(result['result'])
 # Test tools across all countries
 test_cases = [
     {
-        "tool": "check_balance",
+        "tool_id": "tax",
         "country": "AU",
-        "member_id": "AU001",
-        "description": "AU Balance Check"
+        "member_id": "AU004",
+        "withdrawal_amount": 50000,
+        "description": "AU Tax Calculation"
     },
     {
-        "tool": "calculate_tax",
+        "tool_id": "tax",
         "country": "US",
         "member_id": "US001",
-        "description": "US Tax Calculation",
         "withdrawal_amount": 30000,
-        "age": 68
+        "description": "US Tax Calculation"
     },
     {
-        "tool": "check_preservation_age",
+        "tool_id": "tax",
         "country": "UK",
         "member_id": "UK001",
-        "description": "UK Preservation Age"
+        "withdrawal_amount": 40000,
+        "description": "UK Tax Calculation"
     },
     {
-        "tool": "check_balance",
+        "tool_id": "tax",
         "country": "IN",
         "member_id": "IN001",
-        "description": "IN Balance Check"
+        "withdrawal_amount": 500000,
+        "description": "IN Tax Calculation"
     }
 ]
 
 # Execute all test cases
 results = []
 for test in test_cases:
-    params = {k: v for k, v in test.items() if k not in ['tool', 'description']}
-
-    result = executor.execute_tool(
-        tool_name=test['tool'],
-        parameters=params
+    result = call_individual_tool(
+        tool_id=test['tool_id'],
+        member_id=test['member_id'],
+        withdrawal_amount=test['withdrawal_amount'],
+        country=test['country'],
+        warehouse_id=SQL_WAREHOUSE_ID
     )
 
     results.append({
         'Test': test['description'],
-        'Tool': test['tool'],
-        'Success': result['success'],
-        'Duration': f"{result['duration']:.3f}s",
-        'Result Preview': str(result.get('result', ''))[:50] + '...'
+        'Tool': result.get('tool_name', 'N/A'),
+        'Success': 'error' not in result,
+        'Duration': f"{result.get('duration', 0):.3f}s",
+        'Result Preview': str(result.get('calculation', result.get('error', '')))[:50] + '...'
     })
 
 results_df = pd.DataFrame(results)
@@ -177,50 +169,42 @@ display(results_df)
 # COMMAND ----------
 
 # Test error handling with invalid parameters
-error_result = executor.execute_tool(
-    tool_name="calculate_tax",
-    parameters={
-        "country": "AU",
-        "member_id": "INVALID_ID",  # Invalid member
-        "withdrawal_amount": 50000,
-        "age": 65
-    }
+error_result = call_individual_tool(
+    tool_id="tax",
+    member_id="INVALID_ID",  # Invalid member
+    withdrawal_amount=50000,
+    country="AU",
+    warehouse_id=SQL_WAREHOUSE_ID
 )
 
 print("Error Handling:")
-print(f"  Success: {error_result['success']}")
-if not error_result['success']:
+print(f"  Success: {'error' not in error_result}")
+if "error" in error_result:
     print(f"  Error: {error_result.get('error', 'Unknown error')}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Tool Result Formatting
+# MAGIC ## Tool Result Format
+# MAGIC
+# MAGIC Tool results are structured dictionaries with calculation results and metadata
 
 # COMMAND ----------
 
-from src.agents.response_builder import ResponseBuilder
+# Example tool result structure
+example_tool_result = {
+    "tool_name": "ATO Tax Calculator",
+    "tool_id": "tax",
+    "uc_function": "au_calculate_tax",
+    "authority": "Australian Taxation Office",
+    "calculation": "Based on your withdrawal...",
+    "citations": [{"code": "AU-TAX-001", "title": "Tax on Super Withdrawals"}],
+    "duration": 0.342
+}
 
-# Create response builder
-builder = ResponseBuilder()
-
-# Format tool results for LLM consumption
-tool_results = [
-    {
-        "tool": "check_balance",
-        "result": {"super_balance": 450000, "currency": "AUD"},
-        "success": True
-    },
-    {
-        "tool": "calculate_tax",
-        "result": {"tax_amount": 5250, "tax_rate": 0.15, "currency": "AUD"},
-        "success": True
-    }
-]
-
-formatted = builder.format_tool_results(tool_results)
-print("Formatted Tool Results for LLM:")
-print(formatted)
+print("Tool Result Structure:")
+for key, value in example_tool_result.items():
+    print(f"  {key}: {value}")
 
 # COMMAND ----------
 
@@ -238,24 +222,25 @@ def demonstrate_tool_flow(query, country, member_id):
 
     # 1. Classifier determines tools needed
     print("1. Classifier: Identifies required tools")
-    required_tools = ["check_balance", "calculate_tax"]
+    required_tools = ["projection", "tax"]
     print(f"   Tools needed: {required_tools}\n")
 
     # 2. Execute tools
     print("2. Tool Executor: Calls UC functions")
     results = []
     for tool in required_tools:
-        if tool == "check_balance":
-            result = executor.execute_tool(tool, {"country": country, "member_id": member_id})
-        elif tool == "calculate_tax":
-            result = executor.execute_tool(tool, {
-                "country": country,
-                "member_id": member_id,
-                "withdrawal_amount": 50000,
-                "age": 65
-            })
+        result = call_individual_tool(
+            tool_id=tool,
+            member_id=member_id,
+            withdrawal_amount=50000 if tool == "tax" else None,
+            country=country,
+            warehouse_id=SQL_WAREHOUSE_ID
+        )
         results.append(result)
-        print(f"   ✓ {tool}: {result['duration']:.3f}s")
+        if "error" not in result:
+            print(f"   ✓ {tool}: {result.get('duration', 0):.3f}s")
+        else:
+            print(f"   ✗ {tool}: {result.get('error', 'Failed')}")
 
     print("\n3. Response Builder: Formats results")
     print("   Creates natural language response with tool data\n")
@@ -283,24 +268,28 @@ import time
 benchmark_results = []
 
 for i in range(5):
-    start = time.time()
-
-    result = executor.execute_tool(
-        "check_balance",
-        {"country": "AU", "member_id": "AU001"}
+    result = call_individual_tool(
+        tool_id="projection",
+        member_id="AU001",
+        withdrawal_amount=None,
+        country="AU",
+        warehouse_id=SQL_WAREHOUSE_ID
     )
 
-    duration = time.time() - start
-    benchmark_results.append(duration)
+    if "duration" in result:
+        benchmark_results.append(result['duration'])
 
-avg_duration = sum(benchmark_results) / len(benchmark_results)
-min_duration = min(benchmark_results)
-max_duration = max(benchmark_results)
+if benchmark_results:
+    avg_duration = sum(benchmark_results) / len(benchmark_results)
+    min_duration = min(benchmark_results)
+    max_duration = max(benchmark_results)
 
-print(f"Tool Performance (check_balance, n=5):")
-print(f"  Average: {avg_duration:.3f}s")
-print(f"  Min: {min_duration:.3f}s")
-print(f"  Max: {max_duration:.3f}s")
+    print(f"Tool Performance (projection, n=5):")
+    print(f"  Average: {avg_duration:.3f}s")
+    print(f"  Min: {min_duration:.3f}s")
+    print(f"  Max: {max_duration:.3f}s")
+else:
+    print("Benchmark failed - no results collected")
 
 # COMMAND ----------
 
