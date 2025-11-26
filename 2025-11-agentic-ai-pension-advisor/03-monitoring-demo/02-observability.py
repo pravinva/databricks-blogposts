@@ -14,10 +14,10 @@ repo_root = os.path.abspath(
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
-from src.observability import track_query_latency, get_agent_stats
 from src.config import UNITY_CATALOG, UNITY_SCHEMA
 
 print("✓ Observability modules imported")
+print(f"  Governance table: {UNITY_CATALOG}.{UNITY_SCHEMA}.governance")
 
 # COMMAND ----------
 
@@ -64,4 +64,95 @@ display(tool_usage)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Validation Performance
+
+# COMMAND ----------
+
+validation_stats = spark.sql(f"""
+SELECT
+    country,
+    judge_verdict,
+    COUNT(*) as query_count,
+    AVG(validation_attempts) as avg_attempts,
+    AVG(total_time_seconds) as avg_latency
+FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
+WHERE judge_verdict IS NOT NULL
+GROUP BY country, judge_verdict
+ORDER BY country, judge_verdict
+""")
+
+display(validation_stats)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Query Type Distribution
+
+# COMMAND ----------
+
+query_types = spark.sql(f"""
+SELECT
+    query_type,
+    country,
+    COUNT(*) as query_count,
+    AVG(total_time_seconds) as avg_time,
+    AVG(cost) as avg_cost
+FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
+WHERE query_type IS NOT NULL
+GROUP BY query_type, country
+ORDER BY query_count DESC
+""")
+
+display(query_types)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Recent Activity
+
+# COMMAND ----------
+
+recent_queries = spark.sql(f"""
+SELECT
+    timestamp,
+    country,
+    query_type,
+    tool_used,
+    judge_verdict,
+    total_time_seconds,
+    cost
+FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
+ORDER BY timestamp DESC
+LIMIT 20
+""")
+
+display(recent_queries)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Cost Trends
+
+# COMMAND ----------
+
+cost_trends = spark.sql(f"""
+SELECT
+    DATE(timestamp) as date,
+    country,
+    COUNT(*) as query_count,
+    SUM(cost) as total_cost,
+    AVG(cost) as avg_cost
+FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
+WHERE cost IS NOT NULL
+GROUP BY DATE(timestamp), country
+ORDER BY date DESC, country
+LIMIT 50
+""")
+
+display(cost_trends)
+
+# COMMAND ----------
+
 print("✅ Observability metrics available")
+print("   Query governance table for detailed agent analytics")

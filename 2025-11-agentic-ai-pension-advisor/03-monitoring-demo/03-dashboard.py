@@ -113,14 +113,13 @@ display(latency_metrics)
 cost_analysis = spark.sql(f"""
 SELECT
     country,
-    DATE(query_timestamp) as query_date,
+    DATE(timestamp) as query_date,
     COUNT(*) as query_count,
-    SUM(total_cost) as daily_cost,
-    AVG(total_cost) as avg_cost_per_query,
-    SUM(input_tokens + output_tokens) as total_tokens
+    SUM(cost) as daily_cost,
+    AVG(cost) as avg_cost_per_query
 FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
-WHERE query_timestamp >= CURRENT_DATE - INTERVAL 7 DAYS
-GROUP BY country, DATE(query_timestamp)
+WHERE timestamp >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY country, DATE(timestamp)
 ORDER BY query_date DESC, country
 """)
 
@@ -161,11 +160,11 @@ display(tool_usage_stats)
 hourly_activity = spark.sql(f"""
 SELECT
     country,
-    HOUR(query_timestamp) as hour_of_day,
+    HOUR(timestamp) as hour_of_day,
     COUNT(*) as query_count,
     AVG(total_time_seconds) as avg_latency
 FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
-GROUP BY country, HOUR(query_timestamp)
+GROUP BY country, HOUR(timestamp)
 ORDER BY country, hour_of_day
 """)
 
@@ -240,11 +239,11 @@ spark.sql("SET spark.databricks.session.country = 'AU'")
 # Query should only return AU001's data due to RLS
 rls_test = spark.sql(f"""
 SELECT
-    member_id,
+    user_id,
     country,
     COUNT(*) as query_count
 FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
-GROUP BY member_id, country
+GROUP BY user_id, country
 ORDER BY query_count DESC
 LIMIT 10
 """)
@@ -288,8 +287,8 @@ SELECT
         ELSE 'Failed'
     END as outcome,
     COUNT(*) as query_count,
-    AVG(total_cost) as avg_cost,
-    SUM(total_cost) as total_cost,
+    AVG(cost) as avg_cost,
+    SUM(cost) as total_cost,
     AVG(total_time_seconds) as avg_time
 FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
 GROUP BY country, outcome
@@ -330,14 +329,14 @@ print("  - Drill-down to individual queries")
 summary_metrics = spark.sql(f"""
 SELECT
     COUNT(*) as total_queries,
-    COUNT(DISTINCT member_id) as active_members,
+    COUNT(DISTINCT user_id) as active_members,
     COUNT(DISTINCT country) as countries_served,
     AVG(total_time_seconds) as avg_response_time,
-    SUM(total_cost) as total_cost,
+    SUM(cost) as total_cost,
     COUNT(CASE WHEN judge_verdict = 'Pass' THEN 1 END) * 100.0 / COUNT(*) as overall_pass_rate,
     COUNT(CASE WHEN error_message IS NOT NULL THEN 1 END) * 100.0 / COUNT(*) as error_rate
 FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
-WHERE query_timestamp >= CURRENT_DATE - INTERVAL 7 DAYS
+WHERE timestamp >= CURRENT_DATE - INTERVAL 7 DAYS
 """)
 
 print("7-Day Performance Summary:")
