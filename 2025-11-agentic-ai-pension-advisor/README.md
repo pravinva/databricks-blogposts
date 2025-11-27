@@ -19,7 +19,7 @@ In this reference implementation, we've built a **production-ready agentic AI pe
 - **Prompt Registry** with versioning and A/B testing capabilities
 - **Regulatory Compliance** with comprehensive audit trails and LLM-as-a-Judge validation
 
-**Cost Efficiency:** Processes queries at **$0.003 per query** (vs. traditional advisor at $150/hour), demonstrating massive cost savings while maintaining high-quality, personalized responses.
+**Cost Efficiency:** Processes queries at **pennies per query** ($0.003-$0.010), enabling substantial cost savings by deflecting 40-50% of common member inquiries from call centers and human advisors.
 
 ---
 
@@ -28,6 +28,39 @@ In this reference implementation, we've built a **production-ready agentic AI pe
 ### The ReAct Agent Pattern
 
 At the heart of this system lies the **ReAct (Reasoning-Acting-Observing) agentic loop**, a proven pattern for building intelligent agents that can reason about problems, select appropriate tools, and iteratively refine their responses.
+
+#### Core Agentic Loop
+
+<div style="background-color: #F9F7F4; margin: 0; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+    <div style="display: flex; flex-direction: column; align-items: center; padding: 40px; background-color: #ffffff; border-radius: 12px; max-width: 700px; margin: 40px auto; box-shadow: 0 8px 24px rgba(27, 49, 57, 0.12);">
+        <div style="font-size: 28px; font-weight: 700; color: #1B3139; margin-bottom: 15px; text-align: center; letter-spacing: -0.5px;">ReAct Pattern for Agentic AI</div>
+        <div style="font-size: 14px; color: #5F6368; margin-bottom: 35px; text-align: center; font-weight: 400;">Building Intelligent Agents on Databricks</div>
+        <div style="border: 3px solid #FF3621; border-radius: 12px; padding: 25px; width: 100%; background: linear-gradient(135deg, #FFF5F3 0%, #FFFFFF 100%);">
+            <div style="font-size: 18px; font-weight: 700; color: #1B3139; margin-bottom: 20px; text-align: center; letter-spacing: -0.3px;">Core Agentic Loop</div>
+            <div style="background-color: #ffffff; border-left: 4px solid #FF3621; padding: 14px 20px; margin: 14px 0; text-align: left; font-size: 14px; font-weight: 500; color: #1B3139; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);">
+                <span style="font-weight: 700; font-size: 15px; color: #1B3139; margin-bottom: 6px; display: block;">Classification (Cost Optimization)</span>
+                <span style="font-weight: 500; color: #00A972; font-size: 13px; margin-top: 6px; display: block;">3-Stage Cascade: Regex → Embedding → LLM Fallback</span>
+            </div>
+            <div style="font-size: 24px; color: #FF3621; text-align: center; margin: 8px 0; font-weight: 900;">⬇️</div>
+            <div style="background-color: #ffffff; border-left: 4px solid #FF3621; padding: 14px 20px; margin: 14px 0; text-align: left; font-size: 14px; font-weight: 500; color: #1B3139; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);">
+                <span style="font-weight: 700; font-size: 15px; color: #1B3139; margin-bottom: 6px; display: block;">Tool Selection & Execution (ACT)</span>
+                <span style="font-weight: 500; color: #00A972; font-size: 13px; margin-top: 6px; display: block;">Calls <span style="background-color: #FF3621; color: white; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 0 3px; display: inline-block;">Unity Catalog SQL Functions</span> via <span style="background-color: #FF3621; color: white; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 0 3px; display: inline-block;">SQL Warehouses</span></span>
+            </div>
+            <div style="font-size: 24px; color: #FF3621; text-align: center; margin: 8px 0; font-weight: 900;">⬇️</div>
+            <div style="background-color: #ffffff; border-left: 4px solid #FF3621; padding: 14px 20px; margin: 14px 0; text-align: left; font-size: 14px; font-weight: 500; color: #1B3139; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);">
+                <span style="font-weight: 700; font-size: 15px; color: #1B3139; margin-bottom: 6px; display: block;">Response Synthesis (OBSERVE)</span>
+                <span style="font-weight: 500; color: #00A972; font-size: 13px; margin-top: 6px; display: block;"><span style="background-color: #FF3621; color: white; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 0 3px; display: inline-block;">Foundation Model API</span> (Claude Opus) generates response</span>
+            </div>
+            <div style="font-size: 24px; color: #FF3621; text-align: center; margin: 8px 0; font-weight: 900;">⬇️</div>
+            <div style="background-color: #ffffff; border-left: 4px solid #FF3621; padding: 14px 20px; margin: 14px 0; text-align: left; font-size: 14px; font-weight: 500; color: #1B3139; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);">
+                <span style="font-weight: 700; font-size: 15px; color: #1B3139; margin-bottom: 6px; display: block;">Validation</span>
+                <span style="font-weight: 500; color: #00A972; font-size: 13px; margin-top: 6px; display: block;"><span style="background-color: #FF3621; color: white; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 0 3px; display: inline-block;">LLM-as-a-Judge</span> (Claude Sonnet 4) ensures Compliance</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+#### System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -554,11 +587,9 @@ Every response includes:
 | Validation | Claude Sonnet 4 | ~500 | $0.0004 |
 | **Total per Query** | | | **~$0.003** |
 
-### Cost Comparison
+### Cost Efficiency
 
-- **Traditional Financial Advisor**: $150-300/hour
-- **This System**: $0.003/query (~50,000 queries = $150)
-- **Cost Savings**: 99.9% reduction
+The system processes queries at **pennies per query** ($0.003-$0.010), enabling substantial cost savings by deflecting 40-50% of common member inquiries from call centers. At scale, this allows organizations to handle significantly more queries with the same budget while maintaining high-quality personalized responses.
 
 ### Real-Time Cost Display
 

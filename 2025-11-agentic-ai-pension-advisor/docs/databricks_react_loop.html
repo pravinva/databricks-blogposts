@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Databricks ReAct Pattern</title>
+    <style>
+        /* Official Databricks Brand Colors */
+        :root {
+            --db-coral: #FF3621;
+            --db-cream: #F9F7F4;
+            --db-dark-teal: #1B3139;
+            --db-accent-green: #00A972;
+        }
+
+        body {
+            background-color: var(--db-cream);
+            margin: 0;
+            padding: 20px;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        
+        .db-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            max-width: 700px;
+            margin: 40px auto;
+            box-shadow: 0 8px 24px rgba(27, 49, 57, 0.12);
+        }
+        
+        .header-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--db-dark-teal);
+            margin-bottom: 15px;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #5F6368;
+            margin-bottom: 35px;
+            text-align: center;
+            font-weight: 400;
+        }
+        
+        .db-react-loop {
+            border: 3px solid var(--db-coral);
+            border-radius: 12px;
+            padding: 25px;
+            width: 100%;
+            background: linear-gradient(135deg, #FFF5F3 0%, #FFFFFF 100%);
+        }
+        
+        .db-react-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--db-dark-teal);
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: -0.3px;
+        }
+        
+        .db-react-step {
+            background-color: #ffffff;
+            border-left: 4px solid var(--db-coral);
+            padding: 14px 20px;
+            margin: 14px 0;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--db-dark-teal);
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+
+        .step-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--db-dark-teal);
+            margin-bottom: 6px;
+            display: block;
+        }
+        
+        .db-component {
+            font-weight: 500;
+            color: var(--db-accent-green);
+            font-size: 13px;
+            margin-top: 6px;
+            display: block;
+        }
+        
+        .db-small-pill {
+            background-color: var(--db-coral);
+            color: white;
+            padding: 3px 9px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin: 0 3px;
+            display: inline-block;
+        }
+
+        .db-arrow {
+            font-size: 24px;
+            color: var(--db-coral);
+            text-align: center;
+            margin: 8px 0;
+            font-weight: 900;
+        }
+    </style>
+</head>
+<body>
+
+<div class="db-container">
+    <div class="header-title">ReAct Pattern for Agentic AI</div>
+    <div class="subtitle">Building Intelligent Agents on Databricks</div>
+
+    <div class="db-react-loop">
+        <div class="db-react-title">Core Agentic Loop</div>
+
+        <div class="db-react-step">
+            <span class="step-title">Classification (Cost Optimization)</span>
+            <span class="db-component">3-Stage Cascade: Regex → Embedding → LLM Fallback</span>
+        </div>
+
+        <div class="db-arrow">⬇️</div>
+
+        <div class="db-react-step">
+            <span class="step-title">Tool Selection & Execution (ACT)</span>
+            <span class="db-component">Calls <span class="db-small-pill">Unity Catalog SQL Functions</span> via <span class="db-small-pill">SQL Warehouses</span></span>
+        </div>
+
+        <div class="db-arrow">⬇️</div>
+
+        <div class="db-react-step">
+            <span class="step-title">Response Synthesis (OBSERVE)</span>
+            <span class="db-component"><span class="db-small-pill">Foundation Model API</span> (Claude Opus) generates response</span>
+        </div>
+
+        <div class="db-arrow">⬇️</div>
+
+        <div class="db-react-step">
+            <span class="step-title">Validation</span>
+            <span class="db-component"><span class="db-small-pill">LLM-as-a-Judge</span> (Claude Sonnet 4) ensures Compliance</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
