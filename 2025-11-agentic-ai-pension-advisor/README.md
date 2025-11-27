@@ -31,34 +31,34 @@ At the heart of this system lies the **ReAct (Reasoning-Acting-Observing) agenti
 
 #### Core Agentic Loop
 
-<div style="background-color: #F9F7F4; margin: 0; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-    <div style="display: flex; flex-direction: column; align-items: center; padding: 40px; background-color: #ffffff; border-radius: 12px; max-width: 700px; margin: 40px auto; box-shadow: 0 8px 24px rgba(27, 49, 57, 0.12);">
-        <div style="font-size: 28px; font-weight: 700; color: #1B3139; margin-bottom: 15px; text-align: center; letter-spacing: -0.5px;">ReAct Pattern for Agentic AI</div>
-        <div style="font-size: 14px; color: #5F6368; margin-bottom: 35px; text-align: center; font-weight: 400;">Building Intelligent Agents on Databricks</div>
-        <div style="border: 3px solid #FF3621; border-radius: 12px; padding: 25px; width: 100%; background: linear-gradient(135deg, #FFF5F3 0%, #FFFFFF 100%);">
-            <div style="font-size: 18px; font-weight: 700; color: #1B3139; margin-bottom: 20px; text-align: center; letter-spacing: -0.3px;">Core Agentic Loop</div>
-            <div style="background-color: #ffffff; border-left: 4px solid #FF3621; padding: 14px 20px; margin: 14px 0; text-align: left; font-size: 14px; font-weight: 500; color: #1B3139; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);">
-                <span style="font-weight: 700; font-size: 15px; color: #1B3139; margin-bottom: 6px; display: block;">Classification (Cost Optimization)</span>
-                <span style="font-weight: 500; color: #00A972; font-size: 13px; margin-top: 6px; display: block;">3-Stage Cascade: Regex → Embedding → LLM Fallback</span>
-            </div>
-            <div style="font-size: 24px; color: #FF3621; text-align: center; margin: 8px 0; font-weight: 900;">⬇️</div>
-            <div style="background-color: #ffffff; border-left: 4px solid #FF3621; padding: 14px 20px; margin: 14px 0; text-align: left; font-size: 14px; font-weight: 500; color: #1B3139; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);">
-                <span style="font-weight: 700; font-size: 15px; color: #1B3139; margin-bottom: 6px; display: block;">Tool Selection & Execution (ACT)</span>
-                <span style="font-weight: 500; color: #00A972; font-size: 13px; margin-top: 6px; display: block;">Calls <span style="background-color: #FF3621; color: white; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 0 3px; display: inline-block;">Unity Catalog SQL Functions</span> via <span style="background-color: #FF3621; color: white; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 0 3px; display: inline-block;">SQL Warehouses</span></span>
-            </div>
-            <div style="font-size: 24px; color: #FF3621; text-align: center; margin: 8px 0; font-weight: 900;">⬇️</div>
-            <div style="background-color: #ffffff; border-left: 4px solid #FF3621; padding: 14px 20px; margin: 14px 0; text-align: left; font-size: 14px; font-weight: 500; color: #1B3139; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);">
-                <span style="font-weight: 700; font-size: 15px; color: #1B3139; margin-bottom: 6px; display: block;">Response Synthesis (OBSERVE)</span>
-                <span style="font-weight: 500; color: #00A972; font-size: 13px; margin-top: 6px; display: block;"><span style="background-color: #FF3621; color: white; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 0 3px; display: inline-block;">Foundation Model API</span> (Claude Opus) generates response</span>
-            </div>
-            <div style="font-size: 24px; color: #FF3621; text-align: center; margin: 8px 0; font-weight: 900;">⬇️</div>
-            <div style="background-color: #ffffff; border-left: 4px solid #FF3621; padding: 14px 20px; margin: 14px 0; text-align: left; font-size: 14px; font-weight: 500; color: #1B3139; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);">
-                <span style="font-weight: 700; font-size: 15px; color: #1B3139; margin-bottom: 6px; display: block;">Validation</span>
-                <span style="font-weight: 500; color: #00A972; font-size: 13px; margin-top: 6px; display: block;"><span style="background-color: #FF3621; color: white; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 0 3px; display: inline-block;">LLM-as-a-Judge</span> (Claude Sonnet 4) ensures Compliance</span>
-            </div>
-        </div>
-    </div>
-</div>
+```
+┌────────────────────────────────────────────────────────────────┐
+│         ReAct Pattern: Reasoning + Acting + Observing          │
+└────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────────────────────────────────────────────┐
+    │  PHASE 1: Classification (Cost Optimization)             │
+    │  └─> 3-Stage Cascade: Regex → Embedding → LLM           │
+    └───────────────────────────┬──────────────────────────────┘
+                                │
+                                ▼
+    ┌──────────────────────────────────────────────────────────┐
+    │  PHASE 2: Tool Selection & Execution (ACT)               │
+    │  └─> Unity Catalog SQL Functions via SQL Warehouses     │
+    └───────────────────────────┬──────────────────────────────┘
+                                │
+                                ▼
+    ┌──────────────────────────────────────────────────────────┐
+    │  PHASE 3: Response Synthesis (OBSERVE)                   │
+    │  └─> Foundation Model API (Claude Opus)                  │
+    └───────────────────────────┬──────────────────────────────┘
+                                │
+                                ▼
+    ┌──────────────────────────────────────────────────────────┐
+    │  PHASE 4: Validation                                     │
+    │  └─> LLM-as-a-Judge (Claude Sonnet 4)                   │
+    └──────────────────────────────────────────────────────────┘
+```
 
 #### System Architecture
 
