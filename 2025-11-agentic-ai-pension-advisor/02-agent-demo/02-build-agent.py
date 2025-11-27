@@ -14,32 +14,32 @@
 # MAGIC The agent follows the **ReAct (Reasoning-Acting-Observing)** pattern, a proven approach for building intelligent agents.
 # MAGIC
 # MAGIC ```
-# MAGIC ┌────────────────────────────────────────────────────────────────┐
-# MAGIC │         ReAct Pattern: Reasoning + Acting + Observing          │
-# MAGIC └────────────────────────────────────────────────────────────────┘
+# MAGIC ┌───────────────────────────────────────────────────────────────┐
+# MAGIC │       ReAct Pattern: Reasoning + Acting + Observing           │
+# MAGIC └───────────────────────────────────────────────────────────────┘
 # MAGIC
-# MAGIC     ┌──────────────────────────────────────────────────────────┐
-# MAGIC     │  PHASE 1: Classification (Cost Optimization)             │
-# MAGIC     │  └─> 3-Stage Cascade: Regex → Embedding → LLM           │
-# MAGIC     └───────────────────────────┬──────────────────────────────┘
-# MAGIC                                 │
-# MAGIC                                 ▼
-# MAGIC     ┌──────────────────────────────────────────────────────────┐
-# MAGIC     │  PHASE 2: Tool Selection & Execution (ACT)               │
-# MAGIC     │  └─> Unity Catalog SQL Functions via SQL Warehouses     │
-# MAGIC     └───────────────────────────┬──────────────────────────────┘
-# MAGIC                                 │
-# MAGIC                                 ▼
-# MAGIC     ┌──────────────────────────────────────────────────────────┐
-# MAGIC     │  PHASE 3: Response Synthesis (OBSERVE)                   │
-# MAGIC     │  └─> Foundation Model API (Claude Opus)                  │
-# MAGIC     └───────────────────────────┬──────────────────────────────┘
-# MAGIC                                 │
-# MAGIC                                 ▼
-# MAGIC     ┌──────────────────────────────────────────────────────────┐
-# MAGIC     │  PHASE 4: Validation                                     │
-# MAGIC     │  └─> LLM-as-a-Judge (Claude Sonnet 4)                   │
-# MAGIC     └──────────────────────────────────────────────────────────┘
+# MAGIC   ┌─────────────────────────────────────────────────────────────┐
+# MAGIC   │  PHASE 1: Classification (Cost Optimization)                │
+# MAGIC   │  └─> 3-Stage Cascade: Regex → Embedding → LLM              │
+# MAGIC   └──────────────────────────┬──────────────────────────────────┘
+# MAGIC                              │
+# MAGIC                              ▼
+# MAGIC   ┌─────────────────────────────────────────────────────────────┐
+# MAGIC   │  PHASE 2: Tool Selection & Execution (ACT)                  │
+# MAGIC   │  └─> Unity Catalog SQL Functions via SQL Warehouses        │
+# MAGIC   └──────────────────────────┬──────────────────────────────────┘
+# MAGIC                              │
+# MAGIC                              ▼
+# MAGIC   ┌─────────────────────────────────────────────────────────────┐
+# MAGIC   │  PHASE 3: Response Synthesis (OBSERVE)                      │
+# MAGIC   │  └─> Foundation Model API (Claude Opus)                     │
+# MAGIC   └──────────────────────────┬──────────────────────────────────┘
+# MAGIC                              │
+# MAGIC                              ▼
+# MAGIC   ┌─────────────────────────────────────────────────────────────┐
+# MAGIC   │  PHASE 4: Validation                                        │
+# MAGIC   │  └─> LLM-as-a-Judge (Claude Sonnet 4)                      │
+# MAGIC   └─────────────────────────────────────────────────────────────┘
 # MAGIC ```
 # MAGIC
 # MAGIC **Key Benefits:**
