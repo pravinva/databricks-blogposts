@@ -497,16 +497,25 @@ class ReactAgenticLoop:
 
                 self.printf(f"🐛 DEBUG: About to return from run_agentic_loop (success path)")
 
-                return {
-                    "response": state.final_response,
-                    "validation": validation_result,
-                    "tools_used": list(state.tool_results.keys()),
-                    "attempts": state.attempts,
-                    "synthesis_results": state.synthesis_attempts,
-                    "validation_results": state.validation_history,
-                    "classification": state.classification,
-                    "citations": state.citations
-                }
+                # Build return dict explicitly to catch any serialization errors
+                try:
+                    result_dict = {
+                        "response": state.final_response,
+                        "validation": validation_result,
+                        "tools_used": list(state.tool_results.keys()),
+                        "attempts": state.attempts,
+                        "synthesis_results": state.synthesis_attempts,
+                        "validation_results": state.validation_history,
+                        "classification": state.classification,
+                        "citations": state.citations
+                    }
+                    self.printf(f"🐛 DEBUG: Return dict built successfully, returning now...")
+                    return result_dict
+                except Exception as return_error:
+                    self.printf(f"❌ CRITICAL: Error building return dict: {return_error}")
+                    import traceback
+                    self.printf(traceback.format_exc())
+                    raise
             else:
                 self.printf(f"❌ Validation FAILED on attempt {attempt}/{MAX_VALIDATION_ATTEMPTS}")
                 if attempt < MAX_VALIDATION_ATTEMPTS:
