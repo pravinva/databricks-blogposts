@@ -807,36 +807,79 @@ def render_validation_results(validation, timings):
 
     # --- Red Box: Real flag only when confidence >= threshold and violations exist
     if len(violations) > 0 and confidence >= LLM_JUDGE_CONFIDENCE_THRESHOLD:
+        # Extract cost and token information
+        total_cost = timings.get('cost', 0.0)
+        cost_breakdown = timings.get('cost_breakdown', {})
+        total_tokens = cost_breakdown.get('total', {}).get('total_tokens', 0)
+
+        # Build details line
+        details_parts = [
+            f"Model: {validation.get('judge_model', 'Claude Sonnet 4')}",
+            f"Confidence: {confidence:.0%}",
+            f"Time: {validation_time:.2f}s"
+        ]
+        if total_tokens > 0:
+            details_parts.append(f"Tokens: {total_tokens:,}")
+        if total_cost > 0:
+            details_parts.append(f"Cost: ${total_cost:.4f}")
+        details_line = " • ".join(details_parts)
+
         st.markdown(f"""
             <div style="background:#FFEBEE;border-left:4px solid #DC2626;
                         padding:1rem;border-radius:8px;margin:1rem 0;">
                 ❌ <strong>LLM Judge: FLAGGED</strong><br>
                 Found {len(violations)} potential issues<br>
-                Model: {validation.get('judge_model', 'Claude Sonnet 4')} •
-                Confidence: {confidence:.0%} •
-                Time: {validation_time:.2f}s
+                <span style="font-size: 0.85em; color: #555;">{details_line}</span>
             </div>
         """, unsafe_allow_html=True)
 
     # --- Amber Box: Low confidence, generic caution
     elif len(violations) > 0 and confidence < LLM_JUDGE_CONFIDENCE_THRESHOLD:
+        # Extract cost and token information
+        total_cost = timings.get('cost', 0.0)
+        cost_breakdown = timings.get('cost_breakdown', {})
+        total_tokens = cost_breakdown.get('total', {}).get('total_tokens', 0)
+
+        # Build details line
+        details_parts = [f"Model: {validation.get('judge_model', 'Claude Sonnet 4')}"]
+        if total_tokens > 0:
+            details_parts.append(f"Tokens: {total_tokens:,}")
+        if total_cost > 0:
+            details_parts.append(f"Cost: ${total_cost:.4f}")
+        details_line = " • ".join(details_parts)
+
         st.markdown(f"""
             <div style="background:#FFF8E1;border-left:4px solid #F59E0B;
                         padding:1rem;border-radius:8px;margin:1rem 0;">
                 ⚠️ <strong>LLM Judge: Low Confidence</strong><br>
                 {len(violations)} potential issue(s) detected, but judge confidence is only {confidence:.0%}.<br>
-                Please review manually.
+                Please review manually.<br>
+                <span style="font-size: 0.85em; color: #555;">{details_line}</span>
             </div>
         """, unsafe_allow_html=True)
 
     # --- Green Box: Full pass or no issues
     else:
         label = "PASSED" if passed else "COMPLETED (NO FLAGGED ISSUES)"
+
+        # Extract cost and token information
+        total_cost = timings.get('cost', 0.0)
+        cost_breakdown = timings.get('cost_breakdown', {})
+        total_tokens = cost_breakdown.get('total', {}).get('total_tokens', 0)
+
+        # Build details line with tokens and cost
+        details_parts = [f"Model: {validation.get('judge_model', 'Claude Sonnet 4')}"]
+        if total_tokens > 0:
+            details_parts.append(f"Tokens: {total_tokens:,}")
+        if total_cost > 0:
+            details_parts.append(f"Cost: ${total_cost:.4f}")
+        details_line = " • ".join(details_parts)
+
         st.markdown(f"""
             <div style="background:#E8F5E9;border-left:4px solid #16A34A;
                         padding:1rem;border-radius:8px;margin:1rem 0;">
                 ✅ <strong>LLM Judge: {label}</strong><br>
-                Model: {validation.get('judge_model', 'Claude Sonnet 4')} •
+                <span style="font-size: 0.85em; color: #555;">{details_line}</span>
             </div>
         """, unsafe_allow_html=True)
 
