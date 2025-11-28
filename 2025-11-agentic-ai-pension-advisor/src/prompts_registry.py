@@ -373,6 +373,12 @@ IMPORTANT CLARIFICATIONS:
 - If response uses numbers from tool calculations, that's CORRECT, NOT INVENTED
 - Only flag as "invented data" if response contains numbers/facts NOT in the member profile OR tool results
 
+ROUNDING & PRECISION:
+- Minor rounding differences (< 1 currency unit) are ACCEPTABLE and should NOT be flagged
+- Example: Response says "113,299 INR" but tool shows "113,298.75 INR" → This is FINE, not DATA_MISUSE
+- Example: Response says "50,000 USD" but tool shows "49,999.82 USD" → This is FINE, not an error
+- Only flag rounding errors if the difference is > 1 currency unit or significantly misleading
+
 COUNTRY-SPECIFIC REGULATORY REQUIREMENTS:
 
 INDIA (IN) - MANDATORY EPF/NPS SPLIT:
@@ -383,8 +389,12 @@ INDIA (IN) - MANDATORY EPF/NPS SPLIT:
   ✓ NPS balance = 25,000 INR (25% of total) - THIS IS CORRECT
 - If response mentions EPF as 75% of super balance - DO NOT FLAG as DATA_MISUSE
 - If response mentions NPS as 25% of super balance - DO NOT FLAG as INVENTED_DATA
-- This split is automatically applied by India tools (tax, benefit, eps_benefit, projection)
-- Only flag if the PERCENTAGES are wrong (not 75/25) or if the MATH is wrong
+- India tools (tax, benefit, eps_benefit, projection) return "balance_split_info" containing:
+  • total_balance, epf_balance, nps_balance, split_note
+  • These values ARE in tool calculations (check the tool output carefully)
+  • Using EPF/NPS balances from balance_split_info is CORRECT, not invented
+- **ROUNDING TOLERANCE**: Differences < 1 INR are acceptable (e.g., 113,299 vs 113,298.75 is FINE)
+- Only flag if PERCENTAGES are wrong (not 75/25) or MATH is off by more than 1 currency unit
 
 AUSTRALIA (AU), USA (US), UK:
 - Super Balance / 401k / Pension balance represents the FULL accessible balance
