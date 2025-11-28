@@ -523,7 +523,7 @@ def agent_query(
 
         phase8_start = time.time()
 
-        # Start async audit logging in background thread (non-blocking)
+        # Start async audit logging in background thread (with timeout to ensure completion)
         audit_thread = threading.Thread(
             target=_async_audit_logging,
             args=(
@@ -541,14 +541,21 @@ def agent_query(
                 elapsed,
                 classification_method
             ),
-            daemon=True  # Daemon thread won't block program exit
+            daemon=False  # Non-daemon so it completes before exit
         )
         audit_thread.start()
         logger.info(f"✅ Audit logging started in background (thread: {audit_thread.name})")
 
+        # Give thread up to 5 seconds to complete (avoids blocking user, but ensures logging finishes)
+        audit_thread.join(timeout=5.0)
+
         phase8_duration = time.time() - phase8_start
-        mark_phase_complete('phase_8_logging', duration=phase8_duration)
-        logger.info(f"✅ Phase 8 initiated ({phase8_duration:.3f}s) - logging continues in background")
+        if audit_thread.is_alive():
+            logger.warning(f"⚠️ Audit logging still running after {phase8_duration:.3f}s (timeout reached)")
+            mark_phase_complete('phase_8_logging', duration=phase8_duration)
+        else:
+            mark_phase_complete('phase_8_logging', duration=phase8_duration)
+            logger.info(f"✅ Phase 8 completed ({phase8_duration:.3f}s) - governance logging finished")
     
     except Exception as e:
         error_info = traceback.format_exc()
