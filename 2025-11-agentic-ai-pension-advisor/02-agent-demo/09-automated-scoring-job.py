@@ -81,6 +81,40 @@ print(f"  Scoring Table: {SCORING_TABLE}")
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Setup Scoring Results Table
+
+# COMMAND ----------
+
+# Create scoring_results table if it doesn't exist
+# This ensures proper Delta Lake configuration and table properties
+spark.sql(f"""
+CREATE TABLE IF NOT EXISTS {SCORING_TABLE} (
+  run_id STRING NOT NULL COMMENT 'MLflow run ID for the query',
+  user_id STRING COMMENT 'User ID who made the query',
+  country STRING COMMENT 'Country code (AU, US, UK, IN)',
+  query_timestamp TIMESTAMP COMMENT 'When the query was made',
+  scoring_timestamp TIMESTAMP NOT NULL COMMENT 'When the scoring was performed',
+  overall_score DOUBLE COMMENT 'Average score across all scorers (0-1)',
+  pass_rate DOUBLE COMMENT 'Percentage of scorers that passed',
+  passed_count INT COMMENT 'Number of scorers that passed',
+  total_count INT COMMENT 'Total number of scorers run',
+  verdict STRING COMMENT 'Overall verdict (PASS, FAIL, ERROR)',
+  individual_scores STRING COMMENT 'JSON string with individual scorer results'
+)
+USING DELTA
+COMMENT 'Automated quality scoring results for production queries'
+TBLPROPERTIES (
+  'delta.enableChangeDataFeed' = 'true',
+  'delta.autoOptimize.optimizeWrite' = 'true',
+  'delta.autoOptimize.autoCompact' = 'true'
+)
+""")
+
+print(f"✅ Table ready: {SCORING_TABLE}")
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Step 1: Query Recent Production Traces
 
 # COMMAND ----------
