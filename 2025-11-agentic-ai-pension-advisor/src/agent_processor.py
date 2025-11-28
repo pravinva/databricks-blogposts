@@ -503,39 +503,51 @@ def agent_query(
         logger.info(f"   Phase 8 (Logging):       (running in background...)")
         logger.info(f"{'='*70}\n")
 
-        # PHASE 8: AUDIT LOGGING (ASYNC - Non-blocking)
-        # Extract classification method for async logging
+        # PHASE 8: AUDIT LOGGING (SYNCHRONOUS for debugging)
+        # Extract classification method for logging
         classification_info = result_dict.get('classification', {})
         classification_method = classification_info.get('method', 'unknown')
 
         # Mark Phase 8 as running
         mark_phase_running('phase_8_logging')
 
-        # Start audit logging in background thread
-        audit_thread = threading.Thread(
-            target=_async_audit_logging,
-            args=(
-                audit_logger,
-                obs,
-                session_id,
-                user_id,
-                country,
-                query_string,
-                answer,
-                judge_verdict,
-                tools_called,
-                total_cost,
-                citations,
-                elapsed,
-                classification_method
-            ),
-            daemon=True  # Thread will not block program exit
-        )
-        audit_thread.start()
+        phase8_start = time.time()
 
-        # Mark Phase 8 as complete immediately (logging continues in background)
-        mark_phase_complete('phase_8_logging', duration=0.0)
-        logger.info("🚀 Audit logging triggered (running in background)")
+        # Log to governance table FIRST (synchronously to catch errors)
+        try:
+            logger.info("📍 PHASE 8: Logging to governance table...")
+            audit_logger.log_to_governance_table(
+                session_id=session_id,
+                user_id=user_id,
+                country=country,
+                query_string=query_string,
+                answer=answer,
+                judge_verdict=judge_verdict,
+                tools_called=tools_called,
+                cost=total_cost,
+                citations=citations,
+                elapsed=elapsed,
+                error_info=None,
+                classification_method=classification_method
+            )
+            logger.info(f"✅ Governance table logged: {session_id}")
+        except Exception as gov_error:
+            logger.error(f"❌ Governance logging FAILED: {gov_error}", exc_info=True)
+
+        # End observability run
+        if obs:
+            try:
+                obs.end_agent_run(
+                    response=answer or "",
+                    success=True,
+                    error=None
+                )
+            except Exception as obs_error:
+                logger.error(f"⚠️ Error ending observability run: {obs_error}")
+
+        phase8_duration = time.time() - phase8_start
+        mark_phase_complete('phase_8_logging', duration=phase8_duration)
+        logger.info(f"✅ Phase 8 complete ({phase8_duration:.2f}s)")
     
     except Exception as e:
         error_info = traceback.format_exc()
