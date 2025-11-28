@@ -301,9 +301,10 @@ print(f"📊 Found {len(recent_runs)} runs in last 24 hours")
 
 # Analyze trace metrics
 if recent_runs:
-    total_cost = sum(run.data.metrics.get('total_cost_usd', 0) for run in recent_runs)
-    avg_latency = sum(run.data.metrics.get('runtime_sec', 0) for run in recent_runs) / len(recent_runs)
-    avg_confidence = sum(run.data.metrics.get('validation_confidence', 0) for run in recent_runs) / len(recent_runs)
+    # Use correct metric names from observability module (with dots, not underscores)
+    total_cost = sum(run.data.metrics.get('total.cost_usd', 0) for run in recent_runs)
+    avg_latency = sum(run.data.metrics.get('total.duration_sec', 0) for run in recent_runs) / len(recent_runs)
+    avg_confidence = sum(run.data.metrics.get('validation.confidence', 0) for run in recent_runs) / len(recent_runs)
 
     print(f"\n📈 Metrics Summary:")
     print(f"  Total Cost: ${total_cost:.4f}")
