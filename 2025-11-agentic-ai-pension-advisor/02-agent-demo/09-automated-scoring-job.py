@@ -129,32 +129,33 @@ for run in recent_runs:
         artifact_uri = run.info.artifact_uri
 
         # Read query and response from artifacts
-        query = ''
-        response = ''
+        query_text = ''
+        response_text = ''
         try:
-            query = client.download_artifacts(run.info.run_id, "query.txt")
-            with open(query, 'r') as f:
-                query = f.read()
+            query_path = client.download_artifacts(run.info.run_id, "query.txt")
+            with open(query_path, 'r') as f:
+                query_text = f.read()
         except Exception as e:
-            logger.debug(f"Could not read query artifact for run {run.info.run_id}: {e}")
+            print(f"  ⚠️ Could not read query.txt for run {run.info.run_id[:8]}: {e}")
 
         try:
-            response = client.download_artifacts(run.info.run_id, "response.txt")
-            with open(response, 'r') as f:
-                response = f.read()
+            response_path = client.download_artifacts(run.info.run_id, "response.txt")
+            with open(response_path, 'r') as f:
+                response_text = f.read()
         except Exception as e:
-            logger.debug(f"Could not read response artifact for run {run.info.run_id}: {e}")
+            print(f"  ⚠️ Could not read response.txt for run {run.info.run_id[:8]}: {e}")
 
         # Only score if we have both query and response
-        if query and response:
+        if query_text and response_text:
             queries_to_score.append({
                 'run_id': run.info.run_id,
                 'user_id': user_id,
                 'country': country,
-                'query': query,
-                'response': response,
+                'query': query_text,
+                'response': response_text,
                 'timestamp': datetime.fromtimestamp(run.info.start_time / 1000)
             })
+            print(f"  ✅ Run {run.info.run_id[:8]} - has both artifacts")
     except Exception as e:
         logger.error(f"Error processing run {run.info.run_id}: {e}")
         continue
