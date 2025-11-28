@@ -609,9 +609,12 @@ elif page == "Governance":
         render_configuration_tab()
 
     with tab3:  # Observability - Real-time metrics, quality, health, classification, automated scoring
-        # MLflow Experiments Link
-        mlflow_url = get_mlflow_experiment_url(MLFLOW_PROD_EXPERIMENT_PATH)
-        st.info(f"🔬 **MLflow Experiments** - [View experiment tracking →]({mlflow_url})")
+        # MLflow Experiments - Display inline
+        from src.ui_components import render_mlflow_traces_tab
+
+        with st.expander("🔬 MLflow Experiments & Traces", expanded=False):
+            render_mlflow_traces_tab()
+
         st.markdown("---")
 
         col1, col2 = st.columns([1, 1])
