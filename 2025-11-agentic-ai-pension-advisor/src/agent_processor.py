@@ -222,7 +222,7 @@ def _async_audit_logging(
         logger.error(f"⚠️ Background audit logging error: {e}", exc_info=True)
 
 
-@mlflow.trace(name="pension_advisor_query", span_type="AGENT")
+# @mlflow.trace(name="pension_advisor_query", span_type="AGENT")  # TEMPORARILY DISABLED FOR DEBUGGING
 def agent_query(
     user_id,
     session_id,
