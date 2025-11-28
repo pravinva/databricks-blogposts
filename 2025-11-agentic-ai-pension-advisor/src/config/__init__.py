@@ -64,8 +64,10 @@ CLASSIFIER_LLM_ENDPOINT = _config['classifier_llm']['endpoint']
 SQL_WAREHOUSE_ID = _get_env_or_config('DATABRICKS_SQL_WAREHOUSE_ID', _config['databricks']['sql_warehouse_id'])
 UNITY_CATALOG = _get_env_or_config('DATABRICKS_UNITY_CATALOG', _config['databricks']['unity_catalog'])
 UNITY_SCHEMA = _get_env_or_config('DATABRICKS_UNITY_SCHEMA', _config['databricks']['unity_schema'])
+FUNCTIONS_SCHEMA = _config['databricks'].get('functions_schema', 'pension_calculators')
 GOVERNANCE_TABLE = _config['databricks']['governance_table']
 MEMBER_PROFILES_TABLE = _config['databricks']['member_profiles_table']
+CITATION_REGISTRY_TABLE = _config['databricks'].get('citation_registry_table', 'citation_registry')
 
 # ============================================================================
 # Supported Countries
@@ -151,6 +153,14 @@ def get_member_profiles_table_path():
     """Get member profiles table full path"""
     return get_table_path(MEMBER_PROFILES_TABLE)
 
+def get_citation_registry_table_path():
+    """Get citation registry table full path"""
+    return get_table_path(CITATION_REGISTRY_TABLE)
+
+def get_functions_path(function_name):
+    """Get fully qualified function path"""
+    return f"{UNITY_CATALOG}.{FUNCTIONS_SCHEMA}.{function_name}"
+
 def calculate_llm_cost(input_tokens, output_tokens, model_type):
     """
     Calculate cost based on official Databricks GenAI pricing.
@@ -219,8 +229,10 @@ __all__ = [
     'SQL_WAREHOUSE_ID',
     'UNITY_CATALOG',
     'UNITY_SCHEMA',
+    'FUNCTIONS_SCHEMA',
     'GOVERNANCE_TABLE',
     'MEMBER_PROFILES_TABLE',
+    'CITATION_REGISTRY_TABLE',
     'COUNTRIES',
     'MLFLOW_PROD_EXPERIMENT_PATH',
     'MLFLOW_OFFLINE_EVAL_PATH',
@@ -229,6 +241,8 @@ __all__ = [
     'get_table_path',
     'get_governance_table_path',
     'get_member_profiles_table_path',
+    'get_citation_registry_table_path',
+    'get_functions_path',
     'calculate_llm_cost',
     'validate_configuration',
 ]

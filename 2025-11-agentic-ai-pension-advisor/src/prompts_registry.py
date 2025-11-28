@@ -12,7 +12,7 @@ import mlflow
 from typing import Dict, Optional
 from datetime import datetime
 from src.country_config import get_country_config, get_special_instructions
-from src.config import MLFLOW_PROD_EXPERIMENT_PATH
+from src.config import MLFLOW_PROD_EXPERIMENT_PATH, get_citation_registry_table_path
 
 
 class PromptsRegistry:
@@ -501,7 +501,7 @@ MEMBER PROFILE (for reference):
         return f"""SELECT DISTINCT
   citation_id, country, authority, regulation_name,
   regulation_code, source_url, description
-FROM super_advisory_demo.member_data.citation_registry
+FROM {get_citation_registry_table_path()}
 WHERE country = '{country}'
   AND ({where_clause})
 ORDER BY citation_id"""
