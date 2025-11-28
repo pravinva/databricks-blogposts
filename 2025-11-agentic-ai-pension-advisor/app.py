@@ -89,13 +89,7 @@ st.sidebar.markdown("---")
 # ============================================================================ #
 st.sidebar.subheader("📊 Databricks Dashboards")
 
-from src.utils.urls import (
-    get_mlflow_experiment_url,
-    get_unity_catalog_url,
-    get_model_registry_url,
-    get_billing_console_url,
-    format_external_link
-)
+from src.utils.urls import get_mlflow_experiment_url
 from src.config import MLFLOW_PROD_EXPERIMENT_PATH, UNITY_CATALOG, UNITY_SCHEMA
 
 st.sidebar.markdown("---")
