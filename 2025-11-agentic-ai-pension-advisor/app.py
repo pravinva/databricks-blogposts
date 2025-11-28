@@ -11,15 +11,12 @@ from src.ui_components import (
     render_postanswer_disclaimer,
     render_validation_results,
     render_enhanced_audit_tab,
-    render_mlflow_traces_tab,
-    render_cost_analysis_tab,
     render_configuration_tab
 )
 from src.ui_monitoring_tabs import (
     render_realtime_metrics_tab,
     render_classification_analytics_tab,
     render_quality_monitoring_tab,
-    render_enhanced_cost_analysis_tab,
     render_system_health_tab
 )
 from src.utils.progress import initialize_progress_tracker
@@ -83,6 +80,39 @@ page = st.sidebar.radio(
     ["Advisory", "Governance"],
     key="page_nav"
 )
+
+st.sidebar.markdown("---")
+
+# ============================================================================ #
+# EXTERNAL LINKS TO DATABRICKS NATIVE UIS
+# ============================================================================ #
+st.sidebar.subheader("📊 Databricks Dashboards")
+
+from src.utils.urls import (
+    get_mlflow_experiment_url,
+    get_unity_catalog_url,
+    get_model_registry_url,
+    get_billing_console_url,
+    format_external_link
+)
+from src.config import MLFLOW_PROD_EXPERIMENT_PATH, UNITY_CATALOG, UNITY_SCHEMA
+
+# MLflow Experiments
+mlflow_url = get_mlflow_experiment_url(MLFLOW_PROD_EXPERIMENT_PATH)
+st.sidebar.markdown(format_external_link("MLflow Experiments", mlflow_url, "🔬"))
+
+# Model Registry
+model_name = f"{UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor"
+model_url = get_model_registry_url(model_name)
+st.sidebar.markdown(format_external_link("Model Registry", model_url, "📦"))
+
+# Unity Catalog
+uc_url = get_unity_catalog_url(UNITY_CATALOG, UNITY_SCHEMA)
+st.sidebar.markdown(format_external_link("Unity Catalog", uc_url, "🗃️"))
+
+# Billing Console
+billing_url = get_billing_console_url()
+st.sidebar.markdown(format_external_link("Billing & Usage", billing_url, "💰"))
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("⚖️ Validation Mode")
@@ -484,13 +514,13 @@ elif page == "Governance":
     
     st.title("🔒 Governance & Observability")
     st.caption("💡 Professional monitoring dashboard - everything at a glance")
-    
-    # 5-TAB DESIGN: Governance, MLflow, Config, Cost, Observability
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    st.info("📊 **Note:** MLflow traces and cost analysis are now available via the Databricks dashboard links in the sidebar →")
+
+    # 3-TAB DESIGN: Governance, Config, Observability
+    # (MLflow and Cost tabs removed - use sidebar links to Databricks native UIs)
+    tab1, tab2, tab3 = st.tabs([
         "🔒 Governance",
-        "🔬 MLflow",
         "⚙️ Config",
-        "💰 Cost",
         "📊 Observability"
     ])
     
@@ -581,23 +611,10 @@ elif page == "Governance":
             # Trust Footer
             render_trust_footer()
     
-    with tab2:  # MLflow - MLflow traces
-        st.markdown("### 🔬 MLflow Traces")
-        st.caption("Advanced MLflow experiment tracking and traces")
-        render_mlflow_traces_tab()
-    
-    with tab3:  # Config - Configuration settings
+    with tab2:  # Config - Configuration settings
         render_configuration_tab()
-    
-    with tab4:  # Cost - Cost analysis
-        st.markdown("### 💰 Cost Analysis")
-        st.caption("Comprehensive cost breakdowns, trends, and projections")
-        
-        # ✅ Single comprehensive cost analysis view (no duplicates)
-        # All unique metrics are now in render_enhanced_cost_analysis_tab()
-        render_enhanced_cost_analysis_tab()
-    
-    with tab5:  # Observability - Real-time metrics, quality, health, classification
+
+    with tab3:  # Observability - Real-time metrics, quality, health, classification
         col1, col2 = st.columns([1, 1])
         with col1:
             render_realtime_metrics_tab()
