@@ -378,11 +378,11 @@ COUNTRY-SPECIFIC REGULATORY REQUIREMENTS:
 INDIA (IN) - MANDATORY EPF/NPS SPLIT:
 - India's retirement corpus is MANDATORILY split: 75% EPF (Employees Provident Fund) + 25% NPS (National Pension Scheme)
 - This is a REGULATORY REQUIREMENT under EPFO rules, NOT invented data or data misuse
-- If member profile shows "Super Balance: 151,065 INR" for an India member:
-  ✓ EPF balance = 113,299 INR (75% of 151,065) - THIS IS CORRECT
-  ✓ NPS balance = 37,766 INR (25% of 151,065) - THIS IS CORRECT
-- If response mentions "EPF balance of 113,299 INR (75% of total)" - DO NOT FLAG as DATA_MISUSE
-- If response mentions "NPS balance of 37,766 INR (25% of total)" - DO NOT FLAG as INVENTED_DATA
+- Example: If member profile shows "Super Balance: 100,000 INR" for an India member:
+  ✓ EPF balance = 75,000 INR (75% of total) - THIS IS CORRECT
+  ✓ NPS balance = 25,000 INR (25% of total) - THIS IS CORRECT
+- If response mentions EPF as 75% of super balance - DO NOT FLAG as DATA_MISUSE
+- If response mentions NPS as 25% of super balance - DO NOT FLAG as INVENTED_DATA
 - This split is automatically applied by India tools (tax, benefit, eps_benefit, projection)
 - Only flag if the PERCENTAGES are wrong (not 75/25) or if the MATH is wrong
 
