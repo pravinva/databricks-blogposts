@@ -723,7 +723,8 @@ def render_automated_scoring_tab():
 
         # Calculate trend (last 24h vs previous 24h)
         if 'scoring_timestamp' in scoring_data.columns:
-            now = datetime.now()
+            # Use timezone-aware datetime to match database timestamps
+            now = pd.Timestamp.now(tz='UTC')
             last_24h = scoring_data[scoring_data['scoring_timestamp'] >= now - timedelta(hours=24)]
             prev_24h = scoring_data[
                 (scoring_data['scoring_timestamp'] >= now - timedelta(hours=48)) &
