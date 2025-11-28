@@ -507,8 +507,10 @@ def agent_query(
         logger.info(f"   Phase 8 (Logging):       (running in background...)")
         logger.info(f"{'='*70}\n")
 
-        # PHASE 8: AUDIT LOGGING (ASYNC - Non-blocking)
-        logger.info("📍 PHASE 8: Starting async audit logging (non-blocking)...")
+        # PHASE 8: AUDIT LOGGING (SYNCHRONOUS)
+        logger.info("📍 PHASE 8: Starting audit logging...")
+        mark_phase_running('phase_8_logging')
+        phase8_start = time.time()
 
         # Extract classification method for logging (with safe fallback)
         try:
@@ -518,44 +520,47 @@ def agent_query(
             logger.warning(f"⚠️ Could not extract classification method: {class_err}")
             classification_method = 'unknown'
 
-        # Mark Phase 8 as running
-        mark_phase_running('phase_8_logging')
+        # Log to governance table (synchronous)
+        try:
+            audit_logger.log_to_governance_table(
+                session_id=session_id,
+                user_id=user_id,
+                country=country,
+                query_string=query_string,
+                answer=answer,
+                judge_verdict=judge_verdict,
+                tools_called=tools_called,
+                cost=total_cost,
+                citations=citations,
+                elapsed=elapsed,
+                error_info=None,
+                classification_method=classification_method
+            )
+            logger.info(f"✅ Governance table logged: {session_id}")
+        except Exception as gov_error:
+            logger.error(f"⚠️ Governance logging failed: {gov_error}", exc_info=True)
 
-        phase8_start = time.time()
-
-        # Start async audit logging in background thread (with timeout to ensure completion)
-        audit_thread = threading.Thread(
-            target=_async_audit_logging,
-            args=(
-                audit_logger,
-                obs,
-                session_id,
-                user_id,
-                country,
-                query_string,
-                answer,
-                judge_verdict,
-                tools_called,
-                total_cost,
-                citations,
-                elapsed,
-                classification_method
-            ),
-            daemon=False  # Non-daemon so it completes before exit
-        )
-        audit_thread.start()
-        logger.info(f"✅ Audit logging started in background (thread: {audit_thread.name})")
-
-        # Give thread up to 5 seconds to complete (avoids blocking user, but ensures logging finishes)
-        audit_thread.join(timeout=5.0)
+        # End observability run
+        if obs:
+            try:
+                obs.end_agent_run(
+                    response=answer or "",
+                    success=True,
+                    error=None
+                )
+            except Exception as obs_error:
+                logger.info(f"⚠️ Error ending observability run: {obs_error}")
+                # Force end any active MLflow run
+                try:
+                    import mlflow
+                    if mlflow.active_run():
+                        mlflow.end_run()
+                except:
+                    pass
 
         phase8_duration = time.time() - phase8_start
-        if audit_thread.is_alive():
-            logger.warning(f"⚠️ Audit logging still running after {phase8_duration:.3f}s (timeout reached)")
-            mark_phase_complete('phase_8_logging', duration=phase8_duration)
-        else:
-            mark_phase_complete('phase_8_logging', duration=phase8_duration)
-            logger.info(f"✅ Phase 8 completed ({phase8_duration:.3f}s) - governance logging finished")
+        mark_phase_complete('phase_8_logging', duration=phase8_duration)
+        logger.info(f"✅ Phase 8 completed ({phase8_duration:.3f}s)")
     
     except Exception as e:
         error_info = traceback.format_exc()
