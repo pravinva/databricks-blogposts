@@ -52,8 +52,7 @@ from databricks.sdk.service.serving import (
     ServedEntityInput,
     EndpointCoreConfigInput,
     AutoCaptureConfigInput,
-    ServedEntityInputWorkloadSize,
-    ServedEntityInputWorkloadType
+    ServedModelInputWorkloadType
 )
 from src.config import UNITY_CATALOG, UNITY_SCHEMA
 
@@ -63,7 +62,7 @@ w = WorkspaceClient()
 # Configuration
 ENDPOINT_NAME = "pension-advisor"
 MODEL_NAME = f"{UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor"
-WORKLOAD_SIZE = ServedEntityInputWorkloadSize.SMALL
+WORKLOAD_SIZE = "Small"  # Small, Medium, Large
 SCALE_TO_ZERO = True  # Enable scale-to-zero for cost savings
 
 print(f"Endpoint Name: {ENDPOINT_NAME}")
@@ -112,7 +111,7 @@ if not endpoint_exists:
                         entity_version="1",  # Or use alias: @champion
                         scale_to_zero_enabled=SCALE_TO_ZERO,
                         workload_size=WORKLOAD_SIZE,
-                        workload_type=ServedEntityInputWorkloadType.CPU
+                        workload_type=ServedModelInputWorkloadType.CPU
                     )
                 ],
                 # Enable automatic inference table logging
@@ -346,16 +345,16 @@ print("Serving Endpoint Cost Estimate (Approximate)")
 print("=" * 70)
 
 workload_costs = {
-    ServedEntityInputWorkloadSize.SMALL: 0.40,  # $/hour
-    ServedEntityInputWorkloadSize.MEDIUM: 0.80,
-    ServedEntityInputWorkloadSize.LARGE: 1.60
+    "Small": 0.40,  # $/hour
+    "Medium": 0.80,
+    "Large": 1.60
 }
 
 hourly_cost = workload_costs.get(WORKLOAD_SIZE, 0.40)
 daily_cost = hourly_cost * 24
 monthly_cost = daily_cost * 30
 
-print(f"\nWorkload Size: {WORKLOAD_SIZE.value}")
+print(f"\nWorkload Size: {WORKLOAD_SIZE}")
 print(f"Scale to Zero: {SCALE_TO_ZERO}")
 print(f"\nCosts (if running continuously):")
 print(f"  Hourly: ${hourly_cost:.2f}")
