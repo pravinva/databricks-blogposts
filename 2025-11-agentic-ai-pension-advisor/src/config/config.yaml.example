@@ -82,3 +82,34 @@ performance:
   cache_ttl: 3600
   batch_size: 10
   parallel_execution: true
+
+# AI Guardrails Configuration (Phase 1)
+ai_guardrails:
+  enabled: true
+  endpoint: "databricks-ai-guardrails"
+
+  # Input validation policies
+  input_policies:
+    pii_detection: true
+    toxicity_threshold: 0.7
+    prompt_injection: true
+    jailbreak_detection: true
+
+  # Output validation policies
+  output_policies:
+    pii_masking: true
+    toxicity_threshold: 0.8
+    groundedness_check: false  # Disabled for now - requires model integration
+
+# MLflow Serving Configuration (Phase 3)
+mlflow_serving:
+  enabled: false  # Set to true to use serving endpoint
+  endpoint_name: "pension-advisor"
+  model_name: "pension_blog.member_data.pension_advisor"  # Update with your model name
+  model_alias: "champion"
+
+  # Inference table configuration
+  inference_monitoring:
+    enabled: true
+    table_prefix: "pension_advisor"
+    schedule: "0 0 9 * * MON"  # Monday 9am
