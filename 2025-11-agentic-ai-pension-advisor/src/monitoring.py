@@ -730,17 +730,24 @@ def get_model_registry_info(model_name: str) -> Dict:
                 "status": "not_found"
             }
 
-        # Get latest versions
+        # Get latest versions (use search_model_versions for UC models)
         versions_info = []
-        for version in model.latest_versions[:5]:  # Get top 5 latest versions
-            versions_info.append({
-                "version": version.version,
-                "stage": version.current_stage,
-                "status": version.status,
-                "creation_timestamp": version.creation_timestamp,
-                "last_updated_timestamp": version.last_updated_timestamp,
-                "run_id": version.run_id
-            })
+        try:
+            all_versions = client.search_model_versions(f"name='{model_name}'")
+            # Sort by version number descending and take top 5
+            sorted_versions = sorted(all_versions, key=lambda x: int(x.version), reverse=True)[:5]
+
+            for version in sorted_versions:
+                versions_info.append({
+                    "version": version.version,
+                    "stage": version.current_stage if hasattr(version, 'current_stage') else "None",
+                    "status": version.status,
+                    "creation_timestamp": version.creation_timestamp,
+                    "last_updated_timestamp": version.last_updated_timestamp if hasattr(version, 'last_updated_timestamp') else None,
+                    "run_id": version.run_id if hasattr(version, 'run_id') else None
+                })
+        except Exception as e:
+            logger.warning(f"Could not fetch model versions: {e}")
 
         # Get aliases (champion/challenger)
         aliases = {}
