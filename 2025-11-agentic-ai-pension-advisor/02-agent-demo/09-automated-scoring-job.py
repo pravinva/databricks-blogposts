@@ -258,7 +258,7 @@ scoring_df = spark.table(SCORING_TABLE)
 
 # Overall statistics
 total_scored = scoring_df.count()
-recent_scored = scoring_df.filter(col("scoring_timestamp") >= current_timestamp() - lit(f"INTERVAL {LOOKBACK_HOURS} HOURS")).count()
+recent_scored = scoring_df.filter(col("scoring_timestamp") >= expr(f"current_timestamp() - INTERVAL '{LOOKBACK_HOURS}' HOUR")).count()
 
 print(f"\n📊 Scoring Statistics:")
 print(f"  Total Queries Scored (all time): {total_scored}")
@@ -288,7 +288,7 @@ verdict_stats.show()
 from pyspark.sql.functions import date_trunc
 
 trend_df = scoring_df \
-    .filter(col("scoring_timestamp") >= current_timestamp() - lit("INTERVAL 7 DAYS")) \
+    .filter(col("scoring_timestamp") >= expr("current_timestamp() - INTERVAL '7' DAY")) \
     .withColumn("day", date_trunc("day", col("scoring_timestamp"))) \
     .groupBy("day") \
     .agg(
