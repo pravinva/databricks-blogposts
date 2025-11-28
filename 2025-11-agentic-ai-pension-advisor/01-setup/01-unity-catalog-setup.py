@@ -195,7 +195,7 @@ if citation_count == 0:
      'NPS 40% annuity requirement and 60% tax-free lump sum', current_timestamp(), 'benefit'),
     ('IN-EPS-001', 'IN', 'EPFO', 'Employees Pension Scheme 1995', 'Regulation 11',
      '1995-11-16', 'https://www.epfindia.gov.in/site_docs/PDFs/Downloads_PDFs/EPS95Eng.pdf',
-     'EPS pension calculation formula', current_timestamp(), 'benefit'),
+     'EPS pension calculation formula', current_timestamp(), 'eps_benefit'),
     ('IN-INTEREST-001', 'IN', 'EPFO', 'EPF Interest Rate Notification', 'Annual',
      '2024-04-01', 'https://www.epfindia.gov.in/',
      'EPF interest rate (currently 8.15% for 2023-24)', current_timestamp(), 'projection')
