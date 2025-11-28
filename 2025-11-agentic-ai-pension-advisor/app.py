@@ -99,20 +99,20 @@ from src.config import MLFLOW_PROD_EXPERIMENT_PATH, UNITY_CATALOG, UNITY_SCHEMA
 
 # MLflow Experiments
 mlflow_url = get_mlflow_experiment_url(MLFLOW_PROD_EXPERIMENT_PATH)
-st.sidebar.markdown(format_external_link("MLflow Experiments", mlflow_url, "🔬"))
+st.sidebar.markdown(format_external_link("MLflow Experiments", mlflow_url, "🔬"), unsafe_allow_html=True)
 
 # Model Registry
 model_name = f"{UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor"
 model_url = get_model_registry_url(model_name)
-st.sidebar.markdown(format_external_link("Model Registry", model_url, "📦"))
+st.sidebar.markdown(format_external_link("Model Registry", model_url, "📦"), unsafe_allow_html=True)
 
 # Unity Catalog
 uc_url = get_unity_catalog_url(UNITY_CATALOG, UNITY_SCHEMA)
-st.sidebar.markdown(format_external_link("Unity Catalog", uc_url, "🗃️"))
+st.sidebar.markdown(format_external_link("Unity Catalog", uc_url, "🗃️"), unsafe_allow_html=True)
 
 # Billing Console
 billing_url = get_billing_console_url()
-st.sidebar.markdown(format_external_link("Billing & Usage", billing_url, "💰"))
+st.sidebar.markdown(format_external_link("Billing & Usage", billing_url, "💰"), unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("⚖️ Validation Mode")

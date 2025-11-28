@@ -170,7 +170,7 @@ def get_inference_table_url(catalog: str, schema: str, table_name: str) -> Optio
 
 def format_external_link(label: str, url: Optional[str], icon: str = "🔗") -> str:
     """
-    Format an external link for Streamlit markdown.
+    Format an external link for Streamlit that opens in new tab.
 
     Args:
         label: Link text
@@ -178,9 +178,11 @@ def format_external_link(label: str, url: Optional[str], icon: str = "🔗") -> 
         icon: Optional emoji icon
 
     Returns:
-        Markdown formatted link or plain text
+        HTML link with target="_blank" or plain text
     """
     if url:
-        return f"{icon} [{label}]({url})"
+        # Use HTML link with target="_blank" to open in new tab
+        # This works correctly in Databricks Apps
+        return f'{icon} <a href="{url}" target="_blank" rel="noopener noreferrer">{label}</a>'
     else:
         return f"{icon} {label} (not available)"
