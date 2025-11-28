@@ -17,14 +17,14 @@ import mlflow.tracing  # Phase 4: Production monitoring with traces
 import json
 from datetime import datetime
 from databricks.sdk import WorkspaceClient
-from src.config import UNITY_CATALOG, SQL_WAREHOUSE_ID, MLFLOW_PROD_EXPERIMENT_PATH
+from src.config import UNITY_CATALOG, SQL_WAREHOUSE_ID, MLFLOW_PROD_EXPERIMENT_PATH, get_governance_table_path
 
 # ✅ CORRECT TABLE PATH
 from src.shared.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-GOVERNANCE_TABLE = "super_advisory_demo.member_data.governance"
+GOVERNANCE_TABLE = get_governance_table_path()
 
 class AuditLogger:
     """Handles MLflow and UC Governance logging"""
