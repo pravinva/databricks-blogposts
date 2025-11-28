@@ -103,6 +103,7 @@ if not endpoint_exists:
         endpoint = w.serving_endpoints.create(
             name=ENDPOINT_NAME,
             config=EndpointCoreConfigInput(
+                name=ENDPOINT_NAME,  # Add name parameter to config
                 served_entities=[
                     ServedEntityInput(
                         entity_name=MODEL_NAME,
