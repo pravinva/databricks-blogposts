@@ -684,7 +684,7 @@ def render_automated_scoring_tab():
         try:
             scoring_df = spark.table(SCORING_TABLE)
         except Exception:
-            st.info("ℹ️ Automated scoring table not found. Run notebook 10 to set up the table, then run notebook 09 to start scoring.")
+            st.info("ℹ️ Automated scoring table not found. Run notebook 09 to create the table and start scoring production queries.")
             st.code(f"Table: {SCORING_TABLE}")
             return
 
