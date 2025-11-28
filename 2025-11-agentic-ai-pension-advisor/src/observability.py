@@ -123,7 +123,10 @@ class AgentObservability:
             if tags:
                 for key, value in tags.items():
                     mlflow.set_tag(key, str(value))
-            
+
+            # Log query as artifact (for automated scoring job)
+            mlflow.log_text(query, "query.txt")
+
             # Initialize metrics tracking
             self.run_metrics = {
                 'start_time': time.time(),

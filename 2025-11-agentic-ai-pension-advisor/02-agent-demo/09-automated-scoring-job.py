@@ -48,7 +48,7 @@ from src.config import MLFLOW_PROD_EXPERIMENT_PATH, UNITY_CATALOG, UNITY_SCHEMA
 from src.shared.logging_config import get_logger
 import mlflow
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, current_timestamp, lit
+from pyspark.sql.functions import col, current_timestamp, lit, expr, date_trunc
 from databricks.sdk import WorkspaceClient
 
 logger = get_logger(__name__)
@@ -119,29 +119,56 @@ import random
 # Extract query data from runs
 queries_to_score = []
 for run in recent_runs:
-    # Get run parameters
-    user_id = run.data.params.get('user_id', 'unknown')
-    country = run.data.params.get('country', 'AU')
+    try:
+        # Get run parameters
+        user_id = run.data.params.get('user_id', 'unknown')
+        country = run.data.params.get('country', 'AU')
 
-    # Get run tags (query and response stored as tags)
-    query = run.data.tags.get('query', '')
-    response = run.data.tags.get('response', '')
+        # Get query and response from artifacts (they are logged as text files)
+        # Download artifacts to read the content
+        artifact_uri = run.info.artifact_uri
 
-    # Only score if we have both query and response
-    if query and response:
-        queries_to_score.append({
-            'run_id': run.info.run_id,
-            'user_id': user_id,
-            'country': country,
-            'query': query,
-            'response': response,
-            'timestamp': datetime.fromtimestamp(run.info.start_time / 1000)
-        })
+        # Read query and response from artifacts
+        query = ''
+        response = ''
+        try:
+            query = client.download_artifacts(run.info.run_id, "query.txt")
+            with open(query, 'r') as f:
+                query = f.read()
+        except Exception as e:
+            logger.debug(f"Could not read query artifact for run {run.info.run_id}: {e}")
+
+        try:
+            response = client.download_artifacts(run.info.run_id, "response.txt")
+            with open(response, 'r') as f:
+                response = f.read()
+        except Exception as e:
+            logger.debug(f"Could not read response artifact for run {run.info.run_id}: {e}")
+
+        # Only score if we have both query and response
+        if query and response:
+            queries_to_score.append({
+                'run_id': run.info.run_id,
+                'user_id': user_id,
+                'country': country,
+                'query': query,
+                'response': response,
+                'timestamp': datetime.fromtimestamp(run.info.start_time / 1000)
+            })
+    except Exception as e:
+        logger.error(f"Error processing run {run.info.run_id}: {e}")
+        continue
 
 print(f"📋 Found {len(queries_to_score)} queries with complete data")
 
+# Check if we have queries to score
+if len(queries_to_score) == 0:
+    print(f"⚠️ No queries found with complete data in last {LOOKBACK_HOURS} hours")
+    print("💡 Tip: Make sure production queries are being logged to MLflow with query.txt and response.txt artifacts")
+    dbutils.notebook.exit("No queries to score")
+
 # Sample queries based on sampling rate
-sample_size = int(len(queries_to_score) * SAMPLING_RATE)
+sample_size = max(1, int(len(queries_to_score) * SAMPLING_RATE))  # At least 1 query
 sampled_queries = random.sample(queries_to_score, min(sample_size, len(queries_to_score)))
 
 print(f"🎯 Sampled {len(sampled_queries)} queries ({SAMPLING_RATE * 100}% of total)")
@@ -285,8 +312,6 @@ print(f"\n🎯 Verdict Distribution:")
 verdict_stats.show()
 
 # Recent trend (last 7 days)
-from pyspark.sql.functions import date_trunc
-
 trend_df = scoring_df \
     .filter(col("scoring_timestamp") >= expr("current_timestamp() - INTERVAL '7' DAY")) \
     .withColumn("day", date_trunc("day", col("scoring_timestamp"))) \
