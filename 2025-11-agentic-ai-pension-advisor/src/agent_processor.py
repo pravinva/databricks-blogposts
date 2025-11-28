@@ -508,9 +508,15 @@ def agent_query(
         logger.info(f"{'='*70}\n")
 
         # PHASE 8: AUDIT LOGGING (SYNCHRONOUS for debugging)
-        # Extract classification method for logging
-        classification_info = result_dict.get('classification', {})
-        classification_method = classification_info.get('method', 'unknown')
+        logger.info("📍 PHASE 8: Starting audit logging...")
+
+        # Extract classification method for logging (with safe fallback)
+        try:
+            classification_info = result_dict.get('classification', {})
+            classification_method = classification_info.get('method', 'unknown') if classification_info else 'unknown'
+        except Exception as class_err:
+            logger.warning(f"⚠️ Could not extract classification method: {class_err}")
+            classification_method = 'unknown'
 
         # Mark Phase 8 as running
         mark_phase_running('phase_8_logging')
@@ -519,7 +525,7 @@ def agent_query(
 
         # Log to governance table FIRST (synchronously to catch errors)
         try:
-            logger.info("📍 PHASE 8: Logging to governance table...")
+            logger.info("📍 PHASE 8: Logging to governance table (governance table)...")
             audit_logger.log_to_governance_table(
                 session_id=session_id,
                 user_id=user_id,
