@@ -248,7 +248,9 @@ def agent_query(
     # Only reset is needed here to clear stale state
     reset_progress_tracker()
     # initialize_progress_tracker() - REMOVED: Was causing progress to render outside expander
-    
+
+    logger.info("🔥🔥🔥 DEBUG: agent_query() started - NEW CODE WITH @mlflow.trace DISABLED 🔥🔥🔥")
+
     start_all = time.time()
     answer = None
     citations = None
