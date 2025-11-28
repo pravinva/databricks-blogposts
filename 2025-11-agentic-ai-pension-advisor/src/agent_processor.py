@@ -425,9 +425,13 @@ def agent_query(
         
         logger.info(f"✓ Validation: {judge_verdict.get('verdict')} ({judge_verdict.get('confidence', 0):.0%} confidence)")
         logger.info(f"⏱️  Phase 6 actual validation time: {validation_duration:.2f}s")
-        
+
         # ✅ Note: Phase tracking for validation happens INSIDE ReAct loop
         # This is just logging the final duration
+
+        # ✅ LOG VALIDATION TO OBSERVABILITY
+        if obs:
+            obs.log_validation(validation_results)
 
         # PHASE 7: NAME RESTORATION
         with orchestrator.track_phase("Name Restoration", "phase_7_restoration"):
