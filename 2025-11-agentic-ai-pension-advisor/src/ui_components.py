@@ -814,7 +814,6 @@ def render_validation_results(validation, timings):
 
         # Build details line
         details_parts = [
-            f"Model: {validation.get('judge_model', 'Claude Sonnet 4')}",
             f"Confidence: {confidence:.0%}",
             f"Time: {validation_time:.2f}s"
         ]
@@ -841,12 +840,12 @@ def render_validation_results(validation, timings):
         total_tokens = cost_breakdown.get('total', {}).get('total_tokens', 0)
 
         # Build details line
-        details_parts = [f"Model: {validation.get('judge_model', 'Claude Sonnet 4')}"]
+        details_parts = []
         if total_tokens > 0:
             details_parts.append(f"Tokens: {total_tokens:,}")
         if total_cost > 0:
             details_parts.append(f"Cost: ${total_cost:.4f}")
-        details_line = " • ".join(details_parts)
+        details_line = " • ".join(details_parts) if details_parts else ""
 
         st.markdown(f"""
             <div style="background:#FFF8E1;border-left:4px solid #F59E0B;
@@ -868,12 +867,12 @@ def render_validation_results(validation, timings):
         total_tokens = cost_breakdown.get('total', {}).get('total_tokens', 0)
 
         # Build details line with tokens and cost
-        details_parts = [f"Model: {validation.get('judge_model', 'Claude Sonnet 4')}"]
+        details_parts = []
         if total_tokens > 0:
             details_parts.append(f"Tokens: {total_tokens:,}")
         if total_cost > 0:
             details_parts.append(f"Cost: ${total_cost:.4f}")
-        details_line = " • ".join(details_parts)
+        details_line = " • ".join(details_parts) if details_parts else ""
 
         st.markdown(f"""
             <div style="background:#E8F5E9;border-left:4px solid #16A34A;
