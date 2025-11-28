@@ -16,6 +16,7 @@ import time
 from typing import Optional, List, Dict
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.sql import StatementState
+from src.config import UNITY_CATALOG, UNITY_SCHEMA
 from src.shared.logging_config import get_logger
 
 logger = get_logger(__name__)

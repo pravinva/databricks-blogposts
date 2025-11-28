@@ -13,6 +13,7 @@ All audit and governance operations:
 import json
 import traceback
 from typing import Optional, List, Dict, Any
+from src.config import UNITY_CATALOG, UNITY_SCHEMA
 from src.utils.lakehouse import execute_sql_statement, get_audit_logs as db_get_audit_logs, get_cost_summary as db_get_cost_summary
 from src.shared.logging_config import get_logger
 

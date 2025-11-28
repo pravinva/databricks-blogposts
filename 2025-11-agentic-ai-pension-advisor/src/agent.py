@@ -17,7 +17,8 @@ from src.tools import SuperAdvisorTools
 from src.validation import LLMJudgeValidator, DeterministicValidator
 from src.config import (
     MAIN_LLM_ENDPOINT, MAIN_LLM_TEMPERATURE, MAIN_LLM_MAX_TOKENS,
-    JUDGE_LLM_ENDPOINT, MAX_VALIDATION_ATTEMPTS, SQL_WAREHOUSE_ID, calculate_llm_cost
+    JUDGE_LLM_ENDPOINT, MAX_VALIDATION_ATTEMPTS, SQL_WAREHOUSE_ID, calculate_llm_cost,
+    UNITY_CATALOG, UNITY_SCHEMA
 )
 from src.utils.formatting import get_currency, get_currency_symbol, safe_float
 from src.country_config import get_authority, get_country_config, get_balance_terminology
