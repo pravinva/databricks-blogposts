@@ -145,7 +145,7 @@ class SuperAdvisorAgent:
             query_parts.append("SELECT DISTINCT")
             query_parts.append("  citation_id, country, authority, regulation_name,")
             query_parts.append("  regulation_code, source_url, description")
-            query_parts.append("FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.citation_registry")
+            query_parts.append(f"FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.citation_registry")
             query_parts.append(f"WHERE country = '{country_upper}'")
             
             # Add tool conditions
