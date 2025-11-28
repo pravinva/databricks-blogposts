@@ -99,12 +99,21 @@ CREATE TABLE IF NOT EXISTS {catalog}.member_data.governance (
   session_id STRING COMMENT 'Session identifier',
   country STRING COMMENT 'Country context',
   query_string STRING COMMENT 'User query text',
+  agent_response STRING COMMENT 'Agent generated response',
+  result_preview STRING COMMENT 'Preview of results',
+  cost DOUBLE COMMENT 'Estimated cost in USD',
+  citations STRING COMMENT 'JSON array of citations used',
   tool_used STRING COMMENT 'Tool used for query execution',
-  judge_verdict STRING COMMENT 'Quality assessment verdict',
-  total_time_seconds DOUBLE COMMENT 'Total execution time',
-  cost DOUBLE COMMENT 'Estimated cost in USD'
+  judge_response STRING COMMENT 'Validation response JSON',
+  judge_verdict STRING COMMENT 'Quality assessment verdict (Pass/Fail)',
+  judge_confidence DOUBLE COMMENT 'Validation confidence score (0-1)',
+  error_info STRING COMMENT 'Error information if any',
+  validation_mode STRING COMMENT 'Validation strategy used',
+  validation_attempts BIGINT COMMENT 'Number of validation attempts',
+  total_time_seconds DOUBLE COMMENT 'Total execution time'
 )
 USING delta
+PARTITIONED BY (country)
 COMMENT 'Audit log for all agent queries and tool executions'
 """)
 print(f"✓ Created table: {catalog}.member_data.governance")
