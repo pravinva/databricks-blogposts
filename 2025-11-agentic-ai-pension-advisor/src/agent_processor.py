@@ -439,6 +439,8 @@ def agent_query(
 
         phase7_duration = orchestrator.get_last_phase_duration()
 
+        logger.info(f"🐛 DEBUG: After Phase 7, about to calculate costs...")
+
         # 🆕 Calculate SYNTHESIS LLM costs
         total_synthesis_input_tokens = sum(s.get('input_tokens', 0) for s in synthesis_results)
         total_synthesis_output_tokens = sum(s.get('output_tokens', 0) for s in synthesis_results)
@@ -490,6 +492,8 @@ def agent_query(
 
         elapsed = time.time() - start_all
 
+        logger.info(f"🐛 DEBUG: Cost calculations complete, about to log summary...")
+
         logger.info(f"\n{'='*70}")
         logger.info(f"✅ Query completed in {elapsed:.2f}s")
         logger.info(f"💰 TOTAL COST: ${total_cost:.6f}")
@@ -506,6 +510,8 @@ def agent_query(
         logger.info(f"   Phase 7 (Restoration):   {phase7_duration:.2f}s")
         logger.info(f"   Phase 8 (Logging):       (running in background...)")
         logger.info(f"{'='*70}\n")
+
+        logger.info(f"🐛 DEBUG: Summary logs complete, starting Phase 8...")
 
         # PHASE 8: AUDIT LOGGING (SYNCHRONOUS)
         logger.info("📍 PHASE 8: Starting audit logging...")
