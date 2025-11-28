@@ -83,16 +83,6 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-
-# ============================================================================ #
-# EXTERNAL LINKS TO DATABRICKS NATIVE UIS
-# ============================================================================ #
-st.sidebar.subheader("📊 Databricks Dashboards")
-
-from src.utils.urls import get_mlflow_experiment_url
-from src.config import MLFLOW_PROD_EXPERIMENT_PATH, UNITY_CATALOG, UNITY_SCHEMA
-
-st.sidebar.markdown("---")
 st.sidebar.subheader("⚖️ Validation Mode")
 
 mode_options = {
