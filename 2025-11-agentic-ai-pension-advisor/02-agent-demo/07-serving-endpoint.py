@@ -125,14 +125,18 @@ if not endpoint_exists:
 
         print(f"✅ Endpoint created successfully!")
         print(f"   Name: {endpoint.name}")
-        print(f"   URL: {endpoint.url}")
+        if hasattr(endpoint, 'url') and endpoint.url:
+            print(f"   URL: {endpoint.url}")
+        else:
+            print(f"   URL will be available once endpoint is ready")
         print(f"   Inference tables will be created at:")
         print(f"   - {UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor_payload")
         print(f"   - {UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor_assessment")
 
     except Exception as e:
         print(f"❌ Failed to create endpoint: {str(e)}")
-        raise
+        import traceback
+        traceback.print_exc()
 else:
     print("⏭️  Skipping creation - endpoint already exists")
 
