@@ -507,8 +507,8 @@ def agent_query(
         logger.info(f"   Phase 8 (Logging):       (running in background...)")
         logger.info(f"{'='*70}\n")
 
-        # PHASE 8: AUDIT LOGGING (SYNCHRONOUS for debugging)
-        logger.info("📍 PHASE 8: Starting audit logging...")
+        # PHASE 8: AUDIT LOGGING (ASYNC - Non-blocking)
+        logger.info("📍 PHASE 8: Starting async audit logging (non-blocking)...")
 
         # Extract classification method for logging (with safe fallback)
         try:
@@ -523,41 +523,32 @@ def agent_query(
 
         phase8_start = time.time()
 
-        # Log to governance table FIRST (synchronously to catch errors)
-        try:
-            logger.info("📍 PHASE 8: Logging to governance table (governance table)...")
-            audit_logger.log_to_governance_table(
-                session_id=session_id,
-                user_id=user_id,
-                country=country,
-                query_string=query_string,
-                answer=answer,
-                judge_verdict=judge_verdict,
-                tools_called=tools_called,
-                cost=total_cost,
-                citations=citations,
-                elapsed=elapsed,
-                error_info=None,
-                classification_method=classification_method
-            )
-            logger.info(f"✅ Governance table logged: {session_id}")
-        except Exception as gov_error:
-            logger.error(f"❌ Governance logging FAILED: {gov_error}", exc_info=True)
-
-        # End observability run
-        if obs:
-            try:
-                obs.end_agent_run(
-                    response=answer or "",
-                    success=True,
-                    error=None
-                )
-            except Exception as obs_error:
-                logger.error(f"⚠️ Error ending observability run: {obs_error}")
+        # Start async audit logging in background thread (non-blocking)
+        audit_thread = threading.Thread(
+            target=_async_audit_logging,
+            args=(
+                audit_logger,
+                obs,
+                session_id,
+                user_id,
+                country,
+                query_string,
+                answer,
+                judge_verdict,
+                tools_called,
+                total_cost,
+                citations,
+                elapsed,
+                classification_method
+            ),
+            daemon=True  # Daemon thread won't block program exit
+        )
+        audit_thread.start()
+        logger.info(f"✅ Audit logging started in background (thread: {audit_thread.name})")
 
         phase8_duration = time.time() - phase8_start
         mark_phase_complete('phase_8_logging', duration=phase8_duration)
-        logger.info(f"✅ Phase 8 complete ({phase8_duration:.2f}s)")
+        logger.info(f"✅ Phase 8 initiated ({phase8_duration:.3f}s) - logging continues in background")
     
     except Exception as e:
         error_info = traceback.format_exc()
