@@ -708,6 +708,12 @@ def render_automated_scoring_tab():
         if 'scoring_timestamp' in scoring_data.columns:
             scoring_data['scoring_timestamp'] = pd.to_datetime(scoring_data['scoring_timestamp'])
 
+        # Convert numeric columns to proper types (fix SQL warehouse string conversion issues)
+        numeric_cols = ['overall_score', 'pass_rate', 'passed_count', 'total_count']
+        for col in numeric_cols:
+            if col in scoring_data.columns:
+                scoring_data[col] = pd.to_numeric(scoring_data[col], errors='coerce')
+
         # === KEY SCORING METRICS ===
         st.markdown("#### 📊 Automated Scoring Summary")
 
