@@ -282,6 +282,37 @@ def agent_query(
         logger.info(f"Validation Mode: {validation_mode}")
         logger.info(f"{'='*70}\n")
 
+        # ✅ INPUT GUARDRAILS - Pre-generation validation
+        from src.ai_guardrails import validate_input
+        from src.config import AI_GUARDRAILS_ENABLED, AI_GUARDRAILS_CONFIG
+
+        if AI_GUARDRAILS_ENABLED:
+            logger.info("🛡️  Running input guardrails...")
+            input_validation = validate_input(
+                query=query_string,
+                policies=list(AI_GUARDRAILS_CONFIG['input_policies'].keys()),
+                config=AI_GUARDRAILS_CONFIG
+            )
+
+            # Log guardrails cost
+            total_cost += input_validation.cost
+
+            if input_validation.blocked:
+                # Query blocked by guardrails
+                logger.warning(f"🚫 Query blocked: {input_validation.violations}")
+
+                # Return blocked response
+                return {
+                    'error': 'Query blocked by safety policies',
+                    'blocked': True,
+                    'violations': input_validation.violations,
+                    'latency_ms': input_validation.latency_ms,
+                    'cost': input_validation.cost,
+                    'session_id': session_id
+                }
+            else:
+                logger.info(f"✅ Input guardrails passed ({input_validation.latency_ms:.0f}ms)")
+
         # PHASE 1: DATA RETRIEVAL
         with orchestrator.track_phase("Data Retrieval", "phase_1_retrieval"):
             agent = SuperAdvisorAgent(validation_mode=validation_mode)
@@ -576,6 +607,31 @@ def agent_query(
             # Silently ignore - don't break execution
             pass
     
+    # ✅ OUTPUT GUARDRAILS - Post-generation validation
+    from src.ai_guardrails import validate_output
+
+    if AI_GUARDRAILS_ENABLED and answer:
+        logger.info("🛡️  Running output guardrails...")
+        output_validation = validate_output(
+            response=answer,
+            policies=list(AI_GUARDRAILS_CONFIG['output_policies'].keys()),
+            config=AI_GUARDRAILS_CONFIG
+        )
+
+        # Log guardrails cost
+        total_cost += output_validation.cost
+
+        # Apply PII masking if needed
+        if output_validation.masked:
+            logger.info(f"🔒 PII masked in output")
+            answer = output_validation.masked_text
+
+        # Log any violations (non-blocking for output)
+        if output_validation.violations:
+            logger.info(f"⚠️  Output guardrail violations: {output_validation.violations}")
+
+        logger.info(f"✅ Output guardrails complete ({output_validation.latency_ms:.0f}ms)")
+
     # Return structured response
     return {
         'answer': answer,
