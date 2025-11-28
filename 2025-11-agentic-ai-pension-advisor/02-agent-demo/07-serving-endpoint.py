@@ -55,9 +55,6 @@ from databricks.sdk.service.serving import (
 )
 from src.config import UNITY_CATALOG, UNITY_SCHEMA
 
-print(f"✓ Imports successful")
-print(f"  Project root: {repo_root}")
-
 # Initialize Databricks workspace client
 w = WorkspaceClient()
 
