@@ -491,10 +491,12 @@ class ReactAgenticLoop:
                 
                 # Fetch citations
                 state.citations = self.agent.get_citations_for_tools(
-                    state.country, 
+                    state.country,
                     state.selected_tools
                 )
-                
+
+                self.printf(f"🐛 DEBUG: About to return from run_agentic_loop (success path)")
+
                 return {
                     "response": state.final_response,
                     "validation": validation_result,

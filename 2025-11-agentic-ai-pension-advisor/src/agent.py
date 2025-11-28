@@ -294,7 +294,13 @@ class SuperAdvisorAgent:
         # Run the ReAct agentic loop
         logger.info("\n🤖 Starting ReAct Agentic Loop...")
         logger.info("="*70)
-        result = self.react_loop.run_agentic_loop(state)
+
+        try:
+            result = self.react_loop.run_agentic_loop(state)
+            logger.info(f"🐛 DEBUG: react_loop.run_agentic_loop() returned successfully")
+        except Exception as loop_error:
+            logger.error(f"❌ CRITICAL: react_loop.run_agentic_loop() raised exception: {loop_error}", exc_info=True)
+            raise
 
         logger.info("\n" + "="*70)
         logger.info(f"✅ Query Processing Complete - Attempts: {result.get('attempts', 0)}")
