@@ -10,13 +10,13 @@ from typing import Optional
 
 def get_workspace_url() -> Optional[str]:
     """
-    Get the Databricks workspace URL from environment.
+    Get the Databricks workspace URL from environment or WorkspaceClient.
 
     Returns:
         Workspace URL (e.g., "https://adb-1234567890123456.7.azuredatabricks.net")
-        or None if not in Databricks environment
+        or None if not available
     """
-    # Try multiple environment variables
+    # Try multiple environment variables first
     workspace_url = (
         os.environ.get("DATABRICKS_HOST") or
         os.environ.get("DATABRICKS_URL") or
@@ -25,9 +25,18 @@ def get_workspace_url() -> Optional[str]:
 
     if workspace_url:
         # Remove trailing slash
-        workspace_url = workspace_url.rstrip("/")
+        return workspace_url.rstrip("/")
 
-    return workspace_url
+    # If no env vars, try WorkspaceClient (will use .databrickscfg)
+    try:
+        from databricks.sdk import WorkspaceClient
+        w = WorkspaceClient()
+        if hasattr(w.config, 'host') and w.config.host:
+            return w.config.host.rstrip("/")
+    except Exception:
+        pass
+
+    return None
 
 
 def get_mlflow_experiment_url(experiment_path: str) -> Optional[str]:
