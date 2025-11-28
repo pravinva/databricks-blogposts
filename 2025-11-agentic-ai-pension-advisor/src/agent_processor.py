@@ -13,6 +13,7 @@ from src.utils.progress import initialize_progress_tracker, reset_progress_track
 from src.observability import create_observability
 import traceback, uuid, time, threading
 import mlflow
+import mlflow.tracing  # Phase 4: Production monitoring with traces
 import json
 from datetime import datetime
 from databricks.sdk import WorkspaceClient
@@ -221,6 +222,7 @@ def _async_audit_logging(
         logger.error(f"⚠️ Background audit logging error: {e}", exc_info=True)
 
 
+@mlflow.trace(name="pension_advisor_query", span_type="AGENT")
 def agent_query(
     user_id,
     session_id,
@@ -230,9 +232,16 @@ def agent_query(
     enable_observability=True
 ):
     """
-    Orchestrates one advisory query with LIVE PHASE TRACKING + OBSERVABILITY
+    Orchestrates one advisory query with LIVE PHASE TRACKING + OBSERVABILITY + TRACING
     Shows phases dropdown with real-time updates as execution progresses
-    Includes MLflow tracking and Lakehouse Monitoring integration
+    Includes MLflow tracking, Lakehouse Monitoring, and distributed tracing
+
+    @mlflow.trace automatically captures:
+    - Function inputs/outputs
+    - Execution time
+    - Nested LLM calls
+    - Tool executions
+    - Validation steps
     """
     
     # ✅ PROGRESS TRACKER - Initialization removed (handled in app.py inside expander)

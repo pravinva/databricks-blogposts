@@ -113,3 +113,29 @@ mlflow_serving:
     enabled: true
     table_prefix: "pension_advisor"
     schedule: "0 0 9 * * MON"  # Monday 9am
+
+# Production Monitoring Configuration (Phase 4)
+production_monitoring:
+  # MLflow Tracing (automatic)
+  tracing:
+    enabled: true  # Enabled via @mlflow.trace decorator
+    capture_inputs: true
+    capture_outputs: true
+    capture_intermediate_steps: true
+
+  # Automated Quality Scorers (async background monitoring)
+  automated_scorers:
+    enabled: false  # Set to true after setting up monitoring notebook
+    sampling_rate: 0.1  # 10% of queries (balance cost vs coverage)
+    schedule: "0 */6 * * *"  # Every 6 hours
+
+    # Built-in scorers
+    scorers:
+      - relevance  # Is response relevant to query?
+      - faithfulness  # Is response grounded in context?
+      - toxicity  # Does response contain toxic content?
+
+    # Custom scorers (add your own)
+    custom_scorers:
+      - country_compliance  # Validates country-specific rules
+      - citation_quality  # Checks citation accuracy
