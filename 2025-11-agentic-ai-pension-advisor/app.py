@@ -484,7 +484,6 @@ elif page == "Governance":
     
     st.title("🔒 Governance & Observability")
     st.caption("💡 Professional monitoring dashboard - everything at a glance")
-    st.info("📊 **Note:** MLflow traces and cost analysis are now available via the Databricks dashboard links in the sidebar →")
 
     # 3-TAB DESIGN: Governance, Config, Observability
     # (MLflow and Cost tabs removed - use sidebar links to Databricks native UIs)
@@ -497,7 +496,47 @@ elif page == "Governance":
     with tab1:  # Governance - Dashboard overview + Audit trail
         st.markdown("### 📊 Governance Dashboard")
         st.caption("Overview of system performance and audit trail")
-        
+
+        # Model Registry Section
+        st.markdown("#### 📦 Model Registry Status")
+        from src.monitoring import get_model_registry_info
+
+        model_name = f"{UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor"
+        model_info = get_model_registry_info(model_name)
+
+        if "error" not in model_info:
+            col1, col2, col3 = st.columns([2, 1, 1])
+
+            with col1:
+                st.markdown(f"**Model:** `{model_info['model_name']}`")
+                st.caption(model_info.get('description', 'No description'))
+
+            with col2:
+                st.metric("Latest Version", model_info.get('latest_version', 'N/A'))
+
+            with col3:
+                champion_ver = model_info['aliases'].get('champion', {})
+                if champion_ver and isinstance(champion_ver, dict):
+                    st.metric("@champion", f"v{champion_ver.get('version', 'N/A')}")
+                else:
+                    st.metric("@champion", "Not set")
+
+            # Show aliases
+            if model_info.get('aliases'):
+                alias_info = []
+                for alias_name, alias_data in model_info['aliases'].items():
+                    if alias_data:
+                        alias_info.append(f"**@{alias_name}**: v{alias_data['version']}")
+                    else:
+                        alias_info.append(f"**@{alias_name}**: Not set")
+
+                if alias_info:
+                    st.caption(" | ".join(alias_info))
+        else:
+            st.warning(f"⚠️ Model Registry: {model_info.get('error', 'Unknown error')}")
+
+        st.markdown("---")
+
         # ✅ Import dashboard components
         from src.ui_dashboard import (
             get_dashboard_data,
