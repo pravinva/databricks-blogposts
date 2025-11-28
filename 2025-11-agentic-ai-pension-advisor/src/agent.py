@@ -164,9 +164,10 @@ class SuperAdvisorAgent:
             )
             
             status_name = result.status.state.name if hasattr(result.status.state, 'name') else str(result.status.state)
-            
+
             if status_name != "SUCCEEDED":
-                logger.warning(f"⚠️ Query failed: {status_name}")
+                logger.info(f"ℹ️ Citations unavailable (citation_registry table not found or query failed: {status_name})")
+                logger.info(f"💡 Tip: Run notebook 01-setup/01-unity-catalog-setup.py to create citation_registry table")
                 return []
             
             # Parse results
