@@ -2,7 +2,7 @@ import streamlit as st
 import uuid
 import os
 import pandas as pd
-from src.config import BRANDCONFIG
+from src.config import BRANDCONFIG, UNITY_CATALOG, UNITY_SCHEMA
 from scripts.debug_widgets import reset_widget_tracking, display_widget_debug_info, log_rerun
 from src.ui_components import (
     render_logo,
