@@ -346,7 +346,9 @@ if page == "Advisory":
                     judge_verdict = result.get('judge_verdict', {})
                     error_info = result.get('error', None)
                     tools_called = result.get('tools_called', [])
-                    
+                    total_cost = result.get('cost', 0.0)
+                    cost_breakdown = result.get('cost_breakdown', {})
+
                     st.session_state.agent_output = {
                         "answer": answer,
                         "citations": citations,
@@ -355,6 +357,8 @@ if page == "Advisory":
                         "judge_verdict": judge_verdict,
                         "error_info": error_info,
                         "tools_called": tools_called,
+                        "cost": total_cost,
+                        "cost_breakdown": cost_breakdown,
                     }
                     
                 except Exception as e:
@@ -418,7 +422,7 @@ if page == "Advisory":
             if judge_verdict:
                 render_validation_results(
                     judge_verdict,
-                    st.session_state.agent_output.get("response_dict", {})
+                    st.session_state.agent_output
                 )
             
             # 🔒 INTERNAL REVIEW SECTION - Collapsed by default
@@ -456,14 +460,13 @@ if page == "Advisory":
             if judge_verdict:
                 render_validation_results(
                     judge_verdict,
-                    st.session_state.agent_output.get("response_dict", {})
+                    st.session_state.agent_output
                 )
         
         # Show cost information if available
-        response_dict = st.session_state.agent_output.get("response_dict", {})
-        if response_dict.get("cost") is not None:
-            total_cost = response_dict["cost"]
-            cost_breakdown = response_dict.get("cost_breakdown", {})
+        if st.session_state.agent_output.get("cost") is not None:
+            total_cost = st.session_state.agent_output["cost"]
+            cost_breakdown = st.session_state.agent_output.get("cost_breakdown", {})
             st.markdown("#### 💰 Cost Summary")
             col1, col2, col3 = st.columns(3)
             
