@@ -680,16 +680,24 @@ def render_automated_scoring_tab():
         w = WorkspaceClient()
         SCORING_TABLE = f"{UNITY_CATALOG}.{UNITY_SCHEMA}.scoring_results"
 
-        # Check if table exists
+        # Check if table exists and get data
         try:
+            # Try Spark first (when running in Databricks)
+            from pyspark.sql import SparkSession
+            spark = SparkSession.builder.getOrCreate()
             scoring_df = spark.table(SCORING_TABLE)
-        except Exception:
-            st.info("ℹ️ Automated scoring table not found. Run notebook 09 to create the table and start scoring production queries.")
-            st.code(f"Table: {SCORING_TABLE}")
-            return
-
-        # Get data
-        scoring_data = scoring_df.toPandas()
+            scoring_data = scoring_df.toPandas()
+        except Exception as e:
+            # Fall back to SQL warehouse query (when running locally)
+            try:
+                from src.utils.lakehouse import execute_sql_query
+                from src.config import SQL_WAREHOUSE_ID
+                scoring_data = execute_sql_query(f"SELECT * FROM {SCORING_TABLE}")
+            except Exception as e2:
+                st.info("ℹ️ Automated scoring table not found. Run notebook 09 to create the table and start scoring production queries.")
+                st.code(f"Table: {SCORING_TABLE}")
+                st.caption(f"Error: {str(e2)}")
+                return
 
         if scoring_data.empty:
             st.info("ℹ️ No scoring data available yet. Run notebook 09 to start automated scoring.")
