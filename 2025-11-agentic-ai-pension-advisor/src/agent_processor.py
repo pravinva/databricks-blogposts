@@ -431,7 +431,18 @@ def agent_query(
 
         # ✅ LOG VALIDATION TO OBSERVABILITY
         if obs:
-            obs.log_validation(validation_results)
+            logger.info(f"🔍 DEBUG: Logging validation to observability. validation_results length: {len(validation_results)}")
+            if validation_results:
+                logger.info(f"🔍 DEBUG: Last validation confidence: {validation_results[-1].get('confidence', 'N/A')}")
+            try:
+                obs.log_validation(validation_results)
+                logger.info(f"✅ DEBUG: Validation logged successfully")
+            except Exception as e:
+                logger.error(f"❌ DEBUG: Error logging validation: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            logger.warning(f"⚠️ DEBUG: obs is None, cannot log validation")
 
         # PHASE 7: NAME RESTORATION
         with orchestrator.track_phase("Name Restoration", "phase_7_restoration"):
