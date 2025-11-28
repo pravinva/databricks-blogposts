@@ -93,12 +93,29 @@ class SafetyGuardrails:
 
     # PII patterns for detection
     PII_PATTERNS = {
-        'ssn': r'\b\d{3}-\d{2}-\d{4}\b',
+        # Universal patterns
         'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
-        'phone': r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',
         'credit_card': r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b',
-        'australian_tfn': r'\b\d{3}\s?\d{3}\s?\d{3}\b',  # Tax File Number
-        'australian_medicare': r'\b\d{4}\s?\d{5}\s?\d\b',  # Medicare number
+
+        # US patterns
+        'us_ssn': r'\b\d{3}-\d{2}-\d{4}\b',  # Social Security Number
+        'us_phone': r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # US phone format
+
+        # Australia patterns
+        'au_tfn': r'\b\d{3}\s?\d{3}\s?\d{3}\b',  # Tax File Number
+        'au_medicare': r'\b\d{4}\s?\d{5}\s?\d\b',  # Medicare number
+        'au_abn': r'\b\d{2}\s?\d{3}\s?\d{3}\s?\d{3}\b',  # ABN (Australian Business Number)
+        'au_phone': r'(?:\+61\s?|0)[2-478](?:\s?\d{1,4}){2,3}\b',  # Australian phone (flexible format)
+
+        # UK patterns
+        'uk_nino': r'\b[A-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b',  # National Insurance Number
+        'uk_nhs': r'\b\d{3}\s?\d{3}\s?\d{4}\b',  # NHS Number
+        'uk_phone': r'\b(?:\+44\s?|0)(?:7\d{3}|[1-9]\d{1,4})\s?\d{3,4}\s?\d{3,4}\b',  # UK phone (mobile + landline)
+
+        # India patterns
+        'in_aadhaar': r'\b\d{4}\s?\d{4}\s?\d{4}\b',  # Aadhaar Number
+        'in_pan': r'\b[A-Z]{5}\d{4}[A-Z]\b',  # PAN (Permanent Account Number)
+        'in_phone': r'\b(?:\+91|0)?[6-9]\d{9}\b',  # Indian phone
     }
 
     # Toxic keywords (simplified - production would use model)
