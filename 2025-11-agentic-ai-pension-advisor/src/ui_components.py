@@ -295,7 +295,7 @@ def render_mlflow_traces_tab():
         with col2:
             if st.button("🚀 Register Prompts Now", type="primary", use_container_width=True):
                 try:
-                    from prompts_registry import register_prompts_now
+                    from src.prompts_registry import register_prompts_now
                     with st.spinner("Registering prompts with MLflow..."):
                         run_id = register_prompts_now()
                     if run_id:
@@ -359,7 +359,7 @@ def render_mlflow_traces_tab():
                 st.markdown("""
                 **To register prompts manually:**
                 ```python
-                from prompts_registry import register_prompts_now
+                from src.prompts_registry import register_prompts_now
                 register_prompts_now()
                 ```
                 """)
@@ -396,7 +396,7 @@ def render_mlflow_traces_tab():
                 st.markdown("""
                 **To register prompts manually:**
                 ```python
-                from prompts_registry import register_prompts_now
+                from src.prompts_registry import register_prompts_now
                 register_prompts_now()
                 ```
                 """)
