@@ -227,11 +227,11 @@ WHEN MATCHED THEN UPDATE SET
     target.effective_date = source.effective_date,
     target.source_url = source.source_url,
     target.description = source.description,
-    target.last_updated = current_timestamp(),
+    target.last_verified = current_timestamp(),
     target.tool_type = source.tool_type
 WHEN NOT MATCHED THEN INSERT (
     citation_id, country, authority, regulation_name, regulation_code,
-    effective_date, source_url, description, last_updated, tool_type
+    effective_date, source_url, description, last_verified, tool_type
 ) VALUES (
     source.citation_id, source.country, source.authority, source.regulation_name,
     source.regulation_code, source.effective_date, source.source_url,
