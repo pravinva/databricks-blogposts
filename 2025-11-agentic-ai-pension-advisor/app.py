@@ -16,7 +16,6 @@ from src.ui_components import (
 )
 from src.ui_monitoring_tabs import (
     render_realtime_metrics_tab,
-    render_classification_analytics_tab,
     render_quality_monitoring_tab,
     render_system_health_tab,
     render_automated_scoring_tab
@@ -608,15 +607,17 @@ elif page == "Governance":
     with tab2:  # Config - Configuration settings
         render_configuration_tab()
 
-    with tab3:  # Observability - Real-time metrics, quality, health, classification, automated scoring
-        # MLflow Experiments - Display inline
+    with tab3:  # Observability - MLflow metrics, traces, and monitoring
+        # MLflow Experiments & Traces - Main content (expanded)
         from src.ui_components import render_mlflow_traces_tab
 
-        with st.expander("🔬 MLflow Experiments & Traces", expanded=False):
-            render_mlflow_traces_tab()
+        st.markdown("### 🔬 MLflow Experiments & Traces")
+        st.caption("Real-time experiment tracking, metrics, and trace analysis")
+        render_mlflow_traces_tab()
 
         st.markdown("---")
 
+        # Monitoring metrics below MLflow
         col1, col2 = st.columns([1, 1])
         with col1:
             render_realtime_metrics_tab()
@@ -625,14 +626,12 @@ elif page == "Governance":
             render_quality_monitoring_tab()
 
         with col2:
-            render_classification_analytics_tab()
-
-            st.markdown("---")
             render_system_health_tab()
 
         # Automated Scoring - Full width below other tabs (Phase 4)
         st.markdown("---")
-        st.markdown("### 🤖 Automated Quality Scoring (Phase 4)")
+        st.markdown("### 🤖 Automated Quality Scoring")
+        st.caption("Background quality monitoring with automated scorers")
         render_automated_scoring_tab()
     
     st.markdown("---")
