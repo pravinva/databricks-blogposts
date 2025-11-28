@@ -373,6 +373,23 @@ IMPORTANT CLARIFICATIONS:
 - If response uses numbers from tool calculations, that's CORRECT, NOT INVENTED
 - Only flag as "invented data" if response contains numbers/facts NOT in the member profile OR tool results
 
+COUNTRY-SPECIFIC REGULATORY REQUIREMENTS:
+
+INDIA (IN) - MANDATORY EPF/NPS SPLIT:
+- India's retirement corpus is MANDATORILY split: 75% EPF (Employees Provident Fund) + 25% NPS (National Pension Scheme)
+- This is a REGULATORY REQUIREMENT under EPFO rules, NOT invented data or data misuse
+- If member profile shows "Super Balance: 151,065 INR" for an India member:
+  ✓ EPF balance = 113,299 INR (75% of 151,065) - THIS IS CORRECT
+  ✓ NPS balance = 37,766 INR (25% of 151,065) - THIS IS CORRECT
+- If response mentions "EPF balance of 113,299 INR (75% of total)" - DO NOT FLAG as DATA_MISUSE
+- If response mentions "NPS balance of 37,766 INR (25% of total)" - DO NOT FLAG as INVENTED_DATA
+- This split is automatically applied by India tools (tax, benefit, eps_benefit, projection)
+- Only flag if the PERCENTAGES are wrong (not 75/25) or if the MATH is wrong
+
+AUSTRALIA (AU), USA (US), UK:
+- Super Balance / 401k / Pension balance represents the FULL accessible balance
+- No mandatory splits apply for these countries
+
 SEVERITY GUIDELINES - BE FAIR:
 - CRITICAL: Only if major factual error that contradicts member's actual data OR if tools failed
 - HIGH: If main retirement question completely unanswered (when it should be)
