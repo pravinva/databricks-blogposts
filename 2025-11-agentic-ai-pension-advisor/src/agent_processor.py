@@ -344,7 +344,41 @@ def agent_query(
             user_query=query_string,
             withdrawal_amount=None
         )
-        
+
+        logger.info(f"🐛 DEBUG: agent.process_query() returned successfully")
+
+        # ✅ GOVERNANCE LOGGING - Do it IMMEDIATELY after process_query returns
+        try:
+            answer = result_dict.get('response', '')
+            tools_called = result_dict.get('tools_used', [])
+            citations = result_dict.get('citations', [])
+            validation_results = result_dict.get('validation_results', [])
+            judge_verdict = validation_results[-1].get('verdict', 'Pass') if validation_results else 'Pass'
+            classification_method = result_dict.get('classification', {}).get('method', 'unknown')
+
+            elapsed = time.time() - start_all
+
+            logger.info(f"🐛 DEBUG: About to log to governance table...")
+
+            audit_logger.log_to_governance_table(
+                session_id=session_id,
+                user_id=user_id,
+                country=country,
+                query_string=query_string,
+                answer=answer,
+                judge_verdict=judge_verdict,
+                tools_called=tools_called,
+                cost=total_cost,
+                citations=citations,
+                elapsed=elapsed,
+                error_info=None,
+                classification_method=classification_method
+            )
+
+            logger.info(f"✅ Governance logged immediately after process_query: {session_id}")
+        except Exception as gov_err:
+            logger.error(f"❌ Immediate governance logging failed: {gov_err}", exc_info=True)
+
         tools_called = result_dict.get('tools_used', [])
         
         # ✅ LOG CLASSIFICATION TO OBSERVABILITY
