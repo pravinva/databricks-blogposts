@@ -39,6 +39,14 @@
 
 # COMMAND ----------
 
+import sys
+import os
+
+# Add project root to path
+repo_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import (
     ServedEntityInput,
@@ -46,6 +54,9 @@ from databricks.sdk.service.serving import (
     AutoCaptureConfigInput
 )
 from src.config import UNITY_CATALOG, UNITY_SCHEMA
+
+print(f"✓ Imports successful")
+print(f"  Project root: {repo_root}")
 
 # Initialize Databricks workspace client
 w = WorkspaceClient()
