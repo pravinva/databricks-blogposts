@@ -71,10 +71,27 @@ print(f"   Experiment: {MLFLOW_PROD_EXPERIMENT_PATH}")
 # COMMAND ----------
 
 import uuid
+from src.utils.lakehouse import execute_sql_query
+from src.config import get_member_profiles_table_path
+
+# Get real member ID
+def get_test_member_id(country='AU'):
+    """Get first real member ID for testing"""
+    try:
+        table_path = get_member_profiles_table_path()
+        query = f"SELECT member_id FROM {table_path} WHERE country = '{country}' LIMIT 1"
+        df = execute_sql_query(query)
+        if not df.empty:
+            return df['member_id'].iloc[0]
+    except:
+        pass
+    return f"{country}001"
+
+test_member_id = get_test_member_id('AU')
 
 # Run a test query - tracing happens automatically!
 result = agent_query(
-    user_id='AU001',
+    user_id=test_member_id,
     session_id=str(uuid.uuid4())[:8],
     country='AU',
     query_string='What is my preservation age?',
@@ -83,9 +100,11 @@ result = agent_query(
 )
 
 print("\n✅ Query completed!")
-print(f"   Answer: {result['answer'][:100]}...")
-print(f"   Cost: ${result['cost']:.6f}")
-print(f"   Blocked: {result['blocked']}")
+print(f"   Member ID: {test_member_id}")
+print(f"   Answer: {result.get('answer', 'N/A')[:100]}...")
+print(f"   Cost: ${result.get('cost', 0.0):.6f}")
+if 'error' in result:
+    print(f"   Error: {result['error']}")
 
 # COMMAND ----------
 
