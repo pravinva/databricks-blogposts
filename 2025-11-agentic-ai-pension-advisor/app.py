@@ -462,25 +462,7 @@ if page == "Advisory":
                     judge_verdict,
                     st.session_state.agent_output
                 )
-        
-        # Show cost information if available
-        if st.session_state.agent_output.get("cost") is not None:
-            total_cost = st.session_state.agent_output["cost"]
-            cost_breakdown = st.session_state.agent_output.get("cost_breakdown", {})
-            st.markdown("#### 💰 Cost Summary")
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.metric("Total Cost", f"${total_cost:.6f}")
-            
-            with col2:
-                main_cost = total_cost - cost_breakdown.get('validation', {}).get('cost', 0)
-                st.metric("Main LLM Cost", f"${main_cost:.6f}")
-            
-            with col3:
-                validation_cost = cost_breakdown.get('validation', {}).get('cost', 0)
-                st.metric("Judge LLM Cost", f"${validation_cost:.6f}")
-        
+
         render_postanswer_disclaimer(country_display)
 
         # Show citations (only if they have meaningful content)
