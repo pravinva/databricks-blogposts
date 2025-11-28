@@ -375,10 +375,11 @@ if page == "Advisory":
         validation_passed = judge_verdict.get("passed", True)
         validation_confidence = judge_verdict.get("confidence", 0.0)
         has_violations = len(judge_verdict.get("violations", [])) > 0
-        
+
         # Determine if answer is safe to show
-        # Failed if: validation explicitly failed AND has violations
-        answer_failed = (not validation_passed) and has_violations
+        # STRICT POLICY: Block answer if ANY violations exist, regardless of confidence
+        # Only GREEN (no violations) responses are shown to customers
+        answer_failed = has_violations
         
         if answer_failed:
             # ❌ VALIDATION FAILED - Show safe fallback message to user
