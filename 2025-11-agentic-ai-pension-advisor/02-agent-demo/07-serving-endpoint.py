@@ -4,6 +4,11 @@
 # MAGIC
 # MAGIC This notebook demonstrates **optional** deployment of the pension advisor model as a serving endpoint.
 # MAGIC
+# MAGIC **⚠️ IMPORTANT: This notebook must be run in Databricks workspace**
+# MAGIC - Requires `dbutils`, `spark`, and `display()` functions
+# MAGIC - Cannot run as local Python script
+# MAGIC - Needs Databricks workspace authentication
+# MAGIC
 # MAGIC **When to Use Serving Endpoints:**
 # MAGIC - **Real-time inference** requirements (< 100ms latency)
 # MAGIC - **High throughput** scenarios (1000s queries/second)
@@ -165,6 +170,24 @@ else:
 import requests
 import json
 import os
+from src.utils.lakehouse import execute_sql_query
+from src.config import get_member_profiles_table_path
+
+# Get real member ID from database
+def get_test_member_id(country='AU'):
+    """Get first real member ID for testing"""
+    try:
+        table_path = get_member_profiles_table_path()
+        query = f"SELECT member_id FROM {table_path} WHERE country = '{country}' LIMIT 1"
+        df = execute_sql_query(query)
+        if not df.empty:
+            return df['member_id'].iloc[0]
+    except:
+        pass
+    return f"{country}001"  # Fallback
+
+test_member_id = get_test_member_id('AU')
+print(f"Using test member ID: {test_member_id}")
 
 # Get authentication token
 token = os.environ.get("DATABRICKS_TOKEN") or dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
@@ -173,10 +196,10 @@ token = os.environ.get("DATABRICKS_TOKEN") or dbutils.notebook.entry_point.getDb
 endpoint = w.serving_endpoints.get(ENDPOINT_NAME)
 endpoint_url = endpoint.url
 
-# Sample query
+# Sample query with real member ID
 test_query = {
     "dataframe_records": [{
-        "user_id": "AU001",
+        "user_id": test_member_id,
         "session_id": "test-session",
         "country": "AU",
         "query": "What is my preservation age?",
