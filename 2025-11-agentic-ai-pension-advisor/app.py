@@ -17,7 +17,8 @@ from src.ui_monitoring_tabs import (
     render_realtime_metrics_tab,
     render_classification_analytics_tab,
     render_quality_monitoring_tab,
-    render_system_health_tab
+    render_system_health_tab,
+    render_automated_scoring_tab
 )
 from src.utils.progress import initialize_progress_tracker
 from src.agent_processor import agent_query
@@ -614,19 +615,24 @@ elif page == "Governance":
     with tab2:  # Config - Configuration settings
         render_configuration_tab()
 
-    with tab3:  # Observability - Real-time metrics, quality, health, classification
+    with tab3:  # Observability - Real-time metrics, quality, health, classification, automated scoring
         col1, col2 = st.columns([1, 1])
         with col1:
             render_realtime_metrics_tab()
-            
+
             st.markdown("---")
             render_quality_monitoring_tab()
-        
+
         with col2:
             render_classification_analytics_tab()
-            
+
             st.markdown("---")
             render_system_health_tab()
+
+        # Automated Scoring - Full width below other tabs (Phase 4)
+        st.markdown("---")
+        st.markdown("### 🤖 Automated Quality Scoring (Phase 4)")
+        render_automated_scoring_tab()
     
     st.markdown("---")
     st.caption(f"🏦 {BRANDCONFIG['brand_name']} | Session: {st.session_state.session_id[:8]}...")
