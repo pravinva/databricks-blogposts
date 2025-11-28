@@ -712,8 +712,11 @@ def get_model_registry_info(model_name: str) -> Dict:
         Dictionary with model information or error
     """
     try:
+        import mlflow
         from mlflow.tracking import MlflowClient
 
+        # Set tracking URI to Databricks
+        mlflow.set_tracking_uri("databricks")
         client = MlflowClient()
 
         # Get registered model
