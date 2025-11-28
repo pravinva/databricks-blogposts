@@ -112,6 +112,30 @@ LLM_PRICING = {
 }
 
 # ============================================================================
+# AI Guardrails Configuration (Phase 1)
+# ============================================================================
+AI_GUARDRAILS_ENABLED = _config.get('ai_guardrails', {}).get('enabled', True)
+AI_GUARDRAILS_ENDPOINT = _config.get('ai_guardrails', {}).get('endpoint', 'databricks-ai-guardrails')
+AI_GUARDRAILS_INPUT_POLICIES = _config.get('ai_guardrails', {}).get('input_policies', {})
+AI_GUARDRAILS_OUTPUT_POLICIES = _config.get('ai_guardrails', {}).get('output_policies', {})
+
+# Full guardrails config for passing to SafetyGuardrails
+AI_GUARDRAILS_CONFIG = {
+    'enabled': AI_GUARDRAILS_ENABLED,
+    'endpoint': AI_GUARDRAILS_ENDPOINT,
+    'input_policies': AI_GUARDRAILS_INPUT_POLICIES,
+    'output_policies': AI_GUARDRAILS_OUTPUT_POLICIES
+}
+
+# ============================================================================
+# MLflow Serving Configuration (Phase 3 - future)
+# ============================================================================
+MLFLOW_SERVING_ENABLED = _config.get('mlflow_serving', {}).get('enabled', False)
+MLFLOW_SERVING_ENDPOINT = _config.get('mlflow_serving', {}).get('endpoint_name', 'pension-advisor')
+MLFLOW_MODEL_NAME = _config.get('mlflow_serving', {}).get('model_name', f'{UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor')
+MLFLOW_MODEL_ALIAS = _config.get('mlflow_serving', {}).get('model_alias', 'champion')
+
+# ============================================================================
 # Helper Functions
 # ============================================================================
 
