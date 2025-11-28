@@ -148,61 +148,99 @@ print(f"✓ Created table: {catalog}.member_data.member_profiles")
 
 # COMMAND ----------
 
-# Insert initial citations if table is empty
-citation_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.member_data.citation_registry").collect()[0].cnt
-
-if citation_count == 0:
-    spark.sql(f"""
-    INSERT INTO {catalog}.member_data.citation_registry VALUES
+# Create temporary view with citation data for MERGE operation
+citation_data = [
     ('AU-TAX-001', 'AU', 'Australian Taxation Office', 'Income Tax Assessment Act 1997', 'Division 301',
      '1997-07-01', 'https://www.legislation.gov.au/Series/C2004A04868',
-     'Superannuation lump sum taxation rules', current_timestamp(), 'tax'),
+     'Superannuation lump sum taxation rules', 'tax'),
     ('AU-PENSION-001', 'AU', 'Department of Social Services', 'Social Security Act 1991', 'Part 3.10',
      '1991-07-01', 'https://www.legislation.gov.au/Series/C2004A04770',
-     'Age Pension asset test thresholds', current_timestamp(), 'benefit'),
+     'Age Pension asset test thresholds', 'benefit'),
     ('AU-STANDARD-001', 'AU', 'ASFA', 'ASFA Retirement Standard', 'Annual Report',
      '2024-01-01', 'https://www.superannuation.asn.au/retirement-standard',
-     'Retirement income adequacy standards', current_timestamp(), 'projection'),
+     'Retirement income adequacy standards', 'projection'),
     ('US-TAX-001', 'US', 'Internal Revenue Service', 'Internal Revenue Code', 'Section 72(t)',
      '1986-10-01', 'https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-tax-on-early-distributions',
-     '10% early withdrawal penalty before age 59.5', current_timestamp(), 'tax'),
+     '10% early withdrawal penalty before age 59.5', 'tax'),
     ('US-PENALTY-001', 'US', 'Internal Revenue Service', 'Internal Revenue Code', 'Section 72(t)',
      '1986-10-01', 'https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-exceptions-to-tax-on-early-distributions',
-     'Exceptions to early withdrawal penalty', current_timestamp(), 'tax'),
+     'Exceptions to early withdrawal penalty', 'tax'),
     ('US-SS-001', 'US', 'Social Security Administration', 'Social Security Act', 'Title II',
      '1935-08-14', 'https://www.ssa.gov/benefits/retirement/planner/',
-     'Social Security retirement benefits eligibility', current_timestamp(), 'benefit'),
+     'Social Security retirement benefits eligibility', 'benefit'),
     ('US-RMD-001', 'US', 'Internal Revenue Service', 'SECURE 2.0 Act', 'IRC Section 401(a)(9)',
      '2023-01-01', 'https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds',
-     'Required Minimum Distribution rules starting at age 73', current_timestamp(), 'projection'),
+     'Required Minimum Distribution rules starting at age 73', 'projection'),
     ('UK-TAX-001', 'UK', 'HM Revenue & Customs', 'Finance Act 2004', 'Part 4',
      '2006-04-06', 'https://www.gov.uk/tax-on-your-private-pension',
-     'Pension tax-free lump sum (25% up to £268,275)', current_timestamp(), 'tax'),
+     'Pension tax-free lump sum (25% up to £268,275)', 'tax'),
     ('UK-PENSION-001', 'UK', 'Department for Work and Pensions', 'Pensions Act 2014', 'Part 1',
      '2016-04-06', 'https://www.gov.uk/new-state-pension',
-     'New State Pension eligibility and rates', current_timestamp(), 'benefit'),
+     'New State Pension eligibility and rates', 'benefit'),
     ('UK-DRAWDOWN-001', 'UK', 'Financial Conduct Authority', 'Pension Freedoms', 'COBS 19.5',
      '2015-04-06', 'https://www.fca.org.uk/publication/policy/ps15-04.pdf',
-     'Pension drawdown flexibility rules', current_timestamp(), 'projection'),
+     'Pension drawdown flexibility rules', 'projection'),
     ('IN-EPF-001', 'IN', 'EPFO', 'Employees Provident Funds Act 1952', 'Section 10(12)',
      '1952-03-04', 'https://www.epfindia.gov.in/',
-     'EPF contribution limits and tax exemptions', current_timestamp(), 'tax'),
+     'EPF contribution limits and tax exemptions', 'tax'),
     ('IN-TAX-001', 'IN', 'Income Tax Department', 'Income Tax Act 1961', 'Section 80C',
      '1961-04-01', 'https://www.incometax.gov.in/',
-     'EPF withdrawal taxation rules', current_timestamp(), 'tax'),
+     'EPF withdrawal taxation rules', 'tax'),
     ('IN-NPS-001', 'IN', 'PFRDA', 'PFRDA Act 2013', 'Section 22',
      '2013-09-27', 'https://www.pfrda.org.in/',
-     'NPS 40% annuity requirement and 60% tax-free lump sum', current_timestamp(), 'benefit'),
+     'NPS 40% annuity requirement and 60% tax-free lump sum', 'benefit'),
     ('IN-EPS-001', 'IN', 'EPFO', 'Employees Pension Scheme 1995', 'Regulation 11',
      '1995-11-16', 'https://www.epfindia.gov.in/site_docs/PDFs/Downloads_PDFs/EPS95Eng.pdf',
-     'EPS pension calculation formula', current_timestamp(), 'eps_benefit'),
+     'EPS pension calculation formula', 'eps_benefit'),
     ('IN-INTEREST-001', 'IN', 'EPFO', 'EPF Interest Rate Notification', 'Annual',
      '2024-04-01', 'https://www.epfindia.gov.in/',
-     'EPF interest rate (currently 8.15% for 2023-24)', current_timestamp(), 'projection')
-    """)
-    print(f"✓ Loaded {15} initial citations")
-else:
-    print(f"✓ Citations already exist ({citation_count} records)")
+     'EPF interest rate (currently 8.15% for 2023-24)', 'projection')
+]
+
+# Create temp view
+from pyspark.sql.types import StructType, StructField, StringType
+schema = StructType([
+    StructField("citation_id", StringType(), False),
+    StructField("country", StringType(), False),
+    StructField("authority", StringType(), False),
+    StructField("regulation_name", StringType(), False),
+    StructField("regulation_code", StringType(), True),
+    StructField("effective_date", StringType(), False),
+    StructField("source_url", StringType(), True),
+    StructField("description", StringType(), True),
+    StructField("tool_type", StringType(), False)
+])
+
+df_citations = spark.createDataFrame(citation_data, schema)
+df_citations.createOrReplaceTempView("new_citations")
+
+# MERGE to update existing and insert new citations
+spark.sql(f"""
+MERGE INTO {catalog}.member_data.citation_registry AS target
+USING new_citations AS source
+ON target.citation_id = source.citation_id
+WHEN MATCHED THEN UPDATE SET
+    target.country = source.country,
+    target.authority = source.authority,
+    target.regulation_name = source.regulation_name,
+    target.regulation_code = source.regulation_code,
+    target.effective_date = source.effective_date,
+    target.source_url = source.source_url,
+    target.description = source.description,
+    target.last_updated = current_timestamp(),
+    target.tool_type = source.tool_type
+WHEN NOT MATCHED THEN INSERT (
+    citation_id, country, authority, regulation_name, regulation_code,
+    effective_date, source_url, description, last_updated, tool_type
+) VALUES (
+    source.citation_id, source.country, source.authority, source.regulation_name,
+    source.regulation_code, source.effective_date, source.source_url,
+    source.description, current_timestamp(), source.tool_type
+)
+""")
+
+citation_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.member_data.citation_registry").collect()[0].cnt
+print(f"✓ Merged citations - total records: {citation_count}")
 
 # COMMAND ----------
 
