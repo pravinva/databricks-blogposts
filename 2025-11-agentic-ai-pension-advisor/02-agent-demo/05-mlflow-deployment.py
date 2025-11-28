@@ -67,6 +67,48 @@ print(f"  Schema: {UNITY_SCHEMA}")
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ### Load Real Member IDs from Database
+# MAGIC
+# MAGIC Fetch actual member IDs instead of using hardcoded test IDs.
+
+# COMMAND ----------
+
+from src.utils.lakehouse import execute_sql_query, get_member_by_id
+from src.config import get_member_profiles_table_path
+
+# Fetch sample member IDs by country
+def get_sample_members():
+    """Get real member IDs from database"""
+    table_path = get_member_profiles_table_path()
+
+    query = f"""
+    SELECT country, member_id, name
+    FROM {table_path}
+    GROUP BY country, member_id, name
+    ORDER BY country, member_id
+    """
+
+    df = execute_sql_query(query)
+
+    # Get first member from each country for testing
+    members = {}
+    for country in ['AU', 'US', 'UK', 'IN']:
+        country_members = df[df['country'] == country]['member_id'].tolist()
+        if country_members:
+            members[country] = country_members[:3]  # Get first 3 members per country
+
+    return members
+
+# Get real member IDs
+SAMPLE_MEMBERS = get_sample_members()
+
+print("✅ Sample member IDs loaded from database:")
+for country, member_list in SAMPLE_MEMBERS.items():
+    print(f"  {country}: {', '.join(member_list[:3])}")
+
+# COMMAND ----------
+
 # Create model instance
 model = PensionAdvisorModel()
 
@@ -84,9 +126,11 @@ print("✅ Model instance created and context loaded")
 
 # COMMAND ----------
 
-# Create test input
+# Create test input using real member ID
+test_member_id = SAMPLE_MEMBERS['AU'][0] if 'AU' in SAMPLE_MEMBERS and SAMPLE_MEMBERS['AU'] else 'AU001'
+
 test_input = pd.DataFrame([{
-    'user_id': 'AU001',
+    'user_id': test_member_id,
     'session_id': str(uuid.uuid4())[:8],
     'country': 'AU',
     'query': 'What is my preservation age?',
@@ -120,10 +164,10 @@ else:
 
 # COMMAND ----------
 
-# Create batch test input
+# Create batch test input using real member IDs
 test_batch = pd.DataFrame([
     {
-        'user_id': 'AU001',
+        'user_id': SAMPLE_MEMBERS['AU'][0] if 'AU' in SAMPLE_MEMBERS and len(SAMPLE_MEMBERS['AU']) > 0 else 'AU001',
         'session_id': str(uuid.uuid4())[:8],
         'country': 'AU',
         'query': 'What is my preservation age?',
@@ -131,7 +175,7 @@ test_batch = pd.DataFrame([
         'enable_observability': False
     },
     {
-        'user_id': 'AU002',
+        'user_id': SAMPLE_MEMBERS['AU'][1] if 'AU' in SAMPLE_MEMBERS and len(SAMPLE_MEMBERS['AU']) > 1 else 'AU002',
         'session_id': str(uuid.uuid4())[:8],
         'country': 'AU',
         'query': 'Can I access my super before retirement?',
@@ -139,7 +183,7 @@ test_batch = pd.DataFrame([
         'enable_observability': False
     },
     {
-        'user_id': 'AU003',
+        'user_id': SAMPLE_MEMBERS['AU'][2] if 'AU' in SAMPLE_MEMBERS and len(SAMPLE_MEMBERS['AU']) > 2 else 'AU003',
         'session_id': str(uuid.uuid4())[:8],
         'country': 'AU',
         'query': 'My SSN is 123-45-6789, what is my balance?',  # Should be blocked
@@ -147,7 +191,7 @@ test_batch = pd.DataFrame([
         'enable_observability': False
     },
     {
-        'user_id': 'US001',
+        'user_id': SAMPLE_MEMBERS['US'][0] if 'US' in SAMPLE_MEMBERS and len(SAMPLE_MEMBERS['US']) > 0 else 'US001',
         'session_id': str(uuid.uuid4())[:8],
         'country': 'US',
         'query': 'What is the early withdrawal penalty?',
@@ -260,9 +304,10 @@ try:
 
     print("✅ Model loaded from Unity Catalog")
 
-    # Test loaded model
+    # Test loaded model using real member ID
+    test_member = SAMPLE_MEMBERS['AU'][0] if 'AU' in SAMPLE_MEMBERS and SAMPLE_MEMBERS['AU'] else 'AU001'
     test_query = pd.DataFrame([{
-        'user_id': 'TEST001',
+        'user_id': test_member,
         'session_id': str(uuid.uuid4())[:8],
         'country': 'AU',
         'query': 'When can I access my super without penalties?',
@@ -292,9 +337,8 @@ except Exception as e:
 
 # COMMAND ----------
 
-# Create larger test batch
+# Create larger test batch using real member IDs
 batch_queries = []
-countries = ['AU', 'US', 'UK', 'IN']
 test_queries = [
     'What is my preservation age?',
     'Can I access my super early?',
@@ -302,15 +346,18 @@ test_queries = [
     'How do I check my balance?',
 ]
 
-for i, (country, query) in enumerate(zip(countries * 2, test_queries * 2)):
-    batch_queries.append({
-        'user_id': f'{country}{str(i+1).zfill(3)}',
-        'session_id': str(uuid.uuid4())[:8],
-        'country': country,
-        'query': query,
-        'validation_mode': 'llm_judge',
-        'enable_observability': False
-    })
+# Use real members from database
+for country in ['AU', 'US', 'UK', 'IN']:
+    if country in SAMPLE_MEMBERS and SAMPLE_MEMBERS[country]:
+        for i, member_id in enumerate(SAMPLE_MEMBERS[country][:2]):  # Use first 2 members per country
+            batch_queries.append({
+                'user_id': member_id,
+                'session_id': str(uuid.uuid4())[:8],
+                'country': country,
+                'query': test_queries[i % len(test_queries)],
+                'validation_mode': 'llm_judge',
+                'enable_observability': False
+            })
 
 batch_df = pd.DataFrame(batch_queries)
 
@@ -395,8 +442,8 @@ except Exception as e:
 import time
 from src.agent_processor import agent_query
 
-# Test query
-test_user = 'PERF001'
+# Test query using real member ID
+test_user = SAMPLE_MEMBERS['AU'][0] if 'AU' in SAMPLE_MEMBERS and SAMPLE_MEMBERS['AU'] else 'AU001'
 test_session = str(uuid.uuid4())[:8]
 test_country = 'AU'
 test_query = 'What is my preservation age?'
