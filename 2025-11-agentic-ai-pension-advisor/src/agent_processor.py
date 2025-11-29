@@ -536,7 +536,7 @@ def agent_query(
         logger.info(f"   Phase 4 (Execution):     {phase4_duration:.2f}s")
         logger.info(f"   Phase 5 (Synthesis):     {synthesis_duration:.2f}s (actual LLM time)")
         logger.info(f"   Phase 6 (Validation):    {validation_duration:.2f}s (actual LLM time)")
-        logger.info(f"   Phase 7 (Restoration):   {phase7_duration:.2f}s")
+        logger.info(f"   Phase 7 (Restoration):   <0.01s (not tracked separately)")
         logger.info(f"   Phase 8 (Logging):       (running in background...)")
         logger.info(f"{'='*70}\n")
 
@@ -649,12 +649,23 @@ def agent_query(
     except Exception as e:
         error_info = traceback.format_exc()
         elapsed = time.time() - start_all
-        
+
         logger.error(f"\n❌ ERROR: {e}", exc_info=True)
-        
+
         # Mark current phase as error
         mark_phase_error('phase_4_execution', str(e))
-        
+
+        # Create error judge verdict
+        error_judge_verdict = {
+            'passed': False,
+            'confidence': 0.0,
+            'verdict': 'Error',
+            'reasoning': f'Error during query processing: {str(e)}',
+            'violations': [{'code': 'SYSTEM_ERROR', 'detail': str(e)}],
+            'validation_mode': validation_mode,
+            'attempts': 0
+        }
+
         # Log error to governance table FIRST
         audit_logger.log_to_governance_table(
             session_id=session_id,
