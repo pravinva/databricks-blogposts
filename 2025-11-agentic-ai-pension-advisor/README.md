@@ -1195,40 +1195,60 @@ While LLM token costs are the most visible component, the total system cost incl
 - Dominated by LLM token costs ($0.003-$0.010)
 - Infrastructure costs are minimal per query
 
-### Cost Efficiency vs Human Advisors
+### Solution Value Proposition
 
-**AI Agent Cost Structure** (Fixed + Variable):
+This AI agent system is designed to provide **highly personalized, fully auditable, and cost-effective advice** for routine pension queries, enabling human advisors to focus on more complex cases that require nuanced judgment and personalized planning.
+
+**AI Agent Economics** (Cost-Effective at Scale):
 - **Fixed Costs**: Databricks workspace, compute infrastructure (~$500-2,000/month)
 - **Variable Costs**: LLM tokens + SQL Warehouse (~$0.005-$0.015 per query)
-- **Scaling**: Variable costs scale linearly with query volume
+- **Scaling Characteristics**: Fixed infrastructure costs + minimal variable costs per query
+- **Cost Structure**: ~$1,500-2,000/month baseline + ~$0.01 per query at high volume
 
-**Human Advisor Cost Structure** (Linear Scaling):
-- **Advisor Salary**: $50,000-$80,000/year per advisor
-- **Handling Capacity**: ~20-30 queries/day per advisor (~500/month)
-- **Cost per Query**: ~$100-$160/month salary ÷ 500 queries = **$0.20-$0.32 per query**
-- **Benefits & Overhead**: +30-40% = **$0.26-$0.45 per query**
-- **Scaling**: Costs scale linearly - each 500 queries/month requires another full-time advisor
+**Cost Structure by Volume**:
 
-**Cost Comparison at Scale**:
+| Monthly Volume | Infrastructure | Variable Costs | Total Monthly Cost |
+|----------------|----------------|----------------|---------------------|
+| 1,000 queries | $1,500 | $5-15 | ~$1,515 |
+| 10,000 queries | $1,500 | $50-150 | ~$1,650 |
+| 50,000 queries | $1,500 | $250-750 | ~$2,250 |
 
-| Monthly Volume | AI Agent Cost | Human Advisors Cost | Savings |
-|----------------|---------------|---------------------|---------|
-| 1,000 queries | $1,500 + $5-15 = ~$1,515 | 2 advisors × $7,000 = $14,000 | 89% |
-| 10,000 queries | $1,500 + $50-150 = ~$1,650 | 20 advisors × $7,000 = $140,000 | 99% |
-| 50,000 queries | $1,500 + $250-750 = ~$2,250 | 100 advisors × $7,000 = $700,000 | 99.7% |
+**Use Case: Deflecting Routine Queries**
 
-**Key Insight**:
-- **AI costs remain nearly flat** as query volume increases (fixed infrastructure + small variable costs)
-- **Human costs scale linearly** - each additional 500 queries/month requires another $7,000/month advisor
-- **Break-even point**: ~100 queries/month
-- **At 50,000 queries/month**: AI costs ~$2,250 vs Human costs ~$700,000 (99.7% savings)
+The system is designed to handle **40-50% of incoming member queries** that are routine, fact-based questions:
+- "What is my preservation age?"
+- "When can I access my super?"
+- "What is my current balance?"
+- "How much tax will I pay on withdrawals?"
 
-**Additional Benefits Beyond Cost**:
-- **24/7 Availability**: No after-hours or weekend staffing costs
-- **Instant Response**: ~20s vs scheduling call-backs or waiting in queue
-- **Consistent Quality**: Every response validated by LLM-as-a-Judge
-- **Scalability**: Handle traffic spikes without hiring/training
-- **Audit Trail**: Complete logging and compliance for every interaction
+**Benefits for Organizations**:
+
+1. **Query Deflection**: Automated handling of routine queries at scale
+   - Instant responses 24/7
+   - No queue times or callbacks
+   - Consistent, validated answers
+
+2. **Human Advisor Enhancement**: Free advisors to focus on high-value interactions
+   - Complex financial planning
+   - Emotional support during major life decisions
+   - Multi-factor retirement strategy
+   - Estate planning and beneficiary management
+
+3. **Quality & Compliance**: Enterprise-grade governance
+   - Every response validated by LLM-as-a-Judge
+   - Complete audit trail for regulatory compliance
+   - Citation tracking for legal references
+   - Cost transparency per interaction
+
+4. **Scalability**: Handle volume spikes without capacity constraints
+   - Peak periods (tax season, end of fiscal year)
+   - Member onboarding campaigns
+   - Regulatory changes causing query surges
+
+**Operating Model**:
+- **Tier 1**: AI agent handles routine queries (~40-50% of volume)
+- **Tier 2**: Human advisors handle escalated and complex cases
+- **Result**: Same human advisor capacity now serves 2x the member base while improving response times
 
 ---
 
