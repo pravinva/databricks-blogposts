@@ -72,7 +72,7 @@ def safe_dataframe_check(df):
 # ============================================================================ #
 
 if os.path.exists("_resources/logo.png"):
-    st.sidebar.image("_resources/logo.png", use_container_width=True)
+    st.sidebar.image("_resources/logo.png", width="stretch")
 st.sidebar.title(BRANDCONFIG["brand_name"])
 st.sidebar.caption(BRANDCONFIG.get("subtitle", "Enterprise-Grade Agentic AI on Databricks"))
 st.sidebar.markdown("---")
@@ -167,7 +167,7 @@ if page == "Advisory":
                 button_type = "primary" if is_selected else "secondary"
                 button_label = f"{'✓ ' if is_selected else ''}Select {member.get('name','Unknown')}"
                 
-                if st.button(button_label, key=f"btn_{member_id}_{country_code}", use_container_width=True, type=button_type):
+                if st.button(button_label, key=f"btn_{member_id}_{country_code}", width="stretch", type=button_type):
                     st.session_state.selected_member = member_id
                     log_rerun("member_selection", f"Selected member: {member_id}")
                     st.rerun()
@@ -212,7 +212,7 @@ if page == "Advisory":
     for i, q in enumerate(sample_questions.get(country_display, [])):
         with cols[i]:
             # ✅ Include country_code in key to avoid conflicts when switching countries
-            if st.button(q, key=f"sample_q_{country_code}_{i}", use_container_width=True):
+            if st.button(q, key=f"sample_q_{country_code}_{i}", width="stretch"):
                 st.session_state.query_input = q
     
     question = st.text_input("Your question:", key="query_input")
@@ -266,7 +266,7 @@ if page == "Advisory":
     if is_executing and not show_logs:
         st.info("🔄 Query is currently processing... Enable 'Show Processing Logs' to see progress.")
     
-    if st.button("🚀 Get Recommendation", type="primary", use_container_width=True):
+    if st.button("🚀 Get Recommendation", type="primary", width="stretch"):
         if not question:
             st.warning("Please enter a question first.")
         elif not st.session_state.selected_member:

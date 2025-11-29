@@ -89,7 +89,7 @@ def render_realtime_metrics_tab():
             labels={'hour': 'Time', 'queries': 'Query Count'}
         )
         fig_volume.update_traces(line_color='#00843D')
-        st.plotly_chart(fig_volume, use_container_width=True)
+        st.plotly_chart(fig_volume, width="stretch")
         
         # === TOKEN COST AND LATENCY TRENDS ===
         col1, col2 = st.columns(2)
@@ -105,7 +105,7 @@ def render_realtime_metrics_tab():
                 labels={'hour': 'Time', 'cost': 'Token Cost (USD)'}
             )
             fig_cost.update_traces(fillcolor='rgba(0,132,61,0.2)', line_color='#00843D')
-            st.plotly_chart(fig_cost, use_container_width=True)
+            st.plotly_chart(fig_cost, width="stretch")
 
         with col2:
             st.markdown("#### ⚡ Latency Trend")
@@ -118,7 +118,7 @@ def render_realtime_metrics_tab():
                 labels={'hour': 'Time', 'runtime_sec': 'Latency (s)'}
             )
             fig_latency.update_traces(line_color='#FFD700')
-            st.plotly_chart(fig_latency, use_container_width=True)
+            st.plotly_chart(fig_latency, width="stretch")
         
         # === COUNTRY BREAKDOWN ===
         st.markdown("#### 🌍 Performance by Country")
@@ -136,7 +136,7 @@ def render_realtime_metrics_tab():
             col1, col2 = st.columns(2)
             
             with col1:
-                st.dataframe(country_stats, use_container_width=True)
+                st.dataframe(country_stats, width="stretch")
             
             with col2:
                 fig_country = px.pie(
@@ -145,7 +145,7 @@ def render_realtime_metrics_tab():
                     title='Queries by Country',
                     hole=0.4
                 )
-                st.plotly_chart(fig_country, use_container_width=True)
+                st.plotly_chart(fig_country, width="stretch")
         
     except Exception as e:
         st.error(f"❌ Error loading real-time metrics: {str(e)}")
@@ -231,7 +231,7 @@ def render_classification_analytics_tab():
             y=['Stage 1: Regex', 'Stage 2: Embedding', 'Stage 3: LLM'],
             title="Classification Cascade Funnel"
         )
-        st.plotly_chart(fig_stages, use_container_width=True)
+        st.plotly_chart(fig_stages, width="stretch")
         
         st.markdown("---")
         
@@ -279,7 +279,7 @@ def render_classification_analytics_tab():
                         'Count': results.values,
                         'Percentage': (results.values / len(df) * 100).round(1)
                     }),
-                    use_container_width=True
+                    width="stretch"
                 )
             
             with col2:
@@ -290,7 +290,7 @@ def render_classification_analytics_tab():
                     title="Classification Results",
                     labels={'x': 'Count', 'y': 'Classification'}
                 )
-                st.plotly_chart(fig_results, use_container_width=True)
+                st.plotly_chart(fig_results, width="stretch")
         
         # === LATENCY BY STAGE ===
         st.markdown("#### ⚡ Latency by Classification Stage")
@@ -299,7 +299,7 @@ def render_classification_analytics_tab():
             df['runtime_sec'] = pd.to_numeric(df['runtime_sec'], errors='coerce')
             latency_by_stage = df.groupby('classification_method')['runtime_sec'].agg(['mean', 'median', 'std']).round(3)
             latency_by_stage.columns = ['Mean (s)', 'Median (s)', 'Std Dev (s)']
-            st.dataframe(latency_by_stage, use_container_width=True)
+            st.dataframe(latency_by_stage, width="stretch")
         
     except Exception as e:
         st.error(f"❌ Error loading classification analytics: {str(e)}")
@@ -368,7 +368,7 @@ def render_quality_monitoring_tab():
                 )
                 fig_pass_rate.add_hline(y=95, line_dash="dash", line_color="green", annotation_text="Target: 95%")
                 fig_pass_rate.add_hline(y=80, line_dash="dash", line_color="orange", annotation_text="Warning: 80%")
-                st.plotly_chart(fig_pass_rate, use_container_width=True)
+                st.plotly_chart(fig_pass_rate, width="stretch")
         
         st.markdown("---")
         
@@ -399,7 +399,7 @@ def render_quality_monitoring_tab():
                         labels={'judge_confidence': 'Confidence Score'},
                         color_discrete_sequence=['#00843D']
                     )
-                    st.plotly_chart(fig_conf, use_container_width=True)
+                    st.plotly_chart(fig_conf, width="stretch")
                 
                 with col2:
                     # Confidence by verdict
@@ -413,7 +413,7 @@ def render_quality_monitoring_tab():
                             labels={'x': 'Verdict', 'y': 'Avg Confidence'},
                             color_discrete_sequence=['#00843D']
                         )
-                        st.plotly_chart(fig_conf_verdict, use_container_width=True)
+                        st.plotly_chart(fig_conf_verdict, width="stretch")
         else:
             st.info("ℹ️ No confidence data available. Confidence scores are logged in judge_response JSON.")
             st.caption("New queries will include confidence scores. Existing queries may not have this data.")
@@ -434,7 +434,7 @@ def render_quality_monitoring_tab():
             if violation_counts:
                 st.dataframe(
                     pd.DataFrame(list(violation_counts.items()), columns=['Violation Type', 'Count']),
-                    use_container_width=True
+                    width="stretch"
                 )
             else:
                 st.success("✅ No violations detected in recent queries!")
@@ -450,7 +450,7 @@ def render_quality_monitoring_tab():
             country_quality.columns = ['Pass Rate (%)', 'Query Count']
             country_quality = country_quality.sort_values('Pass Rate (%)', ascending=False)
             
-            st.dataframe(country_quality, use_container_width=True)
+            st.dataframe(country_quality, width="stretch")
             
             fig_country_quality = px.bar(
                 country_quality.reset_index(),
@@ -460,7 +460,7 @@ def render_quality_monitoring_tab():
                 color='Pass Rate (%)',
                 color_continuous_scale='RdYlGn'
             )
-            st.plotly_chart(fig_country_quality, use_container_width=True)
+            st.plotly_chart(fig_country_quality, width="stretch")
         
     except Exception as e:
         st.error(f"❌ Error loading quality monitoring: {str(e)}")
@@ -545,7 +545,7 @@ def render_enhanced_cost_analysis_tab():
                 title="Cost per Query Distribution",
                 labels={'cost': 'Cost (USD)'}
             )
-            st.plotly_chart(fig_dist, use_container_width=True)
+            st.plotly_chart(fig_dist, width="stretch")
         
         with col2:
             st.markdown("#### 📈 Cost Percentiles")
@@ -554,7 +554,7 @@ def render_enhanced_cost_analysis_tab():
                 'Percentile': ['P50 (Median)', 'P75', 'P90', 'P95', 'P99'],
                 'Cost ($)': percentiles.values
             })
-            st.dataframe(percentile_df, use_container_width=True)
+            st.dataframe(percentile_df, width="stretch")
             
             # Box plot
             fig_box = px.box(
@@ -563,7 +563,7 @@ def render_enhanced_cost_analysis_tab():
                 title="Cost Distribution (Box Plot)",
                 labels={'cost': 'Cost (USD)'}
             )
-            st.plotly_chart(fig_box, use_container_width=True)
+            st.plotly_chart(fig_box, width="stretch")
         
         st.markdown("---")
         
@@ -578,7 +578,7 @@ def render_enhanced_cost_analysis_tab():
                 country_costs = df.groupby('country')['cost'].agg(['sum', 'mean', 'count'])
                 country_costs.columns = ['Total ($)', 'Avg ($)', 'Queries']
                 country_costs = country_costs.sort_values('Total ($)', ascending=False)
-                st.dataframe(country_costs.round(5), use_container_width=True)
+                st.dataframe(country_costs.round(5), width="stretch")
         
         with col2:
             if 'user_id' in df.columns:
@@ -586,7 +586,7 @@ def render_enhanced_cost_analysis_tab():
                 user_costs = df.groupby('user_id')['cost'].sum().sort_values(ascending=False).head(10)
                 st.dataframe(
                     pd.DataFrame({'User': user_costs.index, 'Total Cost ($)': user_costs.values.round(5)}),
-                    use_container_width=True
+                    width="stretch"
                 )
         
         # === COST TREND ===
@@ -620,7 +620,7 @@ def render_enhanced_cost_analysis_tab():
                 hovermode='x unified'
             )
             
-            st.plotly_chart(fig_trend, use_container_width=True)
+            st.plotly_chart(fig_trend, width="stretch")
         
         # === COST PROJECTION ===
         st.markdown("#### 🔮 Monthly Cost Projection")
@@ -803,7 +803,7 @@ def render_automated_scoring_tab():
                 showlegend=True
             )
 
-            st.plotly_chart(fig_trend, use_container_width=True)
+            st.plotly_chart(fig_trend, width="stretch")
 
         st.markdown("---")
 
@@ -843,7 +843,7 @@ def render_automated_scoring_tab():
                     color=avg_by_scorer.values,
                     color_continuous_scale='RdYlGn'
                 )
-                st.plotly_chart(fig_scorers, use_container_width=True)
+                st.plotly_chart(fig_scorers, width="stretch")
 
             with col2:
                 # Pass rate by scorer
@@ -860,7 +860,7 @@ def render_automated_scoring_tab():
                     color=pass_by_scorer.values,
                     color_continuous_scale='RdYlGn'
                 )
-                st.plotly_chart(fig_pass, use_container_width=True)
+                st.plotly_chart(fig_pass, width="stretch")
 
         st.markdown("---")
 
@@ -879,7 +879,7 @@ def render_automated_scoring_tab():
             col1, col2 = st.columns(2)
 
             with col1:
-                st.dataframe(country_quality, use_container_width=True)
+                st.dataframe(country_quality, width="stretch")
 
             with col2:
                 fig_country = px.bar(
@@ -890,7 +890,7 @@ def render_automated_scoring_tab():
                     color='Avg Score',
                     color_continuous_scale='RdYlGn'
                 )
-                st.plotly_chart(fig_country, use_container_width=True)
+                st.plotly_chart(fig_country, width="stretch")
 
         st.markdown("---")
 
@@ -909,7 +909,7 @@ def render_automated_scoring_tab():
                         'Count': verdict_counts.values,
                         'Percentage': (verdict_counts.values / len(scoring_data) * 100).round(1)
                     }),
-                    use_container_width=True
+                    width="stretch"
                 )
 
             with col2:
@@ -920,7 +920,7 @@ def render_automated_scoring_tab():
                     hole=0.4,
                     color_discrete_map={'PASS': '#00843D', 'FAIL': '#FF3621', 'ERROR': '#FFD700'}
                 )
-                st.plotly_chart(fig_verdict, use_container_width=True)
+                st.plotly_chart(fig_verdict, width="stretch")
 
         st.markdown("---")
 
@@ -935,7 +935,7 @@ def render_automated_scoring_tab():
             with st.expander(f"📋 View Recent Failures ({min(10, len(failures))})"):
                 st.dataframe(
                     failures[['scoring_timestamp', 'user_id', 'country', 'overall_score', 'pass_rate']].head(10),
-                    use_container_width=True
+                    width="stretch"
                 )
         else:
             st.success("✅ No failures detected!")
@@ -1094,7 +1094,7 @@ def render_system_health_tab():
                 st.warning(f"⚠️ {len(cost_anomalies)} queries with unusually high cost")
                 st.dataframe(
                     cost_anomalies[['timestamp', 'user_id', 'country', 'cost']].head(10),
-                    use_container_width=True
+                    width="stretch"
                 )
             else:
                 st.success("✅ No cost anomalies detected")
@@ -1105,7 +1105,7 @@ def render_system_health_tab():
                 st.warning(f"⚠️ {len(latency_anomalies)} queries with unusually high latency")
                 st.dataframe(
                     latency_anomalies[['timestamp', 'user_id', 'country', 'runtime_sec']].head(10),
-                    use_container_width=True
+                    width="stretch"
                 )
             else:
                 st.success("✅ No latency anomalies detected")
@@ -1135,13 +1135,13 @@ def render_system_health_tab():
                         labels={'hour': 'Time', 'errors': 'Error Count'}
                     )
                     fig_errors.update_traces(marker_color='red')
-                    st.plotly_chart(fig_errors, use_container_width=True)
+                    st.plotly_chart(fig_errors, width="stretch")
                 
                 # Recent errors
                 with st.expander("📋 Recent Errors"):
                     st.dataframe(
                         errors_df[['timestamp', 'user_id', 'country', 'error_info']].tail(20),
-                        use_container_width=True
+                        width="stretch"
                     )
             else:
                 st.success("✅ No errors in recent queries!")
