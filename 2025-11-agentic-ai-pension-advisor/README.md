@@ -235,6 +235,197 @@ Understanding how the components interact is crucial for maintaining and extendi
 - `utils/lakehouse.py`: Unity Catalog SQL utilities
 - `utils/progress.py`: Real-time UI progress tracking
 
+---
+
+## 8-Phase Agent Execution Flow
+
+The pension advisor system executes each query through 8 distinct phases, orchestrated by `agent_processor.py`. Each phase is tracked, timed, and logged for complete observability.
+
+### Phase 1: Data Retrieval
+**Purpose**: Fetch member profile and regulatory data from Unity Catalog
+
+**Operations**:
+- Query member profile table using Unity Catalog
+- Retrieve member-specific data: name, age, balance, country
+- Load country-specific regulatory authorities and rules
+- **Duration**: ~100-200ms
+- **Cost**: SQL Warehouse compute only (no LLM calls)
+
+**Example**:
+```python
+member = get_member_profile(user_id="AU001")
+# Returns: {name: "John Smith", age: 65, balance: 450000, country: "AU"}
+```
+
+### Phase 2: Anonymization
+**Purpose**: Protect member privacy by replacing names with tokens during LLM processing
+
+**Operations**:
+- Extract member's real name from profile
+- Replace with anonymous token (e.g., "John Smith" → "[MEMBER_NAME]")
+- Store mapping for later restoration
+- **Duration**: <10ms
+- **Cost**: None (string manipulation)
+
+**Why**: Ensures PII is never sent to LLM APIs or logged to MLflow
+
+### Phase 3: Classification
+**Purpose**: Intelligent query topic classification to optimize costs
+
+**3-Stage Cascade (Fast → Slow)**:
+1. **Regex Patterns** (80% of queries, <1ms, $0)
+   - Pattern matching against retirement keywords
+   - Example: "What's my super balance?" → matches "balance" pattern
+
+2. **Embedding Similarity** (15% of queries, ~100ms, $0.0001)
+   - BGE embedding model for semantic matching
+   - Cosine similarity against query types
+
+3. **LLM Fallback** (5% of queries, ~300ms, $0.001)
+   - Claude Sonnet 4 for ambiguous cases
+   - Full reasoning about query intent
+
+**Off-Topic Detection**: Catches non-retirement queries early to save costs
+
+**Duration**: 1ms - 300ms depending on stage
+**Cost**: $0 - $0.001 depending on stage
+
+### Phase 4: Tool Selection & Execution
+**Purpose**: Execute Unity Catalog SQL functions to retrieve required data
+
+**Operations**:
+- **Tool Selection**: LLM reasons about which tools to call
+  - Example: "What's my preservation age?" → calls `get_preservation_age()`
+- **Tool Execution**: Call Unity Catalog functions via SQL Warehouse
+  - Each tool is a versioned SQL function
+  - Supports: tax calculations, benefit projections, balance queries
+- **Result Aggregation**: Combine tool outputs into context
+
+**Duration**: ~200-500ms per tool
+**Cost**: SQL Warehouse compute + minimal LLM for planning
+
+**Example Tools**:
+```sql
+-- Unity Catalog SQL Function
+SELECT main.retirement_tools.get_preservation_age('1965-03-15', 'AU')
+-- Returns: 60 (preservation age for person born 1965 in Australia)
+```
+
+### Phase 5: Response Synthesis
+**Purpose**: Generate natural language response using LLM
+
+**Operations**:
+- Build synthesis prompt with:
+  - Member context (anonymized)
+  - Tool outputs
+  - Country-specific regulations
+  - Query text
+- **LLM Call**: Claude Opus 4.1 (most capable model)
+- Generate comprehensive response with citations
+- **Retry Logic**: Up to 2 retries if validation fails
+
+**Duration**: ~15-35s (LLM API latency)
+**Cost**: ~$0.0029 per query (largest cost component)
+
+**Prompt Structure**:
+```
+You are a pension advisor for {country}.
+Member: [MEMBER_NAME], Age: 65, Balance: $450,000
+Tools called: get_preservation_age() → "60"
+Query: "When can I access my super?"
+Generate response...
+```
+
+### Phase 6: Validation
+**Purpose**: Ensure response quality using LLM-as-a-Judge
+
+**Operations**:
+- **Validator LLM**: Claude Sonnet 4 (fast, cost-effective)
+- Checks for:
+  - Factual accuracy
+  - Regulatory compliance
+  - Response completeness
+  - Professional tone
+  - Proper citations
+- Returns: `{passed: true/false, confidence: 0-1, violations: []}`
+- **Retry**: If confidence < 0.70, retry synthesis with feedback
+
+**Duration**: ~1-3s
+**Cost**: ~$0.0004 per query
+
+**Validation Criteria**:
+- **PASS**: confidence ≥ 0.70, no violations
+- **FAIL**: Has violations (blocks user from seeing response)
+- **RETRY**: confidence < 0.70, no violations (retry synthesis)
+
+### Phase 7: Name Restoration
+**Purpose**: Replace anonymous tokens with real names before showing to user
+
+**Operations**:
+- Find all instances of "[MEMBER_NAME]" in response
+- Replace with real name from Phase 2 mapping
+- Add personalized greeting
+- **Duration**: <10ms
+- **Cost**: None
+
+**Example**:
+```
+Before: "Hi [MEMBER_NAME], your preservation age is 60."
+After:  "Hi John Smith, your preservation age is 60."
+```
+
+### Phase 8: Audit Logging (Asynchronous)
+**Purpose**: Comprehensive governance logging for compliance and monitoring
+
+**Operations** (runs in background thread):
+- Log to Unity Catalog governance table:
+  - Query text, response, validation results
+  - Cost breakdown, tool usage, timestamp
+  - Country, user ID, session ID
+- Log to MLflow:
+  - Metrics: cost, latency, confidence
+  - Artifacts: validation results, cost breakdowns
+  - Traces: Full execution graph
+- **Duration**: <500ms (async, doesn't block user)
+- **Cost**: Minimal (storage + SQL Warehouse)
+
+**Audit Record Schema**:
+```python
+{
+    "timestamp": "2025-01-15 10:23:45",
+    "user_id": "AU001",
+    "country": "AU",
+    "query": "What's my preservation age?",
+    "response": "Your preservation age is 60...",
+    "validation_passed": true,
+    "confidence": 0.92,
+    "cost_usd": 0.003245,
+    "tools_called": ["get_preservation_age"],
+    "latency_seconds": 18.4
+}
+```
+
+### End-to-End Timing Summary
+
+**Typical Query Execution**:
+- Phase 1 (Retrieval): 0.15s
+- Phase 2 (Anonymization): <0.01s
+- Phase 3 (Classification): 0.05s
+- Phase 4 (Tool Execution): 0.30s
+- Phase 5 (Synthesis): 18.5s (LLM API latency)
+- Phase 6 (Validation): 2.1s
+- Phase 7 (Restoration): <0.01s
+- Phase 8 (Logging): 0.20s (async)
+- **Total**: ~21s (dominated by LLM API calls)
+
+**Cost Breakdown**:
+- Classification: $0.0001
+- Synthesis (Opus 4.1): $0.0029
+- Validation (Sonnet 4): $0.0004
+- **Total LLM Token Cost**: ~$0.0034 per query
+
+---
+
 ### Key Design Patterns
 
 **Separation of Concerns:**
@@ -385,7 +576,7 @@ Expanded from US-only to comprehensive 4-market support:
 - Indian phone numbers: `+91 98765 43210`
 
 **Testing:**
-- ✅ 100% test coverage (17/17 patterns)
+- PASS: 100% test coverage (17/17 patterns)
 - All patterns validated locally
 - Production-ready
 
@@ -397,7 +588,7 @@ Enhanced validation result cards to show query metrics:
 
 **Display Format:**
 ```
-✅ LLM Judge: PASSED
+PASS: LLM Judge: PASSED
 Tokens: 1,234 • Cost: $0.0034
 ```
 
@@ -407,9 +598,9 @@ Tokens: 1,234 • Cost: $0.0034
 - Comma-formatted tokens for readability
 - 4 decimal places for cost precision
 - Applied to all three validation states:
-  - ✅ PASSED (green)
-  - ❌ FLAGGED (red)
-  - ⚠️ Low Confidence (amber)
+  - PASS: PASSED (green)
+  - FAIL: FLAGGED (red)
+  - WARNING: Low Confidence (amber)
 
 ### Strict Validation Policy
 
@@ -436,9 +627,9 @@ answer_failed = has_violations  # Block if ANY violations
 
 | Validation Result | Shown to Customer? | What They See |
 |-------------------|-------------------|---------------|
-| ✅ GREEN (no violations) | ✅ YES | Full answer |
-| ⚠️ AMBER (low confidence) | ❌ NO | "Unable to Process Request" |
-| ❌ RED (flagged) | ❌ NO | "Unable to Process Request" |
+| PASS: GREEN (no violations) | PASS: YES | Full answer |
+| WARNING: AMBER (low confidence) | FAIL: NO | "Unable to Process Request" |
+| FAIL: RED (flagged) | FAIL: NO | "Unable to Process Request" |
 
 **Internal Review:**
 - All blocked responses stored in collapsible expander
@@ -586,11 +777,11 @@ job = w.jobs.create(
 ### Testing
 
 **All features have been tested:**
-- ✅ Automated scorers: 6/6 tests passing (test_scorers.py)
-- ✅ Multi-country PII: 17/17 patterns validated
-- ✅ MLflow tracing: All imports working
-- ✅ Observability integration: UI rendering correctly
-- ✅ Validation policy: Strict blocking confirmed
+- PASS: Automated scorers: 6/6 tests passing (test_scorers.py)
+- PASS: Multi-country PII: 17/17 patterns validated
+- PASS: MLflow tracing: All imports working
+- PASS: Observability integration: UI rendering correctly
+- PASS: Validation policy: Strict blocking confirmed
 
 ### Git Branch
 
@@ -950,13 +1141,22 @@ Every response includes:
 | Validation | Claude Sonnet 4 | ~500 | $0.0004 |
 | **Total per Query** | | | **~$0.003** |
 
-### Cost Efficiency
+### Per-Query LLM Token Cost Breakdown
 
-The system processes queries at **pennies per query** ($0.003-$0.010 in LLM token costs), enabling substantial cost savings by deflecting 40-50% of common member inquiries from call centers. At scale, this allows organizations to handle significantly more queries with the same budget while maintaining high-quality personalized responses.
+**Typical Query Cost Components**:
+
+| Phase | Operation | Model | Tokens | LLM Token Cost |
+|-------|-----------|-------|--------|----------------|
+| Phase 3 | Classification (5% queries) | Claude Sonnet 4 | ~300 | $0.0001 |
+| Phase 5 | Response Synthesis | Claude Opus 4.1 | ~2,000 | $0.0029 |
+| Phase 6 | Validation | Claude Sonnet 4 | ~500 | $0.0004 |
+| | **Total LLM Token Cost per Query** | | **~2,800** | **$0.0034** |
+
+**Note**: This represents Claude Foundation Model API costs only, not total cost of ownership (TCO).
 
 ### Real-Time Token Cost Display
 
-Each response shows detailed LLM token cost breakdown:
+Each response in the UI shows detailed LLM token cost breakdown:
 ```
 LLM Token Cost: $0.003245
 ├─ Main LLM (Opus 4.1): $0.002891
@@ -964,12 +1164,71 @@ LLM Token Cost: $0.003245
 └─ Classification: $0.0001
 ```
 
-**Total Cost of Ownership (TCO) Includes:**
-- LLM Token Costs (shown above): ~$0.003-$0.010 per query
-- SQL Warehouse Compute: Variable, depends on query complexity
-- Databricks Workspace: Subscription-based
-- Storage (Unity Catalog): Volume-based
-- App Hosting (Streamlit): Compute instance costs
+### Total Cost of Ownership (TCO)
+
+While LLM token costs are the most visible component, the total system cost includes:
+
+**1. LLM Token Costs** (shown above)
+- **Cost**: $0.003-$0.010 per query
+- **Driver**: Query complexity, number of retries
+- **Optimization**: 3-stage cascade classification saves 80% on off-topic queries
+
+**2. SQL Warehouse Compute**
+- **Cost**: ~$0.001-$0.003 per query (estimated)
+- **Driver**: Number of tools called, query complexity
+- **Optimization**: Efficient SQL functions, connection pooling
+
+**3. Databricks Workspace**
+- **Cost**: Subscription-based (not per-query)
+- **Model**: Monthly or annual workspace licensing
+
+**4. Storage (Unity Catalog)**
+- **Cost**: ~$0.023 per GB per month
+- **Driver**: Audit logs, member profiles, governance data
+- **Volume**: ~1 KB per query (audit log) = ~$0.000023 per query
+
+**5. App Hosting (Streamlit)**
+- **Cost**: Compute instance costs (not per-query)
+- **Model**: Hourly instance pricing based on tier
+
+**Estimated Total TCO per Query**: ~$0.005-$0.015
+- Dominated by LLM token costs ($0.003-$0.010)
+- Infrastructure costs are minimal per query
+
+### Cost Efficiency vs Human Advisors
+
+**AI Agent Cost Structure** (Fixed + Variable):
+- **Fixed Costs**: Databricks workspace, compute infrastructure (~$500-2,000/month)
+- **Variable Costs**: LLM tokens + SQL Warehouse (~$0.005-$0.015 per query)
+- **Scaling**: Variable costs scale linearly with query volume
+
+**Human Advisor Cost Structure** (Linear Scaling):
+- **Advisor Salary**: $50,000-$80,000/year per advisor
+- **Handling Capacity**: ~20-30 queries/day per advisor (~500/month)
+- **Cost per Query**: ~$100-$160/month salary ÷ 500 queries = **$0.20-$0.32 per query**
+- **Benefits & Overhead**: +30-40% = **$0.26-$0.45 per query**
+- **Scaling**: Costs scale linearly - each 500 queries/month requires another full-time advisor
+
+**Cost Comparison at Scale**:
+
+| Monthly Volume | AI Agent Cost | Human Advisors Cost | Savings |
+|----------------|---------------|---------------------|---------|
+| 1,000 queries | $1,500 + $5-15 = ~$1,515 | 2 advisors × $7,000 = $14,000 | 89% |
+| 10,000 queries | $1,500 + $50-150 = ~$1,650 | 20 advisors × $7,000 = $140,000 | 99% |
+| 50,000 queries | $1,500 + $250-750 = ~$2,250 | 100 advisors × $7,000 = $700,000 | 99.7% |
+
+**Key Insight**:
+- **AI costs remain nearly flat** as query volume increases (fixed infrastructure + small variable costs)
+- **Human costs scale linearly** - each additional 500 queries/month requires another $7,000/month advisor
+- **Break-even point**: ~100 queries/month
+- **At 50,000 queries/month**: AI costs ~$2,250 vs Human costs ~$700,000 (99.7% savings)
+
+**Additional Benefits Beyond Cost**:
+- **24/7 Availability**: No after-hours or weekend staffing costs
+- **Instant Response**: ~20s vs scheduling call-backs or waiting in queue
+- **Consistent Quality**: Every response validated by LLM-as-a-Judge
+- **Scalability**: Handle traffic spikes without hiring/training
+- **Audit Trail**: Complete logging and compliance for every interaction
 
 ---
 
@@ -1386,7 +1645,7 @@ The system includes built-in offline evaluation capabilities for batch testing a
 
 1. **Navigate to Governance → Config Tab**
    - Open the Streamlit app and go to the Governance page
-   - Click on the "⚙️ Config" tab
+   - Click on the "Config" tab
 
 2. **Upload Evaluation CSV**
    - Scroll to "🧪 Offline Evaluation" section
@@ -1483,7 +1742,7 @@ python run_evaluation.py --mode online \
 
 The Governance page provides comprehensive monitoring and observability through 5 specialized tabs. Each tab focuses on different aspects of system performance, cost, and quality.
 
-### Tab 1: 🔒 Governance Dashboard
+### Tab 1: Governance Dashboard
 
 **Purpose**: High-level overview of system health and recent activity at a glance.
 
@@ -1535,7 +1794,7 @@ The Governance page provides comprehensive monitoring and observability through 
 
 ---
 
-### Tab 2: 🔬 MLflow Traces
+### Tab 2: MLflow Traces
 
 **Purpose**: Deep dive into MLflow experiment tracking, prompt versions, and individual query execution details.
 
@@ -1569,7 +1828,7 @@ The Governance page provides comprehensive monitoring and observability through 
 
 ---
 
-### Tab 3: ⚙️ Config
+### Tab 3: Config
 
 **Purpose**: System configuration and offline evaluation management.
 
@@ -1612,7 +1871,7 @@ The Governance page provides comprehensive monitoring and observability through 
 
 ---
 
-### Tab 4: 💰 LLM Token Cost Analysis
+### Tab 4: LLM Token Cost Analysis
 
 **Purpose**: Comprehensive analysis of Claude Foundation Model API costs with breakdowns and trends.
 
@@ -1656,17 +1915,15 @@ The Governance page provides comprehensive monitoring and observability through 
 
 **Purpose**: Real-time monitoring of performance, quality, and automated scoring using Databricks MLOps standards.
 
+The Observability tab is divided into **3 specialized sub-tabs**, each focusing on different aspects of system monitoring:
+
+---
+
+#### Sub-Tab 1: Performance Metrics
+
+**Purpose**: Monitor system performance, latency, and LLM token costs
+
 **What You See:**
-
-#### MLflow Experiments & Traces (Top Section)
-
-**Key Features:**
-- **Real-time experiment tracking**: All queries logged to MLflow
-- **Distributed tracing**: Full visibility into agent execution steps
-- **Metrics & artifacts**: Token counts, costs, validation results
-- **Purpose**: Debug individual queries and compare runs
-
-#### Performance Metrics (Left Column)
 
 **Key Metrics (Last 24h):**
 - **Requests**: Count of queries processed
@@ -1693,7 +1950,19 @@ The Governance page provides comprehensive monitoring and observability through 
 - **Pie chart**: Percentage of queries by country
 - **Purpose**: Understand usage patterns
 
-#### Quality & Validation (Right Column)
+**Use Cases**:
+- Monitor system load and capacity planning
+- Identify performance degradation (latency spikes)
+- Track LLM API spending trends (note: not total TCO)
+- Compare performance across countries
+
+---
+
+#### Sub-Tab 2: Quality Monitoring
+
+**Purpose**: Monitor validation pass rates, confidence scores, and quality trends
+
+**What You See:**
 
 **Validation Pass Rate:**
 - **Overall Pass Rate**: Percentage of queries passing LLM-as-a-Judge validation
@@ -1718,29 +1987,115 @@ The Governance page provides comprehensive monitoring and observability through 
 - **Table**: Pass rate and confidence by country
 - **Purpose**: Country-specific quality analysis
 
-#### Automated Quality Scoring (Full Width, Databricks Recommended)
+**Use Cases:**
+- Quality assurance: Monitor validation success rates
+- Prompt tuning: Identify low confidence patterns for improvement
+- Violation analysis: Understand common failure modes
+- Country comparison: Identify country-specific quality issues
 
-**Purpose**: Background quality monitoring with automated scorers for trend analysis
+---
 
-**Key Features:**
-- **Layer 1**: Real-time LLM-as-a-Judge (100% coverage, blocking)
-- **Layer 2**: Background automated scorers (10% sampling, async)
-- **Scorers**: Relevance, Faithfulness, Toxicity, Country Compliance, Citation Quality
-- **Purpose**: Track quality trends and drift over time without blocking user responses
+#### Sub-Tab 3: Automated Scoring
 
-**Metrics Shown:**
-- **Quality Score Trend**: Daily aggregated quality scores
-- **Scorer Performance**: Individual scorer pass rates and averages
-- **Verdict Distribution**: PASS/FAIL/ERROR breakdown
-- **Recent Failures**: List of queries that failed automated scoring
-- **Country Analysis**: Quality metrics per country
+**Purpose**: Background quality monitoring with automated scorers for long-term trend analysis (Databricks MLOps Recommended)
+
+**What is Automated Scoring?**
+
+Automated scoring is a **Databricks-recommended MLOps practice** that provides continuous quality monitoring in production through background evaluation. Unlike real-time validation (LLM-as-a-Judge), automated scorers run asynchronously and don't block user responses.
+
+**Two-Layer Quality Architecture:**
+
+1. **Layer 1: Real-Time LLM-as-a-Judge** (Phase 6 of agent execution)
+   - **Coverage**: 100% of queries
+   - **Timing**: Synchronous (blocks response)
+   - **Purpose**: Quality gate - blocks bad responses from reaching users
+   - **Speed**: ~2s per query
+   - **Model**: Claude Sonnet 4
+
+2. **Layer 2: Background Automated Scorers** (This tab)
+   - **Coverage**: 10% sampling (configurable)
+   - **Timing**: Asynchronous (doesn't block users)
+   - **Purpose**: Trend detection, drift monitoring, long-term quality tracking
+   - **Speed**: Runs in background after response sent
+   - **Scorers**: Multiple specialized evaluators
+
+**Why Both Layers?**
+
+- **LLM-as-a-Judge**: Prevents bad responses in real-time (quality gate)
+- **Automated Scorers**: Detects gradual quality degradation over time (drift detection)
+
+**Automated Scorers Implemented:**
+
+1. **Relevance Scorer**
+   - Evaluates: Does response actually answer the user's question?
+   - Returns: 0-1 score (1 = fully relevant)
+
+2. **Faithfulness Scorer**
+   - Evaluates: Is response grounded in tool outputs and member data?
+   - Returns: 0-1 score (1 = fully faithful, no hallucination)
+
+3. **Toxicity Scorer**
+   - Evaluates: Is response professional and appropriate?
+   - Returns: 0-1 score (1 = no toxicity)
+
+4. **Country Compliance Scorer**
+   - Evaluates: Does response follow country-specific regulations?
+   - Returns: PASS/FAIL + compliance checklist
+
+5. **Citation Quality Scorer**
+   - Evaluates: Are citations accurate and properly formatted?
+   - Returns: 0-1 score (1 = excellent citations)
+
+**What You See:**
+
+**Quality Score Trends:**
+- **Line chart**: Aggregated quality scores over time (daily)
+- **Purpose**: Identify gradual quality degradation (drift)
+- **Example**: Relevance dropping from 0.95 → 0.80 over 2 weeks
+
+**Scorer Performance Table:**
+- **Columns**: Scorer Name, Pass Rate, Avg Score, Samples Evaluated
+- **Purpose**: Compare performance across different quality dimensions
+- **Example**: Faithfulness 95%, Relevance 92%, Toxicity 99%
+
+**Verdict Distribution:**
+- **Pie chart**: PASS vs FAIL vs ERROR breakdown
+- **Purpose**: Overall health snapshot
+- **Target**: >90% PASS rate
+
+**Recent Failures:**
+- **Table**: Latest queries that failed automated scoring
+- **Columns**: Timestamp, Query, Scorer, Reason, Score
+- **Purpose**: Investigate specific failure cases for prompt improvement
+
+**Country Analysis:**
+- **Table**: Quality scores broken down by country
+- **Purpose**: Identify country-specific quality patterns
+- **Example**: AU 94%, US 92%, UK 89%, IN 91%
+
+**How Automated Scoring Works:**
+
+```
+User Query → Agent Processing → Response (sent to user immediately)
+                                      ↓
+                          Background Thread (async):
+                          ├─ Sample 10% of queries
+                          ├─ Run 5 automated scorers
+                          ├─ Log results to MLflow
+                          └─ Update dashboards
+```
+
+**Sampling Strategy:**
+- Default: 10% of queries (to control costs)
+- Can be configured: 1%-100%
+- Stratified sampling: Ensures all countries represented
 
 **Use Cases:**
-- Performance monitoring: Track latency and request volume
-- Quality assurance: Monitor validation pass rates and confidence
-- Cost awareness: Understand LLM API spending (not total TCO)
-- Drift detection: Identify quality degradation trends
-- Background monitoring: Automated scorers for long-term quality tracking
+- **Drift detection**: Identify gradual quality degradation over weeks/months
+- **Prompt A/B testing**: Compare quality metrics between prompt versions
+- **Regulatory compliance**: Ensure country-specific rules are followed
+- **Long-term trend analysis**: Track quality improvements after prompt updates
+- **Root cause analysis**: Investigate why certain queries fail specific scorers
 
 ---
 
