@@ -1,6 +1,8 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # AI Guardrails Integration Demo
+# MAGIC # 06: AI Guardrails Integration Demo
+# MAGIC
+# MAGIC **📚 Navigation:** [← Previous: 05-MLflow Deployment](05-mlflow-deployment) | [Next: 07-Production Monitoring →](07-production-monitoring)
 # MAGIC
 # MAGIC This notebook demonstrates enterprise-grade safety guardrails integrated into the pension advisor agent.
 # MAGIC
@@ -513,7 +515,7 @@ print("  • Integrated with MLflow")
 # MAGIC    - Register to Unity Catalog
 # MAGIC    - Enable batch inference
 # MAGIC
-# MAGIC 2. **Phase 3:** Serving Endpoint + UI Updates
+# MAGIC 2. **** Serving Endpoint + UI Updates
 # MAGIC    - Deploy serving endpoint
 # MAGIC    - Enable inference tables
 # MAGIC    - Update UI with links to Databricks dashboards

@@ -536,40 +536,48 @@ ORDER BY citation_id"""
     def register_prompts_with_mlflow(self, run_name: Optional[str] = None):
         """
         Register all prompts with MLflow for versioning and tracking.
-        
+
         Args:
             run_name: Optional name for the MLflow run
         """
         if not self.enable_mlflow:
             logger.info("⚠️ MLflow disabled, skipping prompt registration")
             return
-        
+
         try:
             run_name = run_name or f"prompts_v{self.prompt_version}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            
+
             with mlflow.start_run(run_name=run_name) as run:
                 # Log prompt metadata
                 mlflow.log_param("prompt_version", self.prompt_version)
                 mlflow.log_param("registration_time", datetime.now().isoformat())
-                
-                # Log all prompts as artifacts
+
+                # Register prompts for each country
+                from src.country_config import COUNTRY_CONFIGS
+
+                for country_code in COUNTRY_CONFIGS.keys():
+                    # Log country-specific system prompt
+                    system_prompt = self.get_system_prompt(country=country_code)
+                    mlflow.log_text(system_prompt, f"prompts/system_prompt_{country_code}.txt")
+
+                    # Log country-specific citation query
+                    citation_query = self.get_citation_query_template(
+                        country=country_code,
+                        tools_used=["example_tool"]
+                    )
+                    mlflow.log_text(citation_query, f"prompts/citation_query_{country_code}.txt")
+
+                # Log country-agnostic prompts
                 prompts_dict = {
-                    "system_prompt_template": self.get_system_prompt(country="{country}"),
                     "off_topic_decline_template": self.get_off_topic_decline_message(
-                        real_name="{real_name}", 
-                        classification="{classification}"
+                        real_name="[MEMBER_NAME]",
+                        classification="[CLASSIFICATION]"
                     ),
                     "retirement_keywords": self.get_retirement_keywords(),
-                    "ai_classify_template": self.get_ai_classify_query_template(user_query="{user_query}"),
-                    "citation_query_template": self.get_citation_query_template(
-                        country="{country}", 
-                        tools_used=["{tool1}", "{tool2}"]
-                    )
+                    "ai_classify_template": self.get_ai_classify_query_template(user_query="[USER_QUERY]"),
+                    "validation_prompt_template": self.get_validation_prompt_template()
                 }
-                
-                # Add validation prompts
-                prompts_dict["validation_prompt_template"] = self.get_validation_prompt_template()
-                
+
                 # Log each prompt as a parameter
                 for prompt_name, prompt_content in prompts_dict.items():
                     if isinstance(prompt_content, str):
@@ -578,13 +586,15 @@ ORDER BY citation_id"""
                     else:
                         # Log as JSON for lists/dicts
                         import json
-                        mlflow.log_text(json.dumps(prompt_content, indent=2), 
+                        mlflow.log_text(json.dumps(prompt_content, indent=2),
                                        f"prompts/{prompt_name}.json")
-                
+
                 # Log metrics
-                mlflow.log_metric("total_prompts", len(prompts_dict))
+                total_prompts = len(COUNTRY_CONFIGS) * 2 + len(prompts_dict)  # system + citation per country + agnostic
+                mlflow.log_metric("total_prompts", total_prompts)
+                mlflow.log_metric("countries_registered", len(COUNTRY_CONFIGS))
                 mlflow.log_metric("retirement_keywords_count", len(self.get_retirement_keywords()))
-                
+
                 self.last_registered = run.info.run_id
                 logger.info(f"✅ Prompts registered with MLflow - Run ID: {run.info.run_id}")
                 logger.info(f"   Version: {self.prompt_version}")

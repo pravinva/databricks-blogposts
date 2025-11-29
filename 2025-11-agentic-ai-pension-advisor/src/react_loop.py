@@ -358,8 +358,8 @@ class ReactAgenticLoop:
         Returns:
             Complete response dictionary
         """
-        # Phase 1: REASON - Classify query
-        self.printf("🔍 Phase 1: REASON - Classifying query topic...")
+        # Phase 3: CLASSIFICATION - Classify query topic (3-stage cascade)
+        self.printf("🔍 Phase 3: CLASSIFICATION - Classifying query topic...")
         try:
             from src.utils.progress import mark_phase_running, mark_phase_complete, mark_phase_error
             mark_phase_running('phase_3_classification')
@@ -398,9 +398,9 @@ class ReactAgenticLoop:
             return self.handle_off_topic_query(state)
         
         self.printf(f"✅ Query is ON-TOPIC: '{state.classification['classification']}'")
-        
-        # Phase 2: REASON - Select tools
-        self.printf("\n🧠 Phase 2: REASON - Selecting tools...")
+
+        # Phase 4: TOOL PLANNING - ReAct reasoning to select tools
+        self.printf("\n🧠 Phase 4: TOOL PLANNING - Selecting tools...")
         try:
             mark_phase_running('phase_4_planning')
         except:
@@ -413,9 +413,9 @@ class ReactAgenticLoop:
             mark_phase_complete('phase_4_planning')
         except:
             pass
-        
-        # Phase 3: ACT - Execute tools
-        self.printf("\n⚙️  Phase 3: ACT - Executing tools...")
+
+        # Phase 5: TOOL EXECUTION - Execute selected Unity Catalog functions
+        self.printf("\n⚙️  Phase 5: TOOL EXECUTION - Executing tools...")
         try:
             mark_phase_running('phase_5_execution')
         except:
@@ -427,9 +427,9 @@ class ReactAgenticLoop:
             mark_phase_complete('phase_5_execution')
         except:
             pass
-        
-        # Phase 4: ITERATE - Synthesis + Validation Loop
-        self.printf("\n🔄 Phase 4: ITERATE - Synthesis + Validation...")
+
+        # Phase 6-7: SYNTHESIS + VALIDATION - Generate and validate response
+        self.printf("\n🔄 Phase 6-7: SYNTHESIS + VALIDATION - Generate and validate response...")
         
         # Mark synthesis phase as running
         try:
@@ -495,8 +495,6 @@ class ReactAgenticLoop:
                     state.selected_tools
                 )
 
-                self.printf(f"🐛 DEBUG: About to return from run_agentic_loop (success path)")
-
                 # Build return dict explicitly to catch any serialization errors
                 try:
                     result_dict = {
@@ -509,7 +507,6 @@ class ReactAgenticLoop:
                         "classification": state.classification,
                         "citations": state.citations
                     }
-                    self.printf(f"🐛 DEBUG: Return dict built successfully, returning now...")
                     return result_dict
                 except Exception as return_error:
                     self.printf(f"❌ CRITICAL: Error building return dict: {return_error}")

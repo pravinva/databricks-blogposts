@@ -1,15 +1,17 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # MLflow Model Deployment - Pension Advisor Agent
+# MAGIC # 05: MLflow Model Deployment - Pension Advisor Agent
 # MAGIC
-# MAGIC This notebook demonstrates Phase 2: MLflow Model Packaging
+# MAGIC **📚 Navigation:** [← Previous: 04-Validation](04-validation) | [Next: 06-AI Guardrails →](06-ai-guardrails)
+# MAGIC
+# MAGIC This notebook demonstrates MLflow Model Packaging
 # MAGIC
 # MAGIC **What This Achieves:**
 # MAGIC - Package agent as MLflow PyFunc model
 # MAGIC - Register to Unity Catalog for versioning
 # MAGIC - Enable batch inference at scale
 # MAGIC - Support model aliases (@champion, @challenger)
-# MAGIC - Prepare for serving endpoint deployment (Phase 3)
+# MAGIC - Prepare for serving endpoint deployment 
 # MAGIC
 # MAGIC **Architecture:**
 # MAGIC ```
@@ -518,7 +520,7 @@ print(f"  Both methods use same agent_query() internally")
 # MAGIC 4. **Alias Management:** Easy promotion from @challenger → @champion
 # MAGIC 5. **Serving Ready:** Can deploy to endpoint in Phase 3
 # MAGIC
-# MAGIC **Next Steps (Phase 3):**
+# MAGIC **Next Steps :**
 # MAGIC 1. Deploy serving endpoint (optional, based on scale)
 # MAGIC 2. Enable inference tables for monitoring
 # MAGIC 3. Remove custom MLflow/Cost tabs from UI
@@ -533,4 +535,4 @@ print(f"  Both methods use same agent_query() internally")
 
 print("✅ Phase 2: MLflow Model Packaging complete!")
 print(f"   Model: {FULL_MODEL_NAME}@champion")
-print(f"   Ready for Phase 3: Serving Endpoint + UI Updates")
+print(f"   Ready for ")

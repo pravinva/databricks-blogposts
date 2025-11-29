@@ -20,11 +20,9 @@ from databricks.sdk import WorkspaceClient
 
 def render_realtime_metrics_tab():
     """
-    Real-time metrics dashboard showing live agent performance.
-    Updates from Unity Catalog governance table.
+    Real-time performance metrics: requests, latency, LLM token costs.
+    Standard Databricks MLOps metrics from governance table.
     """
-    # ✅ REMOVED: Duplicate heading - already shown in tab header
-    st.caption("Live metrics from the last 24 hours")
     
     try:
         from src.utils.audit import get_audit_log
@@ -53,29 +51,25 @@ def render_realtime_metrics_tab():
         df['cost'] = pd.to_numeric(df.get('cost', 0), errors='coerce')
         df['runtime_sec'] = pd.to_numeric(df.get('runtime_sec', 0), errors='coerce')
         
-        # === KEY METRICS ROW ===
-        col1, col2, col3, col4, col5 = st.columns(5)
-        
+        # === KEY METRICS ROW (Databricks Standard) ===
+        col1, col2, col3, col4 = st.columns(4)
+
         total_queries = len(df)
-        unique_users = df['user_id'].nunique() if 'user_id' in df.columns else 0
-        total_cost = df['cost'].sum()
+        llm_token_cost = df['cost'].sum()
         avg_latency = df['runtime_sec'].mean()
         pass_rate = (df['judge_verdict'] == 'Pass').sum() / len(df) * 100 if 'judge_verdict' in df.columns else 0
-        
+
         with col1:
-            st.metric("Total Queries", f"{total_queries:,}")
-        
+            st.metric("Requests", f"{total_queries:,}", help="Total queries processed")
+
         with col2:
-            st.metric("Unique Users", f"{unique_users}")
-        
+            st.metric("Avg Latency", f"{avg_latency:.2f}s", help="Mean response time")
+
         with col3:
-            st.metric("Total Cost", f"${total_cost:.4f}")
-        
+            st.metric("LLM Token Cost", f"${llm_token_cost:.4f}", help="Claude API costs only (not total TCO)")
+
         with col4:
-            st.metric("Avg Latency", f"{avg_latency:.2f}s")
-        
-        with col5:
-            st.metric("Pass Rate", f"{pass_rate:.1f}%")
+            st.metric("Pass Rate", f"{pass_rate:.1f}%", help="Validation success rate")
         
         st.markdown("---")
         
@@ -97,22 +91,22 @@ def render_realtime_metrics_tab():
         fig_volume.update_traces(line_color='#00843D')
         st.plotly_chart(fig_volume, use_container_width=True)
         
-        # === COST AND LATENCY TRENDS ===
+        # === TOKEN COST AND LATENCY TRENDS ===
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            st.markdown("#### 💰 Cost Trend")
+            st.markdown("#### 💰 LLM Token Cost Trend")
             hourly_cost = df_hourly.groupby('hour')['cost'].sum().reset_index()
             fig_cost = px.area(
                 hourly_cost,
                 x='hour',
                 y='cost',
-                title="Cost per Hour (USD)",
-                labels={'hour': 'Time', 'cost': 'Cost (USD)'}
+                title="LLM Token Cost per Hour (USD)",
+                labels={'hour': 'Time', 'cost': 'Token Cost (USD)'}
             )
             fig_cost.update_traces(fillcolor='rgba(0,132,61,0.2)', line_color='#00843D')
             st.plotly_chart(fig_cost, use_container_width=True)
-        
+
         with col2:
             st.markdown("#### ⚡ Latency Trend")
             hourly_latency = df_hourly.groupby('hour')['runtime_sec'].mean().reset_index()
@@ -128,16 +122,16 @@ def render_realtime_metrics_tab():
         
         # === COUNTRY BREAKDOWN ===
         st.markdown("#### 🌍 Performance by Country")
-        
+
         if 'country' in df.columns:
             country_stats = df.groupby('country').agg({
                 'cost': ['sum', 'mean'],
                 'runtime_sec': 'mean',
                 'user_id': 'count'
             }).round(4)
-            
-            country_stats.columns = ['Total Cost ($)', 'Avg Cost ($)', 'Avg Latency (s)', 'Query Count']
-            country_stats = country_stats.sort_values('Query Count', ascending=False)
+
+            country_stats.columns = ['Total Token Cost ($)', 'Avg Token Cost ($)', 'Avg Latency (s)', 'Requests']
+            country_stats = country_stats.sort_values('Requests', ascending=False)
             
             col1, col2 = st.columns(2)
             
@@ -320,10 +314,9 @@ def render_classification_analytics_tab():
 
 def render_quality_monitoring_tab():
     """
-    LLM Judge validation quality metrics and trends.
+    Quality metrics: pass rates, confidence scores, common violations.
+    Standard Databricks MLOps quality monitoring.
     """
-    # ✅ REMOVED: Duplicate heading - already shown in tab header
-    st.caption("LLM-as-a-Judge validation results and trends")
     
     try:
         from src.utils.audit import get_audit_log

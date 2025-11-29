@@ -256,13 +256,13 @@ Understanding how the components interact is crucial for maintaining and extendi
 
 ---
 
-## Recent Updates (Phase 4: Production Monitoring)
+## Recent Updates: Production Monitoring
 
 ### Overview
 
 This branch (`feature/ai-guardrails-mlflow-scoring`) includes comprehensive enhancements for production monitoring, quality assurance, and security. All updates have been tested and are production-ready.
 
-### Phase 4: Automated Quality Scoring (NEW)
+### Automated Quality Scoring
 
 **Full implementation of background quality monitoring system**
 
@@ -343,12 +343,12 @@ Five fully functional quality scorers for production monitoring:
 - ~$0.002 per query
 - **Status:** Production-ready (Phase 1)
 
-**Layer 2: Background Automated Scorers** (Phase 4 - NEW)
+**Layer 2: Background Automated Scorers**
 - Runs after response sent (async)
 - 10% sampled for cost efficiency
 - Tracks trends and drift over time
 - ~$0.0002 per query (sampled)
-- **Status:** Production-ready (Phase 4)
+- **Status:** Production-ready
 
 **Both layers complement each other:**
 - Real-time validation = Quality gate
@@ -499,13 +499,13 @@ production_monitoring:
 | MLflow Tracing | $0 | No overhead, built-in |
 | Automated Scorers (LLM-based) | ~$0.0001 | 10% sampling, 2 LLM scorers |
 | Automated Scorers (pattern-based) | $0 | 3 pattern-based scorers |
-| **Total Phase 4** | **~$0.0001** | **Negligible impact** |
+| **Total Monitoring** | **~$0.0001** | **Negligible impact** |
 
 **Overall Cost per Query:**
 - Base query processing: $0.003
-- AI Guardrails (Phase 1): +$0.0002
-- MLflow Tracing (Phase 4): $0
-- Automated Scorers (Phase 4): +$0.0001
+- AI Guardrails: +$0.0002
+- MLflow Tracing: $0
+- Automated Scorers: +$0.0001
 - **Total:** ~$0.0033 per query
 
 ### Files Modified/Created
@@ -938,29 +938,38 @@ Every response includes:
 
 ---
 
-## Cost Analysis
+## LLM Token Cost Analysis
 
-### Typical Query Cost Breakdown
+### Typical Query Token Cost Breakdown
 
-| Operation | Model | Tokens | Cost |
-|-----------|-------|--------|------|
+**Note**: These are Claude Foundation Model API costs only. Total cost of ownership (TCO) also includes SQL Warehouse compute, Databricks workspace, storage, and app hosting costs.
+
+| Operation | Model | Tokens | LLM Token Cost |
+|-----------|-------|--------|----------------|
 | Planning & Synthesis | Claude Opus 4.1 | ~2,000 | $0.0029 |
 | Validation | Claude Sonnet 4 | ~500 | $0.0004 |
 | **Total per Query** | | | **~$0.003** |
 
 ### Cost Efficiency
 
-The system processes queries at **pennies per query** ($0.003-$0.010), enabling substantial cost savings by deflecting 40-50% of common member inquiries from call centers. At scale, this allows organizations to handle significantly more queries with the same budget while maintaining high-quality personalized responses.
+The system processes queries at **pennies per query** ($0.003-$0.010 in LLM token costs), enabling substantial cost savings by deflecting 40-50% of common member inquiries from call centers. At scale, this allows organizations to handle significantly more queries with the same budget while maintaining high-quality personalized responses.
 
-### Real-Time Cost Display
+### Real-Time Token Cost Display
 
-Each response shows detailed cost breakdown:
+Each response shows detailed LLM token cost breakdown:
 ```
-Total Cost: $0.003245
+LLM Token Cost: $0.003245
 ├─ Main LLM (Opus 4.1): $0.002891
 ├─ Validation (Sonnet 4): $0.000354
 └─ Classification: $0.0001
 ```
+
+**Total Cost of Ownership (TCO) Includes:**
+- LLM Token Costs (shown above): ~$0.003-$0.010 per query
+- SQL Warehouse Compute: Variable, depends on query complexity
+- Databricks Workspace: Subscription-based
+- Storage (Unity Catalog): Volume-based
+- App Hosting (Streamlit): Compute instance costs
 
 ---
 
@@ -1603,117 +1612,97 @@ The Governance page provides comprehensive monitoring and observability through 
 
 ---
 
-### Tab 4: 💰 Cost Analysis
+### Tab 4: 💰 LLM Token Cost Analysis
 
-**Purpose**: Comprehensive cost analysis, trends, and projections.
+**Purpose**: Comprehensive analysis of Claude Foundation Model API costs with breakdowns and trends.
+
+**Important**: This tab shows LLM token costs only (Claude API). Total cost of ownership (TCO) also includes SQL Warehouse, compute, storage, and hosting costs.
 
 **What You See:**
 
-#### Key Cost Metrics
-- **Total Cost**: Sum of all query costs
-- **Median Cost**: Median cost per query (less sensitive to outliers)
-- **Max Cost**: Highest single query cost
-- **Cost Std Dev**: Variability in query costs
-- **Last Run Cost**: Cost of most recent query with % change vs average
+#### Key LLM Token Cost Metrics
+- **Total Token Cost**: Sum of all LLM API costs
+- **Median Token Cost**: Typical query cost (less sensitive to outliers)
+- **Requests**: Total number of queries processed
+- **P95 Token Cost**: 95th percentile cost (identifies expensive queries)
 
 **How to Interpret:**
 - **Median vs Average**: Large difference indicates cost outliers
-- **High Std Dev**: Inconsistent query costs, may need optimization
-- **Max Cost**: Identify expensive queries for optimization
+- **P95**: Focus optimization on queries above this threshold
+- **Trends**: Identify patterns and potential issues
 
-#### Cost Distribution Charts
-- **Cost Distribution Histogram**: Shows how costs are distributed
-  - **Peak at low costs**: Most queries are efficient
-  - **Long tail**: Some expensive queries exist
-- **Cost Over Time**: Trend line showing cost patterns
-  - **Upward trend**: May indicate classification issues
-  - **Spikes**: Investigate specific time periods
+#### Token Cost Distribution Charts
+- **Cost Distribution Histogram**: Shows how LLM token costs are distributed
+  - **Peak at low costs**: Most queries are efficient ($0.002-$0.005)
+  - **Long tail**: Identify expensive outliers for optimization
+- **Token Cost Over Time**: Trend line showing LLM API spending patterns
+  - **Upward trend**: Investigate prompt changes or query complexity
+  - **Spikes**: Identify periods with expensive queries
 
-#### Cost by Country
-- **Bar chart**: Average cost per country
-- **Purpose**: Identify country-specific cost patterns
-- **Use Cases**: Optimize country-specific configurations
-
-#### Cost Projections
-- **Monthly projection**: Based on current rate
-- **Annual projection**: Long-term cost estimate
-- **Purpose**: Budget planning and forecasting
+#### Token Cost by Country
+- **Bar chart**: Average LLM token cost per country
+- **Purpose**: Identify country-specific patterns
+- **Use Cases**: Different query complexities or prompt lengths by country
 
 **Use Cases:**
-- Budget planning: Use projections for cost estimates
-- Cost optimization: Identify expensive queries and optimize
-- Country analysis: Compare costs across countries
+- Cost awareness: Understand LLM API spending patterns
+- Query optimization: Identify expensive queries for prompt refinement
+- Country analysis: Compare token usage across countries
+- Budget planning: Track LLM API spending trends (note: not total TCO)
 
 ---
 
 ### Tab 5: Observability
 
-**Purpose**: Real-time monitoring of performance, quality, classification, and system health.
+**Purpose**: Real-time monitoring of performance, quality, and automated scoring using Databricks MLOps standards.
 
 **What You See:**
 
-#### Real-Time Performance Metrics (Left Column)
+#### MLflow Experiments & Traces (Top Section)
+
+**Key Features:**
+- **Real-time experiment tracking**: All queries logged to MLflow
+- **Distributed tracing**: Full visibility into agent execution steps
+- **Metrics & artifacts**: Token counts, costs, validation results
+- **Purpose**: Debug individual queries and compare runs
+
+#### Performance Metrics (Left Column)
 
 **Key Metrics (Last 24h):**
-- **Total Queries**: Count of queries processed
-- **Unique Users**: Number of distinct users
-- **Total Cost**: Aggregate spending
-- **Average Latency**: Mean response time
+- **Requests**: Count of queries processed
+- **Average Latency**: Mean response time in seconds
+- **LLM Token Cost**: Claude API costs only (not total TCO)
 - **Pass Rate**: Validation success rate
 
 **Charts:**
-- **Query Volume Over Time**: Hourly query frequency (line chart)
+- **Query Volume Over Time**: Hourly request frequency (line chart)
   - **Peaks**: Identify usage patterns
   - **Drops**: May indicate system issues
-- **Cost Trend**: Cost spending over time (area chart)
+- **LLM Token Cost Trend**: API spending over time (area chart)
   - **Spikes**: Investigate expensive periods
+  - **Note**: Does not include SQL Warehouse, compute, or storage costs
 - **Latency Trend**: Response time over time (line chart)
   - **Spikes**: Performance degradation
 
 **Performance by Country:**
 - **Table**: Metrics broken down by country
+- **Columns**: Total Token Cost, Avg Token Cost, Avg Latency, Requests
 - **Purpose**: Country-specific performance analysis
 
 **Query Distribution:**
 - **Pie chart**: Percentage of queries by country
 - **Purpose**: Understand usage patterns
 
-#### Classification Analytics (Right Column)
-
-**Stage Distribution:**
-- **Stage 1 (Regex)**: Percentage handled by regex patterns
-  - **Target**: 75-85% of queries
-  - **Low percentage**: May need regex pattern updates
-- **Stage 2 (Embedding)**: Percentage handled by embeddings
-  - **Target**: 10-20% of queries
-- **Stage 3 (LLM)**: Percentage requiring LLM fallback
-  - **Target**: <10% of queries
-  - **High percentage**: May indicate classification issues
-
-**Cost Savings Analysis:**
-- **Actual Cost**: Current classification cost
-- **Pure LLM Cost**: What it would cost with LLM-only classification
-- **Savings**: Percentage saved (typically 80-90%)
-- **Purpose**: Validate cost optimization effectiveness
-
-**Classification Funnel:**
-- **Visual flow**: Shows cascade progression
-- **Purpose**: Understand how queries flow through stages
-
-**Latency by Stage:**
-- **Bar chart**: Average latency per stage
-- **Purpose**: Performance comparison
-
-#### Quality Monitoring (Left Column)
+#### Quality & Validation (Right Column)
 
 **Validation Pass Rate:**
-- **Overall Pass Rate**: Percentage of queries passing validation
+- **Overall Pass Rate**: Percentage of queries passing LLM-as-a-Judge validation
 - **Pass Rate Trend**: Pass rate over time (line chart)
   - **Downward trend**: Quality degradation
   - **Drops**: Investigate specific time periods
 
 **Confidence Analysis:**
-- **Average Confidence**: Mean validation confidence score
+- **Average Confidence**: Mean validation confidence score (0-1)
 - **Confidence Distribution**: Histogram of confidence scores
   - **Peak near 1.0**: High quality responses
   - **Peak near 0.5-0.7**: May need prompt refinement
@@ -1723,39 +1712,35 @@ The Governance page provides comprehensive monitoring and observability through 
 **Common Violations:**
 - **Violation types**: Most frequent validation failures
 - **Frequency**: How often each violation occurs
-- **Purpose**: Identify recurring issues
+- **Purpose**: Identify recurring issues for prompt improvement
 
 **Quality by Country:**
 - **Table**: Pass rate and confidence by country
 - **Purpose**: Country-specific quality analysis
 
-#### System Health (Right Column)
+#### Automated Quality Scoring (Full Width, Databricks Recommended)
 
-**Health Score:**
-- **Overall Score**: 0-100 health rating
-- **Components**: Based on pass rate, error rate, latency, cost
-- **Status**: Healthy (80+), Degraded (60-80), Critical (<60)
+**Purpose**: Background quality monitoring with automated scorers for trend analysis
 
-**Anomaly Detection:**
-- **Cost Anomalies**: Unusual cost spikes
-- **Latency Anomalies**: Unusual response times
-- **Quality Anomalies**: Unusual validation failures
-- **Purpose**: Early warning system
+**Key Features:**
+- **Layer 1**: Real-time LLM-as-a-Judge (100% coverage, blocking)
+- **Layer 2**: Background automated scorers (10% sampling, async)
+- **Scorers**: Relevance, Faithfulness, Toxicity, Country Compliance, Citation Quality
+- **Purpose**: Track quality trends and drift over time without blocking user responses
 
-**Error Rate:**
-- **Current Error Rate**: Percentage of failed queries
-- **Error Trend**: Error rate over time
-- **Purpose**: Monitor system stability
-
-**System Alerts:**
-- **Active Alerts**: Current issues requiring attention
-- **Alert History**: Past alerts and resolutions
+**Metrics Shown:**
+- **Quality Score Trend**: Daily aggregated quality scores
+- **Scorer Performance**: Individual scorer pass rates and averages
+- **Verdict Distribution**: PASS/FAIL/ERROR breakdown
+- **Recent Failures**: List of queries that failed automated scoring
+- **Country Analysis**: Quality metrics per country
 
 **Use Cases:**
-- Performance monitoring: Track latency and throughput
-- Quality assurance: Monitor validation pass rates
-- Cost optimization: Validate classification savings
-- Anomaly detection: Identify unusual patterns early
+- Performance monitoring: Track latency and request volume
+- Quality assurance: Monitor validation pass rates and confidence
+- Cost awareness: Understand LLM API spending (not total TCO)
+- Drift detection: Identify quality degradation trends
+- Background monitoring: Automated scorers for long-term quality tracking
 
 ---
 
@@ -1766,20 +1751,17 @@ The Governance page provides comprehensive monitoring and observability through 
 **Green Indicators (Good):**
 - High pass rates (>80%)
 - Low latency (<3 seconds)
-- Low cost (<$0.005 per query)
-- High health scores (>80)
+- Low LLM token cost (<$0.005 per query)
 
 **Yellow Indicators (Warning):**
 - Pass rates 70-80%
 - Latency 3-5 seconds
-- Cost $0.005-$0.010 per query
-- Health scores 60-80
+- LLM token cost $0.005-$0.010 per query
 
 **Red Indicators (Critical):**
 - Pass rates <70%
 - Latency >5 seconds
-- Cost >$0.010 per query
-- Health scores <60
+- LLM token cost >$0.010 per query
 
 #### Chart Reading Tips
 

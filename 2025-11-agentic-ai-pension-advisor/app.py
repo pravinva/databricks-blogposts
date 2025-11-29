@@ -2,6 +2,7 @@ import streamlit as st
 import uuid
 import os
 import pandas as pd
+from datetime import datetime
 from src.config import BRANDCONFIG, UNITY_CATALOG, UNITY_SCHEMA, MLFLOW_PROD_EXPERIMENT_PATH
 from src.utils.urls import get_mlflow_experiment_url
 from scripts.debug_widgets import reset_widget_tracking, display_widget_debug_info, log_rerun
@@ -271,9 +272,27 @@ if page == "Advisory":
         elif not st.session_state.selected_member:
             st.warning("Please select a member profile first.")
         else:
-            # ✅ CRITICAL: Reset show_processing_logs to False for new query
-            # Update session state value but DON'T delete widget key (causes widget index mismatch)
-            st.session_state.show_processing_logs = False
+            # ✅ NEW: Check if this is a new user/question or continuation
+            is_new_context = (
+                st.session_state.get('last_member') != st.session_state.selected_member or
+                st.session_state.get('last_question') != question
+            )
+
+            if is_new_context:
+                # New user or completely new question - clear everything and start fresh
+                st.session_state.conversation_history = []  # Clear all previous answers
+                st.session_state.agent_output = None  # Clear current output
+
+            # Store current context
+            st.session_state.last_member = st.session_state.selected_member
+            st.session_state.last_question = question
+
+            # ✅ NEW: Auto-show processing logs for new query
+            st.session_state.show_processing_logs = True
+
+            # ✅ CRITICAL: Clear old phases/logs for new query
+            if 'phases' in st.session_state:
+                st.session_state.phases = []
 
             # ✅ CRITICAL: Initialize phases FIRST (will trigger rerun)
             initialize_progress_tracker()
@@ -316,7 +335,8 @@ if page == "Advisory":
                     total_cost = result.get('cost', 0.0)
                     cost_breakdown = result.get('cost_breakdown', {})
 
-                    st.session_state.agent_output = {
+                    # ✅ NEW: Store current output
+                    current_output = {
                         "answer": answer,
                         "citations": citations,
                         "response_dict": response_dict,
@@ -326,8 +346,23 @@ if page == "Advisory":
                         "tools_called": tools_called,
                         "cost": total_cost,
                         "cost_breakdown": cost_breakdown,
+                        "question": st.session_state.get('current_query', question),
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
-                    
+
+                    # Set as current output
+                    st.session_state.agent_output = current_output
+
+                    # ✅ NEW: Add to conversation history (newest at top)
+                    if 'conversation_history' not in st.session_state:
+                        st.session_state.conversation_history = []
+
+                    # Insert at beginning (newest first)
+                    st.session_state.conversation_history.insert(0, current_output)
+
+                    # Keep only last 5 conversations to prevent memory issues
+                    st.session_state.conversation_history = st.session_state.conversation_history[:5]
+
                 except Exception as e:
                     st.error(f"Error: {e}")
                     import traceback
@@ -337,26 +372,33 @@ if page == "Advisory":
                     # ✅ CRITICAL: Always mark query as complete
                     st.session_state.query_executing = False
     
-    # ✅ CRITICAL: Answer display - ALWAYS runs regardless of progress tracker errors
-    if st.session_state.agent_output:
+    # ✅ CRITICAL: Answer display - Show conversation history (newest first)
+    if 'conversation_history' in st.session_state and st.session_state.conversation_history:
         st.markdown("---")
-        
-        # Check if validation failed (after all retries)
-        judge_verdict = st.session_state.agent_output.get("judge_verdict", {})
-        validation_passed = judge_verdict.get("passed", True)
-        validation_confidence = judge_verdict.get("confidence", 0.0)
-        has_violations = len(judge_verdict.get("violations", [])) > 0
 
-        # Determine if answer is safe to show
-        # STRICT POLICY: Block answer if ANY violations exist, regardless of confidence
-        # Only GREEN (no violations) responses are shown to customers
-        answer_failed = has_violations
-        
-        if answer_failed:
-            # ❌ VALIDATION FAILED - Show safe fallback message to user
-            st.subheader("📊 Response Status")
-            
-            st.markdown("""
+        # Display each answer in the conversation history
+        for idx, output in enumerate(st.session_state.conversation_history):
+            # Show timestamp and question for context
+            if idx > 0:  # Not the first (most recent) answer
+                st.markdown("---")
+                st.caption(f"Previous Question ({output.get('timestamp', 'Unknown time')}): {output.get('question', 'N/A')}")
+
+            # Check if validation failed (after all retries)
+            judge_verdict = output.get("judge_verdict", {})
+            validation_passed = judge_verdict.get("passed", True)
+            validation_confidence = judge_verdict.get("confidence", 0.0)
+            has_violations = len(judge_verdict.get("violations", [])) > 0
+
+            # Determine if answer is safe to show
+            # STRICT POLICY: Block answer if ANY violations exist, regardless of confidence
+            # Only GREEN (no violations) responses are shown to customers
+            answer_failed = has_violations
+
+            if answer_failed:
+                # ❌ VALIDATION FAILED - Show safe fallback message to user
+                st.subheader("📊 Response Status")
+
+                st.markdown("""
             <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
                         border-left: 6px solid #F59E0B;
                         border-radius: 12px;
@@ -392,66 +434,69 @@ if page == "Advisory":
                     st.session_state.agent_output
                 )
             
-            # 🔒 INTERNAL REVIEW SECTION - Collapsed by default
-            with st.expander("🔧 INTERNAL REVIEW - AI Generated Response (For Dev Team Only)", expanded=False):
-                st.warning("⚠️ This response FAILED validation and was NOT shown to the user.")
-                st.markdown("**AI Generated Answer (Do Not Share With User):**")
-                st.code(st.session_state.agent_output["answer"], language=None)
-                
-                st.markdown("**Validation Issues:**")
-                for i, violation in enumerate(judge_verdict.get("violations", []), 1):
-                    st.markdown(f"""
-                    **Issue {i}:** `{violation.get('code', 'UNKNOWN')}`
-                    - **Severity:** {violation.get('severity', 'Unknown')}
-                    - **Detail:** {violation.get('detail', 'No details')}
-                    - **Evidence:** {violation.get('evidence', 'N/A')[:200]}...
+                # 🔒 INTERNAL REVIEW SECTION - Collapsed by default
+                with st.expander("🔧 INTERNAL REVIEW - AI Generated Response (For Dev Team Only)", expanded=False):
+                    st.warning("⚠️ This response FAILED validation and was NOT shown to the user.")
+                    st.markdown("**AI Generated Answer (Do Not Share With User):**")
+                    st.code(output["answer"], language=None)
+
+                    st.markdown("**Validation Issues:**")
+                    for i, violation in enumerate(judge_verdict.get("violations", []), 1):
+                        st.markdown(f"""
+                        **Issue {i}:** `{violation.get('code', 'UNKNOWN')}`
+                        - **Severity:** {violation.get('severity', 'Unknown')}
+                        - **Detail:** {violation.get('detail', 'No details')}
+                        - **Evidence:** {violation.get('evidence', 'N/A')[:200]}...
+                        """)
+
+                    st.markdown("**Recommended Actions:**")
+                    st.markdown("""
+                    - Review the AI-generated answer above
+                    - Check tool outputs and member data
+                    - Verify regulatory compliance
+                    - Manually craft appropriate response
+                    - Update member via support channel
                     """)
-                
-                st.markdown("**Recommended Actions:**")
-                st.markdown("""
-                - Review the AI-generated answer above
-                - Check tool outputs and member data
-                - Verify regulatory compliance
-                - Manually craft appropriate response
-                - Update member via support channel
-                """)
-        
-        else:
-            # ✅ VALIDATION PASSED - Show answer with professional styling
-            st.subheader("📊 Your Personalized Recommendation")
-            
-            # Use simple st.success for clean display (no HTML issues)
-            st.success(st.session_state.agent_output["answer"])
-            
-            # Show validation results
-            if judge_verdict:
-                render_validation_results(
-                    judge_verdict,
-                    st.session_state.agent_output
-                )
 
-        render_postanswer_disclaimer(country_display)
-
-        # Show citations (only if they have meaningful content)
-        citations = st.session_state.agent_output.get("citations", [])
-        valid_citations = []
-
-        for cite in citations:
-            if isinstance(cite, dict):
-                regulation = cite.get('regulation', '')
-                # Skip citations with empty or "No details" regulation
-                if regulation and regulation != 'No details':
-                    valid_citations.append(cite)
-            elif cite:  # Non-empty string citation
-                valid_citations.append(cite)
-
-        if valid_citations:
-            st.markdown("#### 📚 Citations & References")
-            for i, cite in enumerate(valid_citations[:3], 1):
-                if isinstance(cite, dict):
-                    st.caption(f"[{i}] {cite.get('authority', 'Unknown')}: {cite.get('regulation', '')}")
+            else:
+                # ✅ VALIDATION PASSED - Show answer with professional styling
+                if idx == 0:  # Most recent answer
+                    st.subheader("📊 Your Personalized Recommendation")
                 else:
-                    st.caption(f"[{i}] {cite}")
+                    st.subheader("📊 Previous Response")
+
+                # Use simple st.success for clean display (no HTML issues)
+                st.success(output["answer"])
+
+                # Show validation results
+                if judge_verdict:
+                    render_validation_results(
+                        judge_verdict,
+                        output
+                    )
+
+            render_postanswer_disclaimer(country_display)
+
+            # Show citations (only if they have meaningful content)
+            citations = output.get("citations", [])
+            valid_citations = []
+
+            for cite in citations:
+                if isinstance(cite, dict):
+                    regulation = cite.get('regulation', '')
+                    # Skip citations with empty or "No details" regulation
+                    if regulation and regulation != 'No details':
+                        valid_citations.append(cite)
+                elif cite:  # Non-empty string citation
+                    valid_citations.append(cite)
+
+            if valid_citations:
+                st.markdown("#### 📚 Citations & References")
+                for i, cite in enumerate(valid_citations[:3], 1):
+                    if isinstance(cite, dict):
+                        st.caption(f"[{i}] {cite.get('authority', 'Unknown')}: {cite.get('regulation', '')}")
+                    else:
+                        st.caption(f"[{i}] {cite}")
 
     # Display debug widget information in sidebar (only on Advisory page)
     display_widget_debug_info()
@@ -617,22 +662,24 @@ elif page == "Governance":
 
         st.markdown("---")
 
-        # Monitoring metrics below MLflow
+        # Monitoring metrics - simplified to Databricks standards
         col1, col2 = st.columns([1, 1])
+
         with col1:
+            st.markdown("### 📊 Performance Metrics")
+            st.caption("Request volume, latency, and LLM token costs")
             render_realtime_metrics_tab()
 
-            st.markdown("---")
+        with col2:
+            st.markdown("### ✅ Quality & Validation")
+            st.caption("Pass rates, confidence scores, and violations")
             render_quality_monitoring_tab()
 
-        with col2:
-            render_system_health_tab()
-
-        # Automated Scoring - Full width below other tabs (Phase 4)
+        # Automated Quality Scoring - Databricks standard (Phase 4)
         st.markdown("---")
         st.markdown("### 🤖 Automated Quality Scoring")
-        st.caption("Background quality monitoring with automated scorers")
+        st.caption("Background quality monitoring with automated scorers (Databricks recommended)")
         render_automated_scoring_tab()
-    
+
     st.markdown("---")
     st.caption(f"🏦 {BRANDCONFIG['brand_name']} | Session: {st.session_state.session_id[:8]}...")

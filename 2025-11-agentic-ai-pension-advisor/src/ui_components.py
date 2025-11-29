@@ -706,8 +706,8 @@ def render_configuration_tab():
             uploaded_csv.seek(0)
             
             if st.button("▶️ Run Offline Evaluation", type="primary"):
-                from run_evaluation import run_csv_evaluation
-                
+                from scripts.run_evaluation import run_csv_evaluation
+
                 st.info("🔄 Running offline evaluation... This may take a few minutes.")
                 
                 with st.spinner("Processing queries..."):

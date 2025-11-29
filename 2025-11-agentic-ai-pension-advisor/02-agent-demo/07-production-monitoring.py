@@ -1,8 +1,10 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Production Monitoring with MLflow Tracing & Automated Scorers
+# MAGIC # 07: Production Monitoring with MLflow Tracing & Automated Scorers
 # MAGIC
-# MAGIC This notebook demonstrates **Phase 4: Production Monitoring** capabilities:
+# MAGIC **📚 Navigation:** [← Previous: 06-AI Guardrails](06-ai-guardrails) | [Next: 08-Automated Scoring →](08-automated-scoring-job)
+# MAGIC
+# MAGIC This notebook demonstrates **Production Monitoring** capabilities:
 # MAGIC
 # MAGIC **1. MLflow Tracing (Already Enabled)**
 # MAGIC - Automatic tracing of agent execution via `@mlflow.trace` decorator

@@ -114,7 +114,7 @@ mlflow_serving:
     table_prefix: "pension_advisor"
     schedule: "0 0 9 * * MON"  # Monday 9am
 
-# Production Monitoring Configuration (Phase 4)
+# Production Monitoring Configuration
 production_monitoring:
   # MLflow Tracing (automatic)
   tracing:

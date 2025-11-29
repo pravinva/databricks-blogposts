@@ -103,13 +103,22 @@ class AuditLogger:
             validation_mode = judge_verdict.get('validation_mode', 'llm_judge')
             validation_attempts = judge_verdict.get('attempts', 1)
             
-            # ✅ Store classification_method in error_info field if not null (hack for now)
-            # TODO: Add classification_method column to governance table schema
-            if classification_method:
-                if error_text:
+            # ✅ FIX #6: Don't overwrite error_text if it contains cost_metadata JSON
+            # If error_info already contains JSON (from Fix #6), preserve it
+            # Otherwise, store classification_method (backward compatibility)
+            if classification_method and error_text:
+                # Check if error_text is JSON (from Fix #6)
+                try:
+                    import json as json_check
+                    json_check.loads(error_text)
+                    # It's JSON - DON'T overwrite, keep the cost metadata
+                    pass
+                except:
+                    # Not JSON - old format, prepend classification_method
                     error_text = f"classification_method={classification_method}|{error_text}"
-                else:
-                    error_text = f"classification_method={classification_method}"
+            elif classification_method and not error_text:
+                # No error_text, just store classification_method
+                error_text = f"classification_method={classification_method}"
             
             # ✅ Store judge_confidence in judge_response JSON if not already present
             # Since schema doesn't have judge_confidence column, we'll store it in judge_response as JSON
@@ -140,15 +149,17 @@ class AuditLogger:
                 '{error_text}',
                 '{validation_mode}',
                 {validation_attempts},
-                {elapsed}
+                {elapsed},
+                {judge_confidence}
             )
             """
-            
+
             result = self.w.statement_execution.execute_statement(
                 warehouse_id=self.warehouse_id,
                 statement=insert_query,
                 wait_timeout="10s"
             )
+
             logger.info(f"✅ Governance table logged: {session_id}")
         except Exception as e:
             logger.info(f"⚠️ Governance logging failed: {e}")
@@ -222,7 +233,7 @@ def _async_audit_logging(
         logger.error(f"⚠️ Background audit logging error: {e}", exc_info=True)
 
 
-# @mlflow.trace(name="pension_advisor_query", span_type="AGENT")  # TEMPORARILY DISABLED FOR DEBUGGING
+@mlflow.trace(name="pension_advisor_query", span_type="AGENT")  # ✅ FIX #4: Re-enabled for distributed tracing
 def agent_query(
     user_id,
     session_id,
@@ -243,13 +254,11 @@ def agent_query(
     - Tool executions
     - Validation steps
     """
-    
+
     # ✅ PROGRESS TRACKER - Initialization removed (handled in app.py inside expander)
     # Only reset is needed here to clear stale state
     reset_progress_tracker()
     # initialize_progress_tracker() - REMOVED: Was causing progress to render outside expander
-
-    logger.info("🔥🔥🔥 DEBUG: agent_query() started - NEW CODE WITH @mlflow.trace DISABLED 🔥🔥🔥")
 
     start_all = time.time()
     answer = None
@@ -347,39 +356,9 @@ def agent_query(
             withdrawal_amount=None
         )
 
-        logger.info(f"🐛 DEBUG: agent.process_query() returned successfully")
 
-        # ✅ GOVERNANCE LOGGING - Do it IMMEDIATELY after process_query returns
-        try:
-            answer = result_dict.get('response', '')
-            tools_called = result_dict.get('tools_used', [])
-            citations = result_dict.get('citations', [])
-            validation_results = result_dict.get('validation_results', [])
-            judge_verdict = validation_results[-1].get('verdict', 'Pass') if validation_results else 'Pass'
-            classification_method = result_dict.get('classification', {}).get('method', 'unknown')
-
-            elapsed = time.time() - start_all
-
-            logger.info(f"🐛 DEBUG: About to log to governance table...")
-
-            audit_logger.log_to_governance_table(
-                session_id=session_id,
-                user_id=user_id,
-                country=country,
-                query_string=query_string,
-                answer=answer,
-                judge_verdict=judge_verdict,
-                tools_called=tools_called,
-                cost=total_cost,
-                citations=citations,
-                elapsed=elapsed,
-                error_info=None,
-                classification_method=classification_method
-            )
-
-            logger.info(f"✅ Governance logged immediately after process_query: {session_id}")
-        except Exception as gov_err:
-            logger.error(f"❌ Immediate governance logging failed: {gov_err}", exc_info=True)
+        # ✅ FIX #1: Removed duplicate governance logging (moved to Phase 8)
+        # Governance logging now happens ONCE at Phase 8 (lines 566-583)
 
         tools_called = result_dict.get('tools_used', [])
         
@@ -469,13 +448,8 @@ def agent_query(
         if obs:
             obs.log_validation(validation_results)
 
-        # PHASE 7: NAME RESTORATION
-        with orchestrator.track_phase("Name Restoration", "phase_7_restoration"):
-            logger.info(f"✓ Member name restored")
-
-        phase7_duration = orchestrator.get_last_phase_duration()
-
-        logger.info(f"🐛 DEBUG: After Phase 7, about to calculate costs...")
+        # Name restoration (part of finalization, not a separate tracked phase)
+        logger.info(f"✓ Member name restored")
 
         # 🆕 Calculate SYNTHESIS LLM costs
         total_synthesis_input_tokens = sum(s.get('input_tokens', 0) for s in synthesis_results)
@@ -513,13 +487,32 @@ def agent_query(
         logger.info(f"💰 Validation cost: ${total_validation_cost:.6f} ({validation_model})")
         logger.info(f"   └─ {total_validation_input_tokens} input + {total_validation_output_tokens} output tokens across {len(validation_results)} attempt(s)")
 
-        # 🆕 Calculate TOTAL COST
-        total_cost = total_synthesis_cost + total_validation_cost
+        # 🆕 FIX #2 & #5: Extract classification cost and build breakdown
+        classification_info = result_dict.get('classification', {})
+        classification_cost = classification_info.get('cost_usd', 0.0)
+        classification_method = classification_info.get('method', 'unknown')
+        classification_latency = classification_info.get('latency_ms', 0.0)
+        classification_confidence = classification_info.get('confidence', 0.0)
+
+        cost_breakdown['classification'] = {
+            'method': classification_method,
+            'cost': classification_cost,
+            'latency_ms': classification_latency,
+            'confidence': classification_confidence,
+            'tokens': 0  # Classification doesn't use LLM tokens (regex/embedding)
+        }
+
+        logger.info(f"💰 Classification cost: ${classification_cost:.6f} ({classification_method})")
+
+        # 🆕 Calculate TOTAL COST (including classification)
+        total_cost = classification_cost + total_synthesis_cost + total_validation_cost
 
         cost_breakdown['total'] = {
+            'classification_cost': classification_cost,
             'synthesis_cost': total_synthesis_cost,
             'validation_cost': total_validation_cost,
             'total_cost': total_cost,
+            'classification_tokens': 0,  # Classification doesn't use LLM tokens
             'synthesis_tokens': total_synthesis_input_tokens + total_synthesis_output_tokens,
             'validation_tokens': total_validation_input_tokens + total_validation_output_tokens,
             'total_tokens': (total_synthesis_input_tokens + total_synthesis_output_tokens +
@@ -528,15 +521,23 @@ def agent_query(
 
         elapsed = time.time() - start_all
 
-        logger.info(f"🐛 DEBUG: Cost calculations complete, about to log summary...")
-
         logger.info(f"\n{'='*70}")
         logger.info(f"✅ Query completed in {elapsed:.2f}s")
         logger.info(f"💰 TOTAL COST: ${total_cost:.6f}")
+        logger.info(f"   ├─ Classification:        ${classification_cost:.6f}")
         logger.info(f"   ├─ Synthesis (Opus 4.1):  ${total_synthesis_cost:.6f}")
         logger.info(f"   └─ Validation (Sonnet 4): ${total_validation_cost:.6f}")
         logger.info(f"🔧 Tools used: {', '.join(tools_called)}")
         logger.info(f"📊 Total tokens: {cost_breakdown['total']['total_tokens']:,}")
+        print(f"\n⏱️  PHASE TIMING BREAKDOWN:")
+        print(f"   Phase 1 (Retrieval):     {phase1_duration:.2f}s")
+        print(f"   Phase 2 (Anonymization): {phase2_duration:.2f}s")
+        print(f"   Phase 4 (Execution):     {phase4_duration:.2f}s")
+        print(f"   Phase 5 (Synthesis):     {synthesis_duration:.2f}s (actual LLM time)")
+        print(f"   Phase 6 (Validation):    {validation_duration:.2f}s (actual LLM time)")
+        print(f"   Phase 7 (Restoration):   {phase7_duration:.2f}s")
+        print(f"   Phase 8 (Logging):       <async> (running in background)")
+
         logger.info(f"\n⏱️  PHASE TIMING BREAKDOWN:")
         logger.info(f"   Phase 1 (Retrieval):     {phase1_duration:.2f}s")
         logger.info(f"   Phase 2 (Anonymization): {phase2_duration:.2f}s")
@@ -547,62 +548,111 @@ def agent_query(
         logger.info(f"   Phase 8 (Logging):       (running in background...)")
         logger.info(f"{'='*70}\n")
 
-        logger.info(f"🐛 DEBUG: Summary logs complete, starting Phase 8...")
+        # PHASE 8: AUDIT LOGGING (ASYNCHRONOUS)
+        # Launch background thread for governance + MLflow logging
+        import threading
 
-        # PHASE 8: AUDIT LOGGING (SYNCHRONOUS)
-        logger.info("📍 PHASE 8: Starting audit logging...")
-        mark_phase_running('phase_8_logging')
-        phase8_start = time.time()
-
-        # Extract classification method for logging (with safe fallback)
-        try:
-            classification_info = result_dict.get('classification', {})
-            classification_method = classification_info.get('method', 'unknown') if classification_info else 'unknown'
-        except Exception as class_err:
-            logger.warning(f"⚠️ Could not extract classification method: {class_err}")
-            classification_method = 'unknown'
-
-        # Log to governance table (synchronous)
-        try:
-            audit_logger.log_to_governance_table(
-                session_id=session_id,
-                user_id=user_id,
-                country=country,
-                query_string=query_string,
-                answer=answer,
-                judge_verdict=judge_verdict,
-                tools_called=tools_called,
-                cost=total_cost,
-                citations=citations,
-                elapsed=elapsed,
-                error_info=None,
-                classification_method=classification_method
-            )
-            logger.info(f"✅ Governance table logged: {session_id}")
-        except Exception as gov_error:
-            logger.error(f"⚠️ Governance logging failed: {gov_error}", exc_info=True)
-
-        # End observability run
-        if obs:
+        def async_phase8_logging():
+            """Background thread for Phase 8 logging - doesn't block response"""
+            phase8_start = time.time()
             try:
-                obs.end_agent_run(
-                    response=answer or "",
-                    success=True,
-                    error=None
-                )
-            except Exception as obs_error:
-                logger.info(f"⚠️ Error ending observability run: {obs_error}")
-                # Force end any active MLflow run
-                try:
-                    import mlflow
-                    if mlflow.active_run():
-                        mlflow.end_run()
-                except:
-                    pass
+                mark_phase_running('phase_8_logging')
 
-        phase8_duration = time.time() - phase8_start
-        mark_phase_complete('phase_8_logging', duration=phase8_duration)
-        logger.info(f"✅ Phase 8 completed ({phase8_duration:.3f}s)")
+                # 🆕 FIX #6: Extract classification method and prepare cost metadata
+                try:
+                    classification_info = result_dict.get('classification', {})
+                    classification_method = classification_info.get('method', 'unknown') if classification_info else 'unknown'
+
+                    # Build cost metadata for governance logging
+                    import json
+                    cost_metadata = json.dumps({
+                        'classification_cost': classification_cost,
+                        'classification_method': classification_method,
+                        'synthesis_cost': total_synthesis_cost,
+                        'validation_cost': total_validation_cost,
+                        'total_cost': total_cost
+                    })
+                except Exception as class_err:
+                    logger.warning(f"⚠️ Could not extract classification metadata: {class_err}")
+                    classification_method = 'unknown'
+                    cost_metadata = None
+
+                # Log to governance table
+                try:
+                    audit_logger.log_to_governance_table(
+                        session_id=session_id,
+                        user_id=user_id,
+                        country=country,
+                        query_string=query_string,
+                        answer=answer,
+                        judge_verdict=judge_verdict,
+                        tools_called=tools_called,
+                        cost=total_cost,
+                        citations=citations,
+                        elapsed=elapsed,
+                        error_info=cost_metadata,
+                        classification_method=classification_method
+                    )
+                    logger.info(f"✅ Governance table logged: {session_id}")
+                except Exception as gov_error:
+                    logger.error(f"⚠️ Governance logging failed: {gov_error}", exc_info=True)
+
+                # End observability run (MLflow logging)
+                if obs:
+                    try:
+                        obs.end_agent_run(
+                            response=answer or "",
+                            success=True,
+                            error=None
+                        )
+                    except Exception as obs_error:
+                        logger.info(f"⚠️ Error ending observability run: {obs_error}")
+                        try:
+                            import mlflow
+                            if mlflow.active_run():
+                                mlflow.end_run()
+                        except:
+                            pass
+
+                phase8_duration = time.time() - phase8_start
+                mark_phase_complete('phase_8_logging', duration=phase8_duration)
+                logger.info(f"✅ Phase 8 completed in background ({phase8_duration:.3f}s)")
+
+            except Exception as async_error:
+                logger.error(f"❌ Background Phase 8 logging error: {async_error}", exc_info=True)
+
+        # Start background thread for logging
+        # daemon=False: Thread will complete even if main program exits (prevents log loss)
+        # This is safe for Streamlit - thread completes before next request
+        logging_thread = threading.Thread(
+            target=async_phase8_logging,
+            daemon=False,  # ✅ Non-daemon: logs won't be lost on exit/reload
+            name=f"Phase8-Logging-{session_id[:8]}"
+        )
+        logging_thread.start()
+        logger.info(f"🚀 Phase 8 logging started in background thread (thread: {logging_thread.name})")
+
+        # ✅ OPTIONAL: Add to global thread tracker for monitoring
+        # This helps prevent orphaned threads in long-running processes
+        import atexit
+        if not hasattr(agent_query, '_logging_threads'):
+            agent_query._logging_threads = []
+
+            def cleanup_logging_threads():
+                """Wait for all logging threads to complete on shutdown"""
+                pending = [t for t in agent_query._logging_threads if t.is_alive()]
+                if pending:
+                    logger.info(f"⏳ Waiting for {len(pending)} logging thread(s) to complete...")
+                    for t in pending:
+                        t.join(timeout=10)  # Wait max 10s per thread
+                    logger.info("✅ All logging threads completed")
+
+            atexit.register(cleanup_logging_threads)
+
+        agent_query._logging_threads.append(logging_thread)
+
+        # Clean up old completed threads (prevent memory leak)
+        agent_query._logging_threads = [t for t in agent_query._logging_threads if t.is_alive()]
     
     except Exception as e:
         error_info = traceback.format_exc()
@@ -726,14 +776,14 @@ def agent_query(
 # LIVE PHASE TRACKING - 8 PHASES:
 # ============================================================================
 #
-# ✅ Phase 1: Data Retrieval - Loading member profile from UC
-# ✅ Phase 2: Anonymization - Processing data privacy
-# ✅ Phase 3: Tool Planning - Determining which tools to use
-# ✅ Phase 4: Tool Execution - Calling calculator tools
-# ✅ Phase 5: Response Synthesis - Generating AI response (FIXED TIMING)
-# ✅ Phase 6: LLM Validation - Validating response quality (FIXED TIMING)
-# ✅ Phase 7: Name Restoration - Restoring member details
-# ✅ Phase 8: Audit Logging - Logging to MLflow + governance
+# ✅ Phase 1: Data Retrieval - Loading member profile from Unity Catalog
+# ✅ Phase 2: Privacy Anonymization - Processing PII protection
+# ✅ Phase 3: Query Classification - 3-stage cascade (Regex → Embedding → LLM)
+# ✅ Phase 4: Tool Planning - ReAct reasoning to select appropriate tools
+# ✅ Phase 5: Tool Execution - Running SQL functions in Unity Catalog
+# ✅ Phase 6: Response Synthesis - Generating personalized advice with LLM
+# ✅ Phase 7: Quality Validation - LLM-as-a-Judge quality check
+# ✅ Phase 8: Audit Logging - Async logging to MLflow + governance table
 #
 # EACH PHASE:
 # - Calls mark_phase_running() when starting

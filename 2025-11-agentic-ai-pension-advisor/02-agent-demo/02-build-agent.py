@@ -1,6 +1,8 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Build Multi-Country Retirement Advisory Agent
+# MAGIC # 02: Build Multi-Country Retirement Advisory Agent
+# MAGIC
+# MAGIC **📚 Navigation:** [← Previous: 01-Overview](01-agent-overview) | [Next: 03-Tool Integration →](03-tool-integration)
 # MAGIC
 # MAGIC This notebook demonstrates how to use the production agent framework to build
 # MAGIC a multi-country retirement advisory agent with:
