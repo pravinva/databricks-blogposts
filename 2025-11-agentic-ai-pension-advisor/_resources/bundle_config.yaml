@@ -23,7 +23,7 @@ description: |
 
 # Installation requirements
 custom_schema_supported: true
-default_catalog: "super_advisory_demo"
+default_catalog: "pension_blog"  # Change this to match your config.yaml unity_catalog value
 default_schema: "member_data"
 
 # Databricks Runtime requirements

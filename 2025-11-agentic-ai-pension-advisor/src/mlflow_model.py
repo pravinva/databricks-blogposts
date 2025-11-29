@@ -343,8 +343,8 @@ def load_model_from_registry(
 def run_batch_inference(
     input_df: pd.DataFrame,
     model_name: str = "pension_advisor",
-    catalog: str = "pension_blog",
-    schema: str = "member_data",
+    catalog: str = None,  # Will use UNITY_CATALOG from config
+    schema: str = None,   # Will use UNITY_SCHEMA from config
     alias: str = "champion"
 ) -> pd.DataFrame:
     """
@@ -353,13 +353,21 @@ def run_batch_inference(
     Args:
         input_df: DataFrame with user_id, session_id, country, query columns
         model_name: Model name in Unity Catalog
-        catalog: Unity Catalog name
-        schema: Schema name
+        catalog: Unity Catalog name (defaults to config if None)
+        schema: Schema name (defaults to config if None)
         alias: Model alias to use (champion, challenger, etc.)
 
     Returns:
         DataFrame with predictions
     """
+    # Use config defaults if not provided
+    if catalog is None:
+        from src.config import UNITY_CATALOG
+        catalog = UNITY_CATALOG
+    if schema is None:
+        from src.config import UNITY_SCHEMA
+        schema = UNITY_SCHEMA
+
     # Load model from registry
     model = load_model_from_registry(model_name, catalog, schema, alias)
 
@@ -375,8 +383,8 @@ def run_batch_inference_from_table(
     input_table: str,
     output_table: str,
     model_name: str = "pension_advisor",
-    catalog: str = "pension_blog",
-    schema: str = "member_data",
+    catalog: str = None,  # Will use UNITY_CATALOG from config
+    schema: str = None,   # Will use UNITY_SCHEMA from config
     alias: str = "champion"
 ) -> None:
     """
@@ -391,6 +399,14 @@ def run_batch_inference_from_table(
         alias: Model alias to use
     """
     from pyspark.sql import SparkSession
+
+    # Use config defaults if not provided
+    if catalog is None:
+        from src.config import UNITY_CATALOG
+        catalog = UNITY_CATALOG
+    if schema is None:
+        from src.config import UNITY_SCHEMA
+        schema = UNITY_SCHEMA
 
     spark = SparkSession.builder.getOrCreate()
 

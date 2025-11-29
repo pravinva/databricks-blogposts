@@ -267,7 +267,11 @@ sql_file_path = "../sql_ddls/super_advisory_demo_functions.sql"
 with open(sql_file_path, 'r') as f:
     sql_content = f.read()
 
+# Replace hardcoded catalog name with configured catalog
+sql_content = sql_content.replace("pension_blog", catalog)
+
 print(f"✓ Loaded UC functions SQL from {sql_file_path}")
+print(f"  Replaced 'pension_blog' with '{catalog}'")
 print(f"  Size: {len(sql_content):,} characters")
 
 # COMMAND ----------
@@ -681,7 +685,7 @@ ORDER BY country
 # MAGIC ## Grant Comprehensive Permissions
 # MAGIC
 # MAGIC Grant all necessary permissions for Databricks Apps and service principals:
-# MAGIC - USE CATALOG on pension_blog
+# MAGIC - USE CATALOG on configured catalog
 # MAGIC - USE SCHEMA on member_data and pension_calculators
 # MAGIC - SELECT on all tables
 # MAGIC - EXECUTE on all UC functions
