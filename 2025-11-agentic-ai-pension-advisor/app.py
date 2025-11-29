@@ -390,9 +390,9 @@ if page == "Advisory":
             has_violations = len(judge_verdict.get("violations", [])) > 0
 
             # Determine if answer is safe to show
-            # STRICT POLICY: Block answer if ANY violations exist, regardless of confidence
-            # Only GREEN (no violations) responses are shown to customers
-            answer_failed = has_violations
+            # Trust the LLM judge's verdict - if it says "passed", show the response
+            # The judge evaluates violations and makes the final decision
+            answer_failed = not validation_passed
 
             if answer_failed:
                 # ❌ VALIDATION FAILED - Show safe fallback message to user
