@@ -291,8 +291,9 @@ if page == "Advisory":
             st.session_state.show_processing_logs = True
 
             # ✅ CRITICAL: Clear old phases/logs for new query
+            # Delete phases so initialize_progress_tracker() recreates it properly
             if 'phases' in st.session_state:
-                st.session_state.phases = []
+                del st.session_state.phases
 
             # ✅ CRITICAL: Initialize phases FIRST (will trigger rerun)
             initialize_progress_tracker()
