@@ -724,6 +724,15 @@ for table in tables:
 
 # COMMAND ----------
 
+# Grant MODIFY on governance table (for audit logging)
+try:
+    spark.sql(f"GRANT MODIFY ON TABLE {catalog}.{schema}.governance TO `account users`")
+    print(f"✓ Granted MODIFY on governance (for audit logging)")
+except Exception as e:
+    print(f"Note: {e}")
+
+# COMMAND ----------
+
 # Grant EXECUTE on all UC functions
 functions = spark.sql(f"SHOW USER FUNCTIONS IN {catalog}.pension_calculators").collect()
 
@@ -739,6 +748,7 @@ print(f"\n✓ All permissions granted successfully")
 print(f"  Catalog: USE CATALOG on {catalog}")
 print(f"  Schemas: USE SCHEMA on {schema} and pension_calculators")
 print(f"  Tables: SELECT on member_profiles, governance, citation_registry")
+print(f"  Governance: MODIFY on governance (for audit logging)")
 print(f"  Functions: EXECUTE on all {len(functions)} functions")
 
 # COMMAND ----------
