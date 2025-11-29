@@ -395,6 +395,11 @@ if page == "Advisory":
             # The judge evaluates violations and makes the final decision
             answer_failed = not validation_passed
 
+            # DEBUG: Log validation decision
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"VALIDATION CHECK: passed={validation_passed}, confidence={validation_confidence}, has_violations={has_violations}, answer_failed={answer_failed}")
+
             if answer_failed:
                 # ❌ VALIDATION FAILED - Show safe fallback message to user
                 st.subheader("📊 Response Status")
