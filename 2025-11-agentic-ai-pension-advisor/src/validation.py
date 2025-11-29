@@ -88,10 +88,6 @@ class LLMJudgeValidator:
                 }
         
         try:
-            logger.info(f"\n📊 VALIDATION DEBUG:")
-            logger.info(f"📊 Full response length: {len(response_text)} chars")
-            logger.info(f"📊 Response starts with: {response_text[:150]}...")
-            
             validation_prompt = self._build_validation_prompt(
                 response_text, user_query, context, member_profile, tool_output
             )
