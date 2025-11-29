@@ -544,12 +544,13 @@ def agent_query(
         # Launch background thread for governance + MLflow logging
         import threading
 
+        # Mark Phase 8 as running BEFORE starting thread (threads can't access session_state)
+        mark_phase_running('phase_8_logging')
+        phase8_start = time.time()
+
         def async_phase8_logging():
             """Background thread for Phase 8 logging - doesn't block response"""
-            phase8_start = time.time()
             try:
-                mark_phase_running('phase_8_logging')
-
                 # 🆕 FIX #6: Extract classification method and prepare cost metadata
                 try:
                     classification_info = result_dict.get('classification', {})
@@ -607,7 +608,6 @@ def agent_query(
                             pass
 
                 phase8_duration = time.time() - phase8_start
-                mark_phase_complete('phase_8_logging', duration=phase8_duration)
                 logger.info(f"✅ Phase 8 completed in background ({phase8_duration:.3f}s)")
 
             except Exception as async_error:
@@ -623,6 +623,10 @@ def agent_query(
         )
         logging_thread.start()
         logger.info(f"🚀 Phase 8 logging started in background thread (thread: {logging_thread.name})")
+
+        # Mark Phase 8 as complete immediately (async, non-blocking)
+        # The actual logging happens in background but doesn't block the response
+        mark_phase_complete('phase_8_logging', duration=0.001)  # Minimal duration since it's async
 
         # ✅ OPTIONAL: Add to global thread tracker for monitoring
         # This helps prevent orphaned threads in long-running processes

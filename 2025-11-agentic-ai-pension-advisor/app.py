@@ -395,11 +395,6 @@ if page == "Advisory":
             # The judge evaluates violations and makes the final decision
             answer_failed = not validation_passed
 
-            # DEBUG: Log validation decision
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.info(f"VALIDATION CHECK: passed={validation_passed}, confidence={validation_confidence}, has_violations={has_violations}, answer_failed={answer_failed}")
-
             if answer_failed:
                 # ❌ VALIDATION FAILED - Show safe fallback message to user
                 st.subheader("📊 Response Status")
@@ -432,14 +427,14 @@ if page == "Advisory":
                 </p>
             </div>
             """, unsafe_allow_html=True)
-            
-            # Show validation results for transparency
-            if judge_verdict:
-                render_validation_results(
-                    judge_verdict,
-                    st.session_state.agent_output
-                )
-            
+
+                # Show validation results for transparency
+                if judge_verdict:
+                    render_validation_results(
+                        judge_verdict,
+                        st.session_state.agent_output
+                    )
+
                 # 🔒 INTERNAL REVIEW SECTION - Collapsed by default
                 with st.expander("🔧 INTERNAL REVIEW - AI Generated Response (For Dev Team Only)", expanded=False):
                     st.warning("⚠️ This response FAILED validation and was NOT shown to the user.")
