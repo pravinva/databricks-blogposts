@@ -39,8 +39,9 @@ def render_realtime_metrics_tab():
         # Convert timestamp
         if 'timestamp' in df.columns:
             df['timestamp'] = pd.to_datetime(df['timestamp'])
-            # Filter last 24 hours
-            cutoff = datetime.now() - timedelta(hours=24)
+            # Filter last 24 hours - make cutoff timezone-aware to match df['timestamp']
+            from datetime import timezone
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
             df = df[df['timestamp'] >= cutoff]
         
         if df.empty:
