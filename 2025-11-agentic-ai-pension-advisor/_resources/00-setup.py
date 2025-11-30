@@ -20,7 +20,7 @@
 # COMMAND ----------
 
 # Widgets for configuration
-dbutils.widgets.text("catalog", "super_advisory_demo", "Catalog Name")
+dbutils.widgets.text("catalog", "pension_blog", "Catalog Name")
 dbutils.widgets.text("schema", "member_data", "Schema Name")
 dbutils.widgets.dropdown("reset_all_data", "false", ["true", "false"], "Reset All Data")
 

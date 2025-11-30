@@ -17,7 +17,8 @@ from src.tools import SuperAdvisorTools
 from src.validation import LLMJudgeValidator, DeterministicValidator
 from src.config import (
     MAIN_LLM_ENDPOINT, MAIN_LLM_TEMPERATURE, MAIN_LLM_MAX_TOKENS,
-    JUDGE_LLM_ENDPOINT, MAX_VALIDATION_ATTEMPTS, SQL_WAREHOUSE_ID, calculate_llm_cost
+    JUDGE_LLM_ENDPOINT, MAX_VALIDATION_ATTEMPTS, SQL_WAREHOUSE_ID, calculate_llm_cost,
+    UNITY_CATALOG, UNITY_SCHEMA
 )
 from src.utils.formatting import get_currency, get_currency_symbol, safe_float
 from src.country_config import get_authority, get_country_config, get_balance_terminology
@@ -144,7 +145,7 @@ class SuperAdvisorAgent:
             query_parts.append("SELECT DISTINCT")
             query_parts.append("  citation_id, country, authority, regulation_name,")
             query_parts.append("  regulation_code, source_url, description")
-            query_parts.append("FROM super_advisory_demo.member_data.citation_registry")
+            query_parts.append(f"FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.citation_registry")
             query_parts.append(f"WHERE country = '{country_upper}'")
             
             # Add tool conditions
@@ -161,11 +162,14 @@ class SuperAdvisorAgent:
                 statement=query,
                 wait_timeout="30s"
             )
-            
+
             status_name = result.status.state.name if hasattr(result.status.state, 'name') else str(result.status.state)
-            
+
             if status_name != "SUCCEEDED":
-                logger.warning(f"⚠️ Query failed: {status_name}")
+                error_msg = result.status.error.message if hasattr(result.status, 'error') and result.status.error else "Unknown error"
+                logger.info(f"ℹ️ Citations unavailable - query failed: {status_name}")
+                logger.debug(f"   Error details: {error_msg}")
+                logger.debug(f"   Query: {query}")
                 return []
             
             # Parse results
@@ -290,7 +294,12 @@ class SuperAdvisorAgent:
         # Run the ReAct agentic loop
         logger.info("\n🤖 Starting ReAct Agentic Loop...")
         logger.info("="*70)
-        result = self.react_loop.run_agentic_loop(state)
+
+        try:
+            result = self.react_loop.run_agentic_loop(state)
+        except Exception as loop_error:
+            logger.error(f"❌ CRITICAL: react_loop.run_agentic_loop() raised exception: {loop_error}", exc_info=True)
+            raise
 
         logger.info("\n" + "="*70)
         logger.info(f"✅ Query Processing Complete - Attempts: {result.get('attempts', 0)}")

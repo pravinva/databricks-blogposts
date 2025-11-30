@@ -60,7 +60,8 @@ CREATE TABLE pension_blog.member_data.governance (
   error_info STRING COMMENT 'Error details if any',
   validation_mode STRING COMMENT 'llm_judge/hybrid/deterministic',
   validation_attempts INT COMMENT 'Number of retry attempts',
-  total_time_seconds DOUBLE COMMENT 'Total processing time')
+  total_time_seconds DOUBLE COMMENT 'Total processing time',
+  judge_confidence DOUBLE COMMENT 'Validation confidence score (0.0-1.0)')
 USING delta
 PARTITIONED BY (country)
 COMMENT 'Audit log for all retirement advisory queries'

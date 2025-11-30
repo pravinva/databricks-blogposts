@@ -11,13 +11,43 @@ from pathlib import Path
 from typing import Dict, Any
 
 # Load configuration from YAML
-_config_yaml_path = Path(__file__).parent / 'config.yaml'
+def _find_config_yaml():
+    """Find config.yaml in multiple possible locations."""
+    # Try multiple possible paths
+    possible_paths = [
+        Path(__file__).parent / 'config.yaml',  # Same directory as this file
+        Path(__file__).parent.parent.parent / 'src' / 'config' / 'config.yaml',  # From repo root
+        Path.cwd() / 'src' / 'config' / 'config.yaml',  # From current working directory
+    ]
+
+    # For Databricks Repos - try to find the repo root and navigate from there
+    current_path = Path(__file__).resolve()
+    for parent in current_path.parents:
+        # Look for repo root indicators
+        if (parent / 'src' / 'config' / 'config.yaml').exists():
+            possible_paths.append(parent / 'src' / 'config' / 'config.yaml')
+            break
+        # Stop if we hit common workspace boundaries
+        if parent.name in ['Workspace', 'Repos', 'Users']:
+            break
+
+    for path in possible_paths:
+        if path.exists():
+            return path
+
+    # If not found, raise error with all attempted paths
+    paths_tried = '\n  - '.join(str(p) for p in possible_paths)
+    raise FileNotFoundError(
+        f"Configuration file not found. Tried:\n  - {paths_tried}\n\n"
+        f"Current working directory: {Path.cwd()}\n"
+        f"__file__ location: {Path(__file__)}\n\n"
+        f"💡 For Databricks notebooks: Ensure config.yaml is uploaded or use environment variables"
+    )
+
+_config_yaml_path = _find_config_yaml()
 
 def _load_yaml_config():
     """Load configuration from YAML file."""
-    if not _config_yaml_path.exists():
-        raise FileNotFoundError(f"Configuration file not found: {_config_yaml_path}")
-
     with open(_config_yaml_path, 'r') as f:
         return yaml.safe_load(f)
 
@@ -64,8 +94,10 @@ CLASSIFIER_LLM_ENDPOINT = _config['classifier_llm']['endpoint']
 SQL_WAREHOUSE_ID = _get_env_or_config('DATABRICKS_SQL_WAREHOUSE_ID', _config['databricks']['sql_warehouse_id'])
 UNITY_CATALOG = _get_env_or_config('DATABRICKS_UNITY_CATALOG', _config['databricks']['unity_catalog'])
 UNITY_SCHEMA = _get_env_or_config('DATABRICKS_UNITY_SCHEMA', _config['databricks']['unity_schema'])
+FUNCTIONS_SCHEMA = _config['databricks'].get('functions_schema', 'pension_calculators')
 GOVERNANCE_TABLE = _config['databricks']['governance_table']
 MEMBER_PROFILES_TABLE = _config['databricks']['member_profiles_table']
+CITATION_REGISTRY_TABLE = _config['databricks'].get('citation_registry_table', 'citation_registry')
 
 # ============================================================================
 # Supported Countries
@@ -112,6 +144,30 @@ LLM_PRICING = {
 }
 
 # ============================================================================
+# AI Guardrails Configuration (Phase 1)
+# ============================================================================
+AI_GUARDRAILS_ENABLED = _config.get('ai_guardrails', {}).get('enabled', True)
+AI_GUARDRAILS_ENDPOINT = _config.get('ai_guardrails', {}).get('endpoint', 'databricks-ai-guardrails')
+AI_GUARDRAILS_INPUT_POLICIES = _config.get('ai_guardrails', {}).get('input_policies', {})
+AI_GUARDRAILS_OUTPUT_POLICIES = _config.get('ai_guardrails', {}).get('output_policies', {})
+
+# Full guardrails config for passing to SafetyGuardrails
+AI_GUARDRAILS_CONFIG = {
+    'enabled': AI_GUARDRAILS_ENABLED,
+    'endpoint': AI_GUARDRAILS_ENDPOINT,
+    'input_policies': AI_GUARDRAILS_INPUT_POLICIES,
+    'output_policies': AI_GUARDRAILS_OUTPUT_POLICIES
+}
+
+# ============================================================================
+# MLflow Serving Configuration (Phase 3 - future)
+# ============================================================================
+MLFLOW_SERVING_ENABLED = _config.get('mlflow_serving', {}).get('enabled', False)
+MLFLOW_SERVING_ENDPOINT = _config.get('mlflow_serving', {}).get('endpoint_name', 'pension-advisor')
+MLFLOW_MODEL_NAME = _config.get('mlflow_serving', {}).get('model_name', f'{UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor')
+MLFLOW_MODEL_ALIAS = _config.get('mlflow_serving', {}).get('model_alias', 'champion')
+
+# ============================================================================
 # Helper Functions
 # ============================================================================
 
@@ -126,6 +182,14 @@ def get_governance_table_path():
 def get_member_profiles_table_path():
     """Get member profiles table full path"""
     return get_table_path(MEMBER_PROFILES_TABLE)
+
+def get_citation_registry_table_path():
+    """Get citation registry table full path"""
+    return get_table_path(CITATION_REGISTRY_TABLE)
+
+def get_functions_path(function_name):
+    """Get fully qualified function path"""
+    return f"{UNITY_CATALOG}.{FUNCTIONS_SCHEMA}.{function_name}"
 
 def calculate_llm_cost(input_tokens, output_tokens, model_type):
     """
@@ -195,8 +259,10 @@ __all__ = [
     'SQL_WAREHOUSE_ID',
     'UNITY_CATALOG',
     'UNITY_SCHEMA',
+    'FUNCTIONS_SCHEMA',
     'GOVERNANCE_TABLE',
     'MEMBER_PROFILES_TABLE',
+    'CITATION_REGISTRY_TABLE',
     'COUNTRIES',
     'MLFLOW_PROD_EXPERIMENT_PATH',
     'MLFLOW_OFFLINE_EVAL_PATH',
@@ -205,6 +271,8 @@ __all__ = [
     'get_table_path',
     'get_governance_table_path',
     'get_member_profiles_table_path',
+    'get_citation_registry_table_path',
+    'get_functions_path',
     'calculate_llm_cost',
     'validate_configuration',
 ]

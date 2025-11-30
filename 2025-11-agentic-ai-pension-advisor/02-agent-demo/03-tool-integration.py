@@ -1,6 +1,8 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Tool Integration Deep Dive
+# MAGIC # 03: Tool Integration Deep Dive
+# MAGIC
+# MAGIC **📚 Navigation:** [← Previous: 02-Build Agent]($./02-build-agent) | [Next: 04-Validation →]($./04-validation)
 # MAGIC
 # MAGIC This notebook explores how the agent integrates with Unity Catalog functions
 # MAGIC as tools for retirement calculations.
@@ -16,17 +18,27 @@
 
 import sys
 import os
-repo_root = os.path.abspath(
-    os.path.join(os.getcwd(), "..")
-)
-if repo_root not in sys.path:
-    sys.path.insert(0, repo_root)
+from pathlib import Path
+
+# Determine repo root - works in both local and Databricks environments
+current_dir = Path(os.getcwd())
+# Try to find repo root by looking for 'src' directory
+repo_root = current_dir.parent if (current_dir.parent / 'src').exists() else current_dir
+
+print(f"📂 Setup:")
+print(f"  Current directory: {current_dir}")
+print(f"  Repo root: {repo_root}")
+print(f"  Config path: {repo_root / 'src' / 'config' / 'config.yaml'}")
+print(f"  Config exists: {(repo_root / 'src' / 'config' / 'config.yaml').exists()}")
+
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
 
 from src.tools import AVAILABLE_TOOLS, call_individual_tool
 from src.config import SQL_WAREHOUSE_ID
 import pandas as pd
 
-print("✓ Tool modules imported")
+print("\n✓ Tool modules imported")
 print(f"  Warehouse ID: {SQL_WAREHOUSE_ID}")
 
 # COMMAND ----------
@@ -312,8 +324,9 @@ else:
 # MAGIC - Result formatting
 # MAGIC
 # MAGIC **Next Steps:**
-# MAGIC - **04-validation**: LLM-as-a-Judge validation
-# MAGIC - **03-monitoring-demo/01-mlflow-tracking**: Track tool performance
+# MAGIC - **[04-validation]($./04-validation)**: LLM-as-a-Judge validation
+# MAGIC - **[05-mlflow-deployment]($./05-mlflow-deployment)**: Package agent as MLflow model
+# MAGIC - **[06-ai-guardrails]($./06-ai-guardrails)**: Add AI safety guardrails
 
 # COMMAND ----------
 

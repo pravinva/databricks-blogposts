@@ -12,7 +12,7 @@ import mlflow
 from typing import Dict, Optional
 from datetime import datetime
 from src.country_config import get_country_config, get_special_instructions
-from src.config import MLFLOW_PROD_EXPERIMENT_PATH
+from src.config import MLFLOW_PROD_EXPERIMENT_PATH, get_citation_registry_table_path
 
 
 class PromptsRegistry:
@@ -373,6 +373,33 @@ IMPORTANT CLARIFICATIONS:
 - If response uses numbers from tool calculations, that's CORRECT, NOT INVENTED
 - Only flag as "invented data" if response contains numbers/facts NOT in the member profile OR tool results
 
+ROUNDING & PRECISION:
+- Minor rounding differences (< 1 currency unit) are ACCEPTABLE and should NOT be flagged
+- Example: Response says "113,299 INR" but tool shows "113,298.75 INR" → This is FINE, not DATA_MISUSE
+- Example: Response says "50,000 USD" but tool shows "49,999.82 USD" → This is FINE, not an error
+- Only flag rounding errors if the difference is > 1 currency unit or significantly misleading
+
+COUNTRY-SPECIFIC REGULATORY REQUIREMENTS:
+
+INDIA (IN) - MANDATORY EPF/NPS SPLIT:
+- India's retirement corpus is MANDATORILY split: 75% EPF (Employees Provident Fund) + 25% NPS (National Pension Scheme)
+- This is a REGULATORY REQUIREMENT under EPFO rules, NOT invented data or data misuse
+- Example: If member profile shows "Super Balance: 100,000 INR" for an India member:
+  ✓ EPF balance = 75,000 INR (75% of total) - THIS IS CORRECT
+  ✓ NPS balance = 25,000 INR (25% of total) - THIS IS CORRECT
+- If response mentions EPF as 75% of super balance - DO NOT FLAG as DATA_MISUSE
+- If response mentions NPS as 25% of super balance - DO NOT FLAG as INVENTED_DATA
+- India tools (tax, benefit, eps_benefit, projection) return "balance_split_info" containing:
+  • total_balance, epf_balance, nps_balance, split_note
+  • These values ARE in tool calculations (check the tool output carefully)
+  • Using EPF/NPS balances from balance_split_info is CORRECT, not invented
+- **ROUNDING TOLERANCE**: Differences < 1 INR are acceptable (e.g., 113,299 vs 113,298.75 is FINE)
+- Only flag if PERCENTAGES are wrong (not 75/25) or MATH is off by more than 1 currency unit
+
+AUSTRALIA (AU), USA (US), UK:
+- Super Balance / 401k / Pension balance represents the FULL accessible balance
+- No mandatory splits apply for these countries
+
 SEVERITY GUIDELINES - BE FAIR:
 - CRITICAL: Only if major factual error that contradicts member's actual data OR if tools failed
 - HIGH: If main retirement question completely unanswered (when it should be)
@@ -501,7 +528,7 @@ MEMBER PROFILE (for reference):
         return f"""SELECT DISTINCT
   citation_id, country, authority, regulation_name,
   regulation_code, source_url, description
-FROM super_advisory_demo.member_data.citation_registry
+FROM {get_citation_registry_table_path()}
 WHERE country = '{country}'
   AND ({where_clause})
 ORDER BY citation_id"""
@@ -509,40 +536,48 @@ ORDER BY citation_id"""
     def register_prompts_with_mlflow(self, run_name: Optional[str] = None):
         """
         Register all prompts with MLflow for versioning and tracking.
-        
+
         Args:
             run_name: Optional name for the MLflow run
         """
         if not self.enable_mlflow:
             logger.info("⚠️ MLflow disabled, skipping prompt registration")
             return
-        
+
         try:
             run_name = run_name or f"prompts_v{self.prompt_version}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            
+
             with mlflow.start_run(run_name=run_name) as run:
                 # Log prompt metadata
                 mlflow.log_param("prompt_version", self.prompt_version)
                 mlflow.log_param("registration_time", datetime.now().isoformat())
-                
-                # Log all prompts as artifacts
+
+                # Register prompts for each country
+                from src.country_config import COUNTRY_CONFIGS
+
+                for country_code in COUNTRY_CONFIGS.keys():
+                    # Log country-specific system prompt
+                    system_prompt = self.get_system_prompt(country=country_code)
+                    mlflow.log_text(system_prompt, f"prompts/system_prompt_{country_code}.txt")
+
+                    # Log country-specific citation query
+                    citation_query = self.get_citation_query_template(
+                        country=country_code,
+                        tools_used=["example_tool"]
+                    )
+                    mlflow.log_text(citation_query, f"prompts/citation_query_{country_code}.txt")
+
+                # Log country-agnostic prompts
                 prompts_dict = {
-                    "system_prompt_template": self.get_system_prompt(country="{country}"),
                     "off_topic_decline_template": self.get_off_topic_decline_message(
-                        real_name="{real_name}", 
-                        classification="{classification}"
+                        real_name="[MEMBER_NAME]",
+                        classification="[CLASSIFICATION]"
                     ),
                     "retirement_keywords": self.get_retirement_keywords(),
-                    "ai_classify_template": self.get_ai_classify_query_template(user_query="{user_query}"),
-                    "citation_query_template": self.get_citation_query_template(
-                        country="{country}", 
-                        tools_used=["{tool1}", "{tool2}"]
-                    )
+                    "ai_classify_template": self.get_ai_classify_query_template(user_query="[USER_QUERY]"),
+                    "validation_prompt_template": self.get_validation_prompt_template()
                 }
-                
-                # Add validation prompts
-                prompts_dict["validation_prompt_template"] = self.get_validation_prompt_template()
-                
+
                 # Log each prompt as a parameter
                 for prompt_name, prompt_content in prompts_dict.items():
                     if isinstance(prompt_content, str):
@@ -551,13 +586,15 @@ ORDER BY citation_id"""
                     else:
                         # Log as JSON for lists/dicts
                         import json
-                        mlflow.log_text(json.dumps(prompt_content, indent=2), 
+                        mlflow.log_text(json.dumps(prompt_content, indent=2),
                                        f"prompts/{prompt_name}.json")
-                
+
                 # Log metrics
-                mlflow.log_metric("total_prompts", len(prompts_dict))
+                total_prompts = len(COUNTRY_CONFIGS) * 2 + len(prompts_dict)  # system + citation per country + agnostic
+                mlflow.log_metric("total_prompts", total_prompts)
+                mlflow.log_metric("countries_registered", len(COUNTRY_CONFIGS))
                 mlflow.log_metric("retirement_keywords_count", len(self.get_retirement_keywords()))
-                
+
                 self.last_registered = run.info.run_id
                 logger.info(f"✅ Prompts registered with MLflow - Run ID: {run.info.run_id}")
                 logger.info(f"   Version: {self.prompt_version}")

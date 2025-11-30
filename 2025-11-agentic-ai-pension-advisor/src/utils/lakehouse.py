@@ -16,6 +16,7 @@ import time
 from typing import Optional, List, Dict
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.sql import StatementState
+from src.config import UNITY_CATALOG, UNITY_SCHEMA
 from src.shared.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -175,24 +176,26 @@ def get_member_by_id(member_id: str) -> Optional[Dict]:
 
 def get_members_by_country(country_code: str, default_return: Optional[pd.DataFrame] = None) -> pd.DataFrame:
     """
-    Get all members for a specific country.
-    
+    Get 3 random members for a specific country.
+
+    Members are randomly selected on each query to provide variety in the UI.
+
     Args:
         country_code: Country code (AU, US, UK, IN)
         default_return: Default value to return on error
-        
+
     Returns:
-        DataFrame with member profiles
+        DataFrame with up to 3 random member profiles
     """
     if default_return is None:
         default_return = pd.DataFrame()
-    
+
     from src.config import get_member_profiles_table_path
-    
+
     try:
         table_path = get_member_profiles_table_path()
-        query = f"SELECT * FROM {table_path} WHERE country = '{country_code}'"
-        
+        query = f"SELECT * FROM {table_path} WHERE country = '{country_code}' ORDER BY RAND() LIMIT 3"
+
         df = execute_sql_query(query)
 
         if df.empty:
@@ -233,7 +236,7 @@ def get_citations(citation_ids: List[str], warehouse_id: Optional[str] = None) -
     SELECT 
         citation_id, authority, regulation_name, regulation_code,
         source_url, description
-    FROM super_advisory_demo.member_data.citation_registry
+    FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.citation_registry
     WHERE citation_id IN ('{ids_str}')
     ORDER BY citation_id
     """
@@ -277,7 +280,7 @@ def get_audit_logs(limit: int = 50) -> List[Dict]:
     try:
         sql = f"""
         SELECT *
-        FROM super_advisory_demo.member_data.governance
+        FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
         ORDER BY timestamp DESC
         LIMIT {limit}
         """
@@ -365,7 +368,7 @@ def get_cost_summary(limit: int = 100) -> List[Dict]:
             ROUND(SUM(cost), 4) AS total_cost,
             COUNT(*) AS query_count,
             ROUND(AVG(cost), 6) AS avg_cost
-        FROM super_advisory_demo.member_data.governance
+        FROM {UNITY_CATALOG}.{UNITY_SCHEMA}.governance
         GROUP BY country, user_id
         ORDER BY total_cost DESC
         LIMIT {limit}

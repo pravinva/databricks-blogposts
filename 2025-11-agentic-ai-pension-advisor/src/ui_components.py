@@ -164,7 +164,7 @@ def render_audit_table(df):
             return ""
         sty = df.style.applymap(color_verdict, subset=["judge_verdict"]) \
             if "judge_verdict" in df.columns else df.style
-        st.dataframe(sty, use_container_width=True)
+        st.dataframe(sty, width="stretch")
     except Exception as e:
         st.error(f"Audit table render error: {e}")
 
@@ -247,7 +247,7 @@ def render_mlflow_traces_tab():
             if metric_cols:
                 display_cols += metric_cols[:3]  # Show first 3 metrics
             
-            st.dataframe(runs[display_cols], use_container_width=True)
+            st.dataframe(runs[display_cols], width="stretch")
             
             st.markdown("---")
             
@@ -293,9 +293,9 @@ def render_mlflow_traces_tab():
         with col1:
             st.info("💡 **Tip:** Prompts are not automatically registered. Click the button below to register them now.")
         with col2:
-            if st.button("🚀 Register Prompts Now", type="primary", use_container_width=True):
+            if st.button("🚀 Register Prompts Now", type="primary", width="stretch"):
                 try:
-                    from prompts_registry import register_prompts_now
+                    from src.prompts_registry import register_prompts_now
                     with st.spinner("Registering prompts with MLflow..."):
                         run_id = register_prompts_now()
                     if run_id:
@@ -359,7 +359,7 @@ def render_mlflow_traces_tab():
                 st.markdown("""
                 **To register prompts manually:**
                 ```python
-                from prompts_registry import register_prompts_now
+                from src.prompts_registry import register_prompts_now
                 register_prompts_now()
                 ```
                 """)
@@ -396,7 +396,7 @@ def render_mlflow_traces_tab():
                 st.markdown("""
                 **To register prompts manually:**
                 ```python
-                from prompts_registry import register_prompts_now
+                from src.prompts_registry import register_prompts_now
                 register_prompts_now()
                 ```
                 """)
@@ -574,7 +574,7 @@ def render_cost_analysis_tab():
                 display_df['total_cost'] = display_df['total_cost'].apply(lambda x: f"${x:.4f}")
                 display_df['avg_cost'] = display_df['avg_cost'].apply(lambda x: f"${x:.5f}")
                 display_df['query_count'] = display_df['query_count'].astype(int)
-                st.dataframe(display_df, use_container_width=True)
+                st.dataframe(display_df, width="stretch")
             
         else:
             st.warning("⚠️ No cost data available yet. Run some queries first!")
@@ -701,13 +701,13 @@ def render_configuration_tab():
             st.info(f"📄 Uploaded: {uploaded_csv.name} ({len(df_preview)} rows)")
             
             with st.expander("Preview Data"):
-                st.dataframe(df_preview.head(10), use_container_width=True)
+                st.dataframe(df_preview.head(10), width="stretch")
             
             uploaded_csv.seek(0)
             
             if st.button("▶️ Run Offline Evaluation", type="primary"):
-                from run_evaluation import run_csv_evaluation
-                
+                from scripts.run_evaluation import run_csv_evaluation
+
                 st.info("🔄 Running offline evaluation... This may take a few minutes.")
                 
                 with st.spinner("Processing queries..."):
@@ -744,7 +744,7 @@ def render_configuration_tab():
                 "When can I access my pension?"
             ]
         })
-        st.dataframe(example_df, use_container_width=True)
+        st.dataframe(example_df, width="stretch")
         st.download_button(
             label="⬇️ Download Example CSV",
             data=example_df.to_csv(index=False),
@@ -807,36 +807,78 @@ def render_validation_results(validation, timings):
 
     # --- Red Box: Real flag only when confidence >= threshold and violations exist
     if len(violations) > 0 and confidence >= LLM_JUDGE_CONFIDENCE_THRESHOLD:
+        # Extract cost and token information
+        total_cost = timings.get('cost', 0.0)
+        cost_breakdown = timings.get('cost_breakdown', {})
+        total_tokens = cost_breakdown.get('total', {}).get('total_tokens', 0)
+
+        # Build details line
+        details_parts = [
+            f"Confidence: {confidence:.0%}",
+            f"Time: {validation_time:.2f}s"
+        ]
+        if total_tokens > 0:
+            details_parts.append(f"Tokens: {total_tokens:,}")
+        if total_cost > 0:
+            details_parts.append(f"Cost: ${total_cost:.4f}")
+        details_line = " • ".join(details_parts)
+
         st.markdown(f"""
             <div style="background:#FFEBEE;border-left:4px solid #DC2626;
                         padding:1rem;border-radius:8px;margin:1rem 0;">
                 ❌ <strong>LLM Judge: FLAGGED</strong><br>
                 Found {len(violations)} potential issues<br>
-                Model: {validation.get('judge_model', 'Claude Sonnet 4')} •
-                Confidence: {confidence:.0%} •
-                Time: {validation_time:.2f}s
+                <span style="font-size: 0.85em; color: #555;">{details_line}</span>
             </div>
         """, unsafe_allow_html=True)
 
     # --- Amber Box: Low confidence, generic caution
     elif len(violations) > 0 and confidence < LLM_JUDGE_CONFIDENCE_THRESHOLD:
+        # Extract cost and token information
+        total_cost = timings.get('cost', 0.0)
+        cost_breakdown = timings.get('cost_breakdown', {})
+        total_tokens = cost_breakdown.get('total', {}).get('total_tokens', 0)
+
+        # Build details line
+        details_parts = []
+        if total_tokens > 0:
+            details_parts.append(f"Tokens: {total_tokens:,}")
+        if total_cost > 0:
+            details_parts.append(f"Cost: ${total_cost:.4f}")
+        details_line = " • ".join(details_parts) if details_parts else ""
+
         st.markdown(f"""
             <div style="background:#FFF8E1;border-left:4px solid #F59E0B;
                         padding:1rem;border-radius:8px;margin:1rem 0;">
                 ⚠️ <strong>LLM Judge: Low Confidence</strong><br>
                 {len(violations)} potential issue(s) detected, but judge confidence is only {confidence:.0%}.<br>
-                Please review manually.
+                Please review manually.<br>
+                <span style="font-size: 0.85em; color: #555;">{details_line}</span>
             </div>
         """, unsafe_allow_html=True)
 
     # --- Green Box: Full pass or no issues
     else:
         label = "PASSED" if passed else "COMPLETED (NO FLAGGED ISSUES)"
+
+        # Extract cost and token information
+        total_cost = timings.get('cost', 0.0)
+        cost_breakdown = timings.get('cost_breakdown', {})
+        total_tokens = cost_breakdown.get('total', {}).get('total_tokens', 0)
+
+        # Build details line with tokens and cost
+        details_parts = []
+        if total_tokens > 0:
+            details_parts.append(f"Tokens: {total_tokens:,}")
+        if total_cost > 0:
+            details_parts.append(f"Cost: ${total_cost:.4f}")
+        details_line = " • ".join(details_parts) if details_parts else ""
+
         st.markdown(f"""
             <div style="background:#E8F5E9;border-left:4px solid #16A34A;
                         padding:1rem;border-radius:8px;margin:1rem 0;">
                 ✅ <strong>LLM Judge: {label}</strong><br>
-                Model: {validation.get('judge_model', 'Claude Sonnet 4')} •
+                <span style="font-size: 0.85em; color: #555;">{details_line}</span>
             </div>
         """, unsafe_allow_html=True)
 

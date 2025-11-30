@@ -1,6 +1,8 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Build Multi-Country Retirement Advisory Agent
+# MAGIC # 02: Build Multi-Country Retirement Advisory Agent
+# MAGIC
+# MAGIC **📚 Navigation:** [← Previous: 01-Overview]($./01-agent-overview) | [Next: 03-Tool Integration →]($./03-tool-integration)
 # MAGIC
 # MAGIC This notebook demonstrates how to use the production agent framework to build
 # MAGIC a multi-country retirement advisory agent with:
@@ -307,9 +309,9 @@ result = ask_agent(
 # MAGIC - Country-specific configurations
 # MAGIC
 # MAGIC **Next Steps:**
-# MAGIC - **03-tool-integration**: Deep dive into Unity Catalog function tools
-# MAGIC - **04-validation**: LLM-as-a-Judge validation details
-# MAGIC - **03-monitoring-demo/01-mlflow-tracking**: Track agent performance
+# MAGIC - **[03-tool-integration]($./03-tool-integration)**: Deep dive into Unity Catalog function tools
+# MAGIC - **[04-validation]($./04-validation)**: LLM-as-a-Judge validation details
+# MAGIC - **[03-monitoring-demo/01-mlflow-tracking]($../03-monitoring-demo/01-mlflow-tracking)**: Track agent performance
 
 # COMMAND ----------
 

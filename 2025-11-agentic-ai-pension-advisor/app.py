@@ -2,7 +2,9 @@ import streamlit as st
 import uuid
 import os
 import pandas as pd
-from src.config import BRANDCONFIG
+from datetime import datetime
+from src.config import BRANDCONFIG, UNITY_CATALOG, UNITY_SCHEMA, MLFLOW_PROD_EXPERIMENT_PATH
+from src.utils.urls import get_mlflow_experiment_url
 from scripts.debug_widgets import reset_widget_tracking, display_widget_debug_info, log_rerun
 from src.ui_components import (
     render_logo,
@@ -11,16 +13,13 @@ from src.ui_components import (
     render_postanswer_disclaimer,
     render_validation_results,
     render_enhanced_audit_tab,
-    render_mlflow_traces_tab,
-    render_cost_analysis_tab,
     render_configuration_tab
 )
 from src.ui_monitoring_tabs import (
     render_realtime_metrics_tab,
-    render_classification_analytics_tab,
     render_quality_monitoring_tab,
-    render_enhanced_cost_analysis_tab,
-    render_system_health_tab
+    render_system_health_tab,
+    render_automated_scoring_tab
 )
 from src.utils.progress import initialize_progress_tracker
 from src.agent_processor import agent_query
@@ -73,7 +72,7 @@ def safe_dataframe_check(df):
 # ============================================================================ #
 
 if os.path.exists("_resources/logo.png"):
-    st.sidebar.image("_resources/logo.png", use_container_width=True)
+    st.sidebar.image("_resources/logo.png", width="stretch")
 st.sidebar.title(BRANDCONFIG["brand_name"])
 st.sidebar.caption(BRANDCONFIG.get("subtitle", "Enterprise-Grade Agentic AI on Databricks"))
 st.sidebar.markdown("---")
@@ -168,7 +167,7 @@ if page == "Advisory":
                 button_type = "primary" if is_selected else "secondary"
                 button_label = f"{'✓ ' if is_selected else ''}Select {member.get('name','Unknown')}"
                 
-                if st.button(button_label, key=f"btn_{member_id}_{country_code}", use_container_width=True, type=button_type):
+                if st.button(button_label, key=f"btn_{member_id}_{country_code}", width="stretch", type=button_type):
                     st.session_state.selected_member = member_id
                     log_rerun("member_selection", f"Selected member: {member_id}")
                     st.rerun()
@@ -213,7 +212,7 @@ if page == "Advisory":
     for i, q in enumerate(sample_questions.get(country_display, [])):
         with cols[i]:
             # ✅ Include country_code in key to avoid conflicts when switching countries
-            if st.button(q, key=f"sample_q_{country_code}_{i}", use_container_width=True):
+            if st.button(q, key=f"sample_q_{country_code}_{i}", width="stretch"):
                 st.session_state.query_input = q
     
     question = st.text_input("Your question:", key="query_input")
@@ -267,15 +266,34 @@ if page == "Advisory":
     if is_executing and not show_logs:
         st.info("🔄 Query is currently processing... Enable 'Show Processing Logs' to see progress.")
     
-    if st.button("🚀 Get Recommendation", type="primary", use_container_width=True):
+    if st.button("🚀 Get Recommendation", type="primary", width="stretch"):
         if not question:
             st.warning("Please enter a question first.")
         elif not st.session_state.selected_member:
             st.warning("Please select a member profile first.")
         else:
-            # ✅ CRITICAL: Reset show_processing_logs to False for new query
-            # Update session state value but DON'T delete widget key (causes widget index mismatch)
-            st.session_state.show_processing_logs = False
+            # ✅ NEW: Check if this is a new user/question or continuation
+            is_new_context = (
+                st.session_state.get('last_member') != st.session_state.selected_member or
+                st.session_state.get('last_question') != question
+            )
+
+            if is_new_context:
+                # New user or completely new question - clear everything and start fresh
+                st.session_state.conversation_history = []  # Clear all previous answers
+                st.session_state.agent_output = None  # Clear current output
+
+            # Store current context
+            st.session_state.last_member = st.session_state.selected_member
+            st.session_state.last_question = question
+
+            # ✅ NEW: Auto-show processing logs for new query
+            st.session_state.show_processing_logs = True
+
+            # ✅ CRITICAL: Clear old phases/logs for new query
+            # Delete phases so initialize_progress_tracker() recreates it properly
+            if 'phases' in st.session_state:
+                del st.session_state.phases
 
             # ✅ CRITICAL: Initialize phases FIRST (will trigger rerun)
             initialize_progress_tracker()
@@ -315,8 +333,11 @@ if page == "Advisory":
                     judge_verdict = result.get('judge_verdict', {})
                     error_info = result.get('error', None)
                     tools_called = result.get('tools_called', [])
-                    
-                    st.session_state.agent_output = {
+                    total_cost = result.get('cost', 0.0)
+                    cost_breakdown = result.get('cost_breakdown', {})
+
+                    # ✅ NEW: Store current output
+                    current_output = {
                         "answer": answer,
                         "citations": citations,
                         "response_dict": response_dict,
@@ -324,8 +345,25 @@ if page == "Advisory":
                         "judge_verdict": judge_verdict,
                         "error_info": error_info,
                         "tools_called": tools_called,
+                        "cost": total_cost,
+                        "cost_breakdown": cost_breakdown,
+                        "question": st.session_state.get('current_query', question),
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
-                    
+
+                    # Set as current output
+                    st.session_state.agent_output = current_output
+
+                    # ✅ NEW: Add to conversation history (newest at top)
+                    if 'conversation_history' not in st.session_state:
+                        st.session_state.conversation_history = []
+
+                    # Insert at beginning (newest first)
+                    st.session_state.conversation_history.insert(0, current_output)
+
+                    # Keep only last 5 conversations to prevent memory issues
+                    st.session_state.conversation_history = st.session_state.conversation_history[:5]
+
                 except Exception as e:
                     st.error(f"Error: {e}")
                     import traceback
@@ -335,25 +373,33 @@ if page == "Advisory":
                     # ✅ CRITICAL: Always mark query as complete
                     st.session_state.query_executing = False
     
-    # ✅ CRITICAL: Answer display - ALWAYS runs regardless of progress tracker errors
-    if st.session_state.agent_output:
+    # ✅ CRITICAL: Answer display - Show conversation history (newest first)
+    if 'conversation_history' in st.session_state and st.session_state.conversation_history:
         st.markdown("---")
-        
-        # Check if validation failed (after all retries)
-        judge_verdict = st.session_state.agent_output.get("judge_verdict", {})
-        validation_passed = judge_verdict.get("passed", True)
-        validation_confidence = judge_verdict.get("confidence", 0.0)
-        has_violations = len(judge_verdict.get("violations", [])) > 0
-        
-        # Determine if answer is safe to show
-        # Failed if: validation explicitly failed AND has violations
-        answer_failed = (not validation_passed) and has_violations
-        
-        if answer_failed:
-            # ❌ VALIDATION FAILED - Show safe fallback message to user
-            st.subheader("📊 Response Status")
-            
-            st.markdown("""
+
+        # Display each answer in the conversation history
+        for idx, output in enumerate(st.session_state.conversation_history):
+            # Show timestamp and question for context
+            if idx > 0:  # Not the first (most recent) answer
+                st.markdown("---")
+                st.caption(f"Previous Question ({output.get('timestamp', 'Unknown time')}): {output.get('question', 'N/A')}")
+
+            # Check if validation failed (after all retries)
+            judge_verdict = output.get("judge_verdict", {})
+            validation_passed = judge_verdict.get("passed", True)
+            validation_confidence = judge_verdict.get("confidence", 0.0)
+            has_violations = len(judge_verdict.get("violations", [])) > 0
+
+            # Determine if answer is safe to show
+            # Trust the LLM judge's verdict - if it says "passed", show the response
+            # The judge evaluates violations and makes the final decision
+            answer_failed = not validation_passed
+
+            if answer_failed:
+                # ❌ VALIDATION FAILED - Show safe fallback message to user
+                st.subheader("📊 Response Status")
+
+                st.markdown("""
             <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
                         border-left: 6px solid #F59E0B;
                         border-radius: 12px;
@@ -381,93 +427,77 @@ if page == "Advisory":
                 </p>
             </div>
             """, unsafe_allow_html=True)
-            
-            # Show validation results for transparency
-            if judge_verdict:
-                render_validation_results(
-                    judge_verdict,
-                    st.session_state.agent_output.get("response_dict", {})
-                )
-            
-            # 🔒 INTERNAL REVIEW SECTION - Collapsed by default
-            with st.expander("🔧 INTERNAL REVIEW - AI Generated Response (For Dev Team Only)", expanded=False):
-                st.warning("⚠️ This response FAILED validation and was NOT shown to the user.")
-                st.markdown("**AI Generated Answer (Do Not Share With User):**")
-                st.code(st.session_state.agent_output["answer"], language=None)
-                
-                st.markdown("**Validation Issues:**")
-                for i, violation in enumerate(judge_verdict.get("violations", []), 1):
-                    st.markdown(f"""
-                    **Issue {i}:** `{violation.get('code', 'UNKNOWN')}`
-                    - **Severity:** {violation.get('severity', 'Unknown')}
-                    - **Detail:** {violation.get('detail', 'No details')}
-                    - **Evidence:** {violation.get('evidence', 'N/A')[:200]}...
+
+                # Show validation results for transparency
+                if judge_verdict:
+                    render_validation_results(
+                        judge_verdict,
+                        st.session_state.agent_output
+                    )
+
+                # 🔒 INTERNAL REVIEW SECTION - Collapsed by default
+                with st.expander("🔧 INTERNAL REVIEW - AI Generated Response (For Dev Team Only)", expanded=False):
+                    st.warning("⚠️ This response FAILED validation and was NOT shown to the user.")
+                    st.markdown("**AI Generated Answer (Do Not Share With User):**")
+                    st.code(output["answer"], language=None)
+
+                    st.markdown("**Validation Issues:**")
+                    for i, violation in enumerate(judge_verdict.get("violations", []), 1):
+                        st.markdown(f"""
+                        **Issue {i}:** `{violation.get('code', 'UNKNOWN')}`
+                        - **Severity:** {violation.get('severity', 'Unknown')}
+                        - **Detail:** {violation.get('detail', 'No details')}
+                        - **Evidence:** {violation.get('evidence', 'N/A')[:200]}...
+                        """)
+
+                    st.markdown("**Recommended Actions:**")
+                    st.markdown("""
+                    - Review the AI-generated answer above
+                    - Check tool outputs and member data
+                    - Verify regulatory compliance
+                    - Manually craft appropriate response
+                    - Update member via support channel
                     """)
-                
-                st.markdown("**Recommended Actions:**")
-                st.markdown("""
-                - Review the AI-generated answer above
-                - Check tool outputs and member data
-                - Verify regulatory compliance
-                - Manually craft appropriate response
-                - Update member via support channel
-                """)
-        
-        else:
-            # ✅ VALIDATION PASSED - Show answer with professional styling
-            st.subheader("📊 Your Personalized Recommendation")
-            
-            # Use simple st.success for clean display (no HTML issues)
-            st.success(st.session_state.agent_output["answer"])
-            
-            # Show validation results
-            if judge_verdict:
-                render_validation_results(
-                    judge_verdict,
-                    st.session_state.agent_output.get("response_dict", {})
-                )
-        
-        # Show cost information if available
-        response_dict = st.session_state.agent_output.get("response_dict", {})
-        if response_dict.get("cost") is not None:
-            total_cost = response_dict["cost"]
-            cost_breakdown = response_dict.get("cost_breakdown", {})
-            st.markdown("#### 💰 Cost Summary")
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.metric("Total Cost", f"${total_cost:.6f}")
-            
-            with col2:
-                main_cost = total_cost - cost_breakdown.get('validation', {}).get('cost', 0)
-                st.metric("Main LLM Cost", f"${main_cost:.6f}")
-            
-            with col3:
-                validation_cost = cost_breakdown.get('validation', {}).get('cost', 0)
-                st.metric("Judge LLM Cost", f"${validation_cost:.6f}")
-        
-        render_postanswer_disclaimer(country_display)
 
-        # Show citations (only if they have meaningful content)
-        citations = st.session_state.agent_output.get("citations", [])
-        valid_citations = []
-
-        for cite in citations:
-            if isinstance(cite, dict):
-                regulation = cite.get('regulation', '')
-                # Skip citations with empty or "No details" regulation
-                if regulation and regulation != 'No details':
-                    valid_citations.append(cite)
-            elif cite:  # Non-empty string citation
-                valid_citations.append(cite)
-
-        if valid_citations:
-            st.markdown("#### 📚 Citations & References")
-            for i, cite in enumerate(valid_citations[:3], 1):
-                if isinstance(cite, dict):
-                    st.caption(f"[{i}] {cite.get('authority', 'Unknown')}: {cite.get('regulation', '')}")
+            else:
+                # ✅ VALIDATION PASSED - Show answer with professional styling
+                if idx == 0:  # Most recent answer
+                    st.subheader("📊 Your Personalized Recommendation")
                 else:
-                    st.caption(f"[{i}] {cite}")
+                    st.subheader("📊 Previous Response")
+
+                # Use simple st.success for clean display (no HTML issues)
+                st.success(output["answer"])
+
+                # Show validation results
+                if judge_verdict:
+                    render_validation_results(
+                        judge_verdict,
+                        output
+                    )
+
+            render_postanswer_disclaimer(country_display)
+
+            # Show citations (only if they have meaningful content)
+            citations = output.get("citations", [])
+            valid_citations = []
+
+            for cite in citations:
+                if isinstance(cite, dict):
+                    regulation = cite.get('regulation', '')
+                    # Skip citations with empty or "No details" regulation
+                    if regulation and regulation != 'No details':
+                        valid_citations.append(cite)
+                elif cite:  # Non-empty string citation
+                    valid_citations.append(cite)
+
+            if valid_citations:
+                st.markdown("#### 📚 Citations & References")
+                for i, cite in enumerate(valid_citations[:3], 1):
+                    if isinstance(cite, dict):
+                        st.caption(f"[{i}] {cite.get('authority', 'Unknown')}: {cite.get('regulation', '')}")
+                    else:
+                        st.caption(f"[{i}] {cite}")
 
     # Display debug widget information in sidebar (only on Advisory page)
     display_widget_debug_info()
@@ -484,20 +514,59 @@ elif page == "Governance":
     
     st.title("🔒 Governance & Observability")
     st.caption("💡 Professional monitoring dashboard - everything at a glance")
-    
-    # 5-TAB DESIGN: Governance, MLflow, Config, Cost, Observability
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+
+    # 3-TAB DESIGN: Governance, Config, Observability
+    # (MLflow and Cost tabs removed - use sidebar links to Databricks native UIs)
+    tab1, tab2, tab3 = st.tabs([
         "🔒 Governance",
-        "🔬 MLflow",
         "⚙️ Config",
-        "💰 Cost",
         "📊 Observability"
     ])
     
     with tab1:  # Governance - Dashboard overview + Audit trail
         st.markdown("### 📊 Governance Dashboard")
         st.caption("Overview of system performance and audit trail")
-        
+
+        # Model Registry Section
+        st.markdown("#### 📦 Model Registry Status")
+        from src.monitoring import get_model_registry_info
+
+        model_name = f"{UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor"
+        model_info = get_model_registry_info(model_name)
+
+        if "error" not in model_info:
+            col1, col2, col3 = st.columns([2, 1, 1])
+
+            with col1:
+                st.markdown(f"**Model:** `{model_info['model_name']}`")
+                st.caption(model_info.get('description', 'No description'))
+
+            with col2:
+                st.metric("Latest Version", model_info.get('latest_version', 'N/A'))
+
+            with col3:
+                champion_ver = model_info['aliases'].get('champion', {})
+                if champion_ver and isinstance(champion_ver, dict):
+                    st.metric("@champion", f"v{champion_ver.get('version', 'N/A')}")
+                else:
+                    st.metric("@champion", "Not set")
+
+            # Show aliases
+            if model_info.get('aliases'):
+                alias_info = []
+                for alias_name, alias_data in model_info['aliases'].items():
+                    if alias_data:
+                        alias_info.append(f"**@{alias_name}**: v{alias_data['version']}")
+                    else:
+                        alias_info.append(f"**@{alias_name}**: Not set")
+
+                if alias_info:
+                    st.caption(" | ".join(alias_info))
+        else:
+            st.warning(f"⚠️ Model Registry: {model_info.get('error', 'Unknown error')}")
+
+        st.markdown("---")
+
         # ✅ Import dashboard components
         from src.ui_dashboard import (
             get_dashboard_data,
@@ -581,35 +650,37 @@ elif page == "Governance":
             # Trust Footer
             render_trust_footer()
     
-    with tab2:  # MLflow - MLflow traces
-        st.markdown("### 🔬 MLflow Traces")
-        st.caption("Advanced MLflow experiment tracking and traces")
-        render_mlflow_traces_tab()
-    
-    with tab3:  # Config - Configuration settings
+    with tab2:  # Config - Configuration settings
         render_configuration_tab()
-    
-    with tab4:  # Cost - Cost analysis
-        st.markdown("### 💰 Cost Analysis")
-        st.caption("Comprehensive cost breakdowns, trends, and projections")
-        
-        # ✅ Single comprehensive cost analysis view (no duplicates)
-        # All unique metrics are now in render_enhanced_cost_analysis_tab()
-        render_enhanced_cost_analysis_tab()
-    
-    with tab5:  # Observability - Real-time metrics, quality, health, classification
+
+    with tab3:  # Observability - MLflow metrics, traces, and monitoring
+        # MLflow Experiments & Traces - Main content (expanded)
+        from src.ui_components import render_mlflow_traces_tab
+
+        st.markdown("### 🔬 MLflow Experiments & Traces")
+        st.caption("Real-time experiment tracking, metrics, and trace analysis")
+        render_mlflow_traces_tab()
+
+        st.markdown("---")
+
+        # Monitoring metrics - simplified to Databricks standards
         col1, col2 = st.columns([1, 1])
+
         with col1:
+            st.markdown("### 📊 Performance Metrics")
+            st.caption("Request volume, latency, and LLM token costs")
             render_realtime_metrics_tab()
-            
-            st.markdown("---")
-            render_quality_monitoring_tab()
-        
+
         with col2:
-            render_classification_analytics_tab()
-            
-            st.markdown("---")
-            render_system_health_tab()
-    
+            st.markdown("### ✅ Quality & Validation")
+            st.caption("Pass rates, confidence scores, and violations")
+            render_quality_monitoring_tab()
+
+        # Automated Quality Scoring - Databricks standard (Phase 4)
+        st.markdown("---")
+        st.markdown("### 🤖 Automated Quality Scoring")
+        st.caption("Background quality monitoring with automated scorers (Databricks recommended)")
+        render_automated_scoring_tab()
+
     st.markdown("---")
     st.caption(f"🏦 {BRANDCONFIG['brand_name']} | Session: {st.session_state.session_id[:8]}...")

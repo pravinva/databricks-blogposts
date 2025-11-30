@@ -1,6 +1,8 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Multi-Country Agent Architecture Overview
+# MAGIC # 01: Multi-Country Agent Architecture Overview
+# MAGIC
+# MAGIC **📚 Navigation:** [Next: 02-Build Agent →]($./02-build-agent)
 # MAGIC
 # MAGIC This notebook provides an overview of the retirement advisory agent architecture
 # MAGIC and how it handles multi-country queries with LLM orchestration.
@@ -264,9 +266,9 @@ else:
 # MAGIC - Processing pipeline
 # MAGIC
 # MAGIC **Next Steps:**
-# MAGIC - **02-build-agent**: See the agent in action
-# MAGIC - **03-tool-integration**: Deep dive into tool calling
-# MAGIC - **04-validation**: Learn about response validation
+# MAGIC - **[02-build-agent]($./02-build-agent)**: See the agent in action
+# MAGIC - **[03-tool-integration]($./03-tool-integration)**: Deep dive into tool calling
+# MAGIC - **[04-validation]($./04-validation)**: Learn about response validation
 
 # COMMAND ----------
 

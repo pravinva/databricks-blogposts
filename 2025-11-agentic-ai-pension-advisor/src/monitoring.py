@@ -697,6 +697,92 @@ def export_monitoring_setup(output_path: str = "monitoring_setup.sql"):
             f.write("\n\n")
     
     logger.info(f"✅ Monitoring setup exported to {output_path}")
+# ============================================================================
+# MODEL REGISTRY INFORMATION
+# ============================================================================
+
+def get_model_registry_info(model_name: str) -> Dict:
+    """
+    Fetch Model Registry information for display in Governance tab.
+
+    Args:
+        model_name: Full model name (catalog.schema.model_name)
+
+    Returns:
+        Dictionary with model information or error
+    """
+    try:
+        import mlflow
+        from mlflow.tracking import MlflowClient
+
+        # Set tracking URI to Databricks
+        mlflow.set_tracking_uri("databricks")
+        client = MlflowClient()
+
+        # Get registered model
+        try:
+            model = client.get_registered_model(model_name)
+        except Exception as e:
+            logger.warning(f"Model '{model_name}' not found in registry: {e}")
+            return {
+                "error": f"Model not registered",
+                "model_name": model_name,
+                "status": "not_found"
+            }
+
+        # Get latest versions (use search_model_versions for UC models)
+        versions_info = []
+        try:
+            all_versions = client.search_model_versions(f"name='{model_name}'")
+            # Sort by version number descending and take top 5
+            sorted_versions = sorted(all_versions, key=lambda x: int(x.version), reverse=True)[:5]
+
+            for version in sorted_versions:
+                versions_info.append({
+                    "version": version.version,
+                    "stage": version.current_stage if hasattr(version, 'current_stage') else "None",
+                    "status": version.status,
+                    "creation_timestamp": version.creation_timestamp,
+                    "last_updated_timestamp": version.last_updated_timestamp if hasattr(version, 'last_updated_timestamp') else None,
+                    "run_id": version.run_id if hasattr(version, 'run_id') else None
+                })
+        except Exception as e:
+            logger.warning(f"Could not fetch model versions: {e}")
+
+        # Get aliases (champion/challenger)
+        aliases = {}
+        try:
+            for alias_name in ["champion", "challenger"]:
+                try:
+                    alias_version = client.get_model_version_by_alias(model_name, alias_name)
+                    aliases[alias_name] = {
+                        "version": alias_version.version,
+                        "status": alias_version.status,
+                        "last_updated": alias_version.last_updated_timestamp
+                    }
+                except:
+                    aliases[alias_name] = None
+        except Exception as e:
+            logger.warning(f"Could not fetch aliases: {e}")
+
+        return {
+            "model_name": model_name,
+            "status": "active",
+            "creation_timestamp": model.creation_timestamp,
+            "last_updated_timestamp": model.last_updated_timestamp,
+            "description": model.description or "No description",
+            "versions": versions_info,
+            "aliases": aliases,
+            "latest_version": versions_info[0]["version"] if versions_info else None
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching model registry info: {e}")
+        return {
+            "error": str(e),
+            "model_name": model_name,
+            "status": "error"
+        }
 
 
 if __name__ == "__main__":

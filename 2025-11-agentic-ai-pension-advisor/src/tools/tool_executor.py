@@ -248,9 +248,11 @@ class UnifiedToolExecutor:
                         param, profile, withdrawal_amount, member_id
                     )
 
-        # Format query template
+        # Format query template with catalog from config
         try:
+            from src.config import UNITY_CATALOG
             query = template.format(
+                catalog=UNITY_CATALOG,
                 member_id=member_id,
                 **resolved_params
             )

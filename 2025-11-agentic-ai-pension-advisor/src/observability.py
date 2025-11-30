@@ -123,7 +123,10 @@ class AgentObservability:
             if tags:
                 for key, value in tags.items():
                     mlflow.set_tag(key, str(value))
-            
+
+            # Log query as artifact (for automated scoring job)
+            mlflow.log_text(query, "query.txt")
+
             # Initialize metrics tracking
             self.run_metrics = {
                 'start_time': time.time(),
@@ -301,13 +304,13 @@ class AgentObservability:
         except Exception as e:
             logger.info(f"⚠️ Error logging validation: {e}")
     
-    def end_agent_run(self, 
+    def end_agent_run(self,
                      response: str,
                      success: bool = True,
                      error: Optional[str] = None):
         """
         End the current MLflow run and log final metrics.
-        
+
         Args:
             response: Final response text
             success: Whether the query was successful
@@ -315,7 +318,7 @@ class AgentObservability:
         """
         if not self.enable_mlflow:
             return
-        
+
         # ✅ SAFETY: Check if there's actually an active run
         if not mlflow.active_run():
             logger.info("⚠️ No active MLflow run to end")
