@@ -973,7 +973,46 @@ CountryConfig(
 
 ## Getting Started
 
-> For detailed deployment instructions, troubleshooting, and production setup, see the [Deployment Guide](docs/DEPLOYMENT_GUIDE.md).
+### Quick Start
+
+**Key Resources - Run these notebooks in your Databricks workspace:**
+
+**Setup Notebooks:**
+1. **`01-setup/01-unity-catalog-setup.py`** - Create catalog, tables, and Unity Catalog functions
+   - Creates catalog and schemas (default: `pension_blog.member_data`)
+   - Generates synthetic member data for 4 countries
+   - Registers Unity Catalog SQL functions for retirement calculations
+   - **Configure:** Update catalog name in notebook widget if using existing catalog
+
+2. **`01-setup/02-governance-setup.py`** - Configure row-level security and audit logging
+   - Sets up governance table for audit trails
+   - Configures access controls and permissions
+
+**Agent Framework Notebooks:**
+3. **`02-agent-demo/02-build-agent.py`** - Build and test the ReAct agent
+   - Demonstrates ReAct pattern (Reason → Act → Observe)
+   - Shows agent decision-making and tool selection
+
+4. **`02-agent-demo/03-tool-integration.py`** - Unity Catalog function calling examples
+   - Integration between agent and UC functions
+   - Tool orchestration patterns
+
+5. **`02-agent-demo/04-validation.py`** - LLM-as-a-Judge validation patterns
+   - Response quality validation
+   - Compliance checking with AI judges
+
+6. **`02-agent-demo/06-ai-guardrails.py`** - AI guardrails integration
+   - Content safety and regulatory compliance
+   - Harmful content detection
+
+7. **`02-agent-demo/07-production-monitoring.py`** - MLflow tracing and automated scoring
+   - Production observability setup
+   - Automated quality scoring with MLflow
+
+**Run the Streamlit App:**
+```bash
+streamlit run app.py
+```
 
 ### Prerequisites
 
