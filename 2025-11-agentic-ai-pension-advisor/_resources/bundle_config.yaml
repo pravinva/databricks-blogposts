@@ -1,11 +1,11 @@
 # Databricks Demos - Bundle Configuration
-# Multi-Country Retirement Advisory with Agentic AI
+# Agentic AI Multi-Country Pension Advisor
 
-name: "retirement-advisory-multi-country"
+name: "agentic-pension-advisor"
 category: "financial-services"
-title: "Multi-Country Retirement Advisory with Agentic AI"
+title: "Agentic AI Multi-Country Pension Advisor"
 description: |
-  Production-grade retirement advisory agent supporting 4 countries (AU, US, UK, IN)
+  Production-grade agentic AI pension advisor supporting 4 countries (AU, US, UK, IN)
   using Databricks Lakehouse, Unity Catalog governance, and Claude-based agentic AI.
 
   **Key Features:**
@@ -41,21 +41,6 @@ cluster:
 
 # Demo notebooks
 notebooks:
-  # Setup and data generation
-  - path: "_resources/00-setup"
-    pre_run: false
-    publish_on_website: true
-    add_cluster_setup_cell: true
-    title: "Demo Setup"
-    description: "Initialize catalog, schemas, and configuration"
-
-  - path: "_resources/00-load-data"
-    pre_run: false
-    publish_on_website: true
-    add_cluster_setup_cell: true
-    title: "Generate Demo Data with Faker"
-    description: "Generate synthetic member profiles for 4 countries using Faker"
-
   # Setup notebooks
   - path: "01-setup/01-unity-catalog-setup"
     pre_run: false
@@ -100,6 +85,34 @@ notebooks:
     title: "Response Validation"
     description: "LLM-as-a-Judge validation for response quality"
 
+  - path: "02-agent-demo/05-mlflow-deployment"
+    pre_run: false
+    publish_on_website: true
+    add_cluster_setup_cell: true
+    title: "MLflow Model Deployment"
+    description: "Package and deploy agent as MLflow model"
+
+  - path: "02-agent-demo/06-ai-guardrails"
+    pre_run: false
+    publish_on_website: true
+    add_cluster_setup_cell: true
+    title: "AI Guardrails"
+    description: "Content safety and compliance guardrails"
+
+  - path: "02-agent-demo/07-production-monitoring"
+    pre_run: false
+    publish_on_website: true
+    add_cluster_setup_cell: true
+    title: "Production Monitoring"
+    description: "Monitor production agent deployment"
+
+  - path: "02-agent-demo/08-automated-scoring-job"
+    pre_run: false
+    publish_on_website: true
+    add_cluster_setup_cell: true
+    title: "Automated Scoring Job"
+    description: "Batch scoring job for production workflows"
+
   # Monitoring notebooks
   - path: "03-monitoring-demo/01-mlflow-tracking"
     pre_run: false
@@ -122,30 +135,22 @@ notebooks:
     title: "Governance Dashboard"
     description: "Interactive dashboard for audit logs and compliance"
 
-  # UI demo
-  - path: "04-ui-demo/01-streamlit-ui"
-    pre_run: false
-    publish_on_website: true
-    add_cluster_setup_cell: false
-    title: "Streamlit UI"
-    description: "Interactive web interface for the advisory agent"
-
 # Initialization job (runs on demo install)
 init_job:
-  name: "Retirement Advisory Demo Setup"
+  name: "Agentic Pension Advisor Setup"
   tasks:
-    - task_key: "setup_catalog"
+    - task_key: "unity_catalog_setup"
       notebook_task:
-        notebook_path: "_resources/00-setup"
-    - task_key: "load_data"
+        notebook_path: "01-setup/01-unity-catalog-setup"
+    - task_key: "governance_setup"
       notebook_task:
-        notebook_path: "_resources/00-load-data"
+        notebook_path: "01-setup/02-governance-setup"
       depends_on:
-        - task_key: "setup_catalog"
+        - task_key: "unity_catalog_setup"
 
 # Dashboards to create
 dashboards:
-  - name: "Retirement Advisory - Governance Dashboard"
+  - name: "Agentic Pension Advisor - Governance Dashboard"
     id: "governance_dashboard"
     path: "03-monitoring-demo/governance_dashboard.json"
 

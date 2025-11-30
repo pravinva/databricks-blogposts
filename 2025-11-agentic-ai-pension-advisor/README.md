@@ -37,26 +37,26 @@ At the heart of this system lies the **ReAct (Reasoning-Acting-Observing) agenti
 └───────────────────────────────────────────────────────────────┘
 
   ┌─────────────────────────────────────────────────────────────┐
-  │  PHASE 1: Classification (Cost Optimization)                │
-  │  └─> 3-Stage Cascade: Regex → Embedding → LLM              │
+  │  Classification (Cost Optimization)                         │
+  │  └─> 3-Stage Cascade: Regex → Embedding → LLM               │
   └──────────────────────────┬──────────────────────────────────┘
                              │
                              ▼
   ┌─────────────────────────────────────────────────────────────┐
-  │  PHASE 2: Tool Selection & Execution (ACT)                  │
-  │  └─> Unity Catalog SQL Functions via SQL Warehouses        │
+  │  Tool Selection & Execution (ACT)                           │
+  │  └─> Unity Catalog SQL Functions via SQL Warehouses         │
   └──────────────────────────┬──────────────────────────────────┘
                              │
                              ▼
   ┌─────────────────────────────────────────────────────────────┐
-  │  PHASE 3: Response Synthesis (OBSERVE)                      │
+  │  Response Synthesis (OBSERVE)                               │
   │  └─> Foundation Model API (Claude Opus)                     │
   └──────────────────────────┬──────────────────────────────────┘
                              │
                              ▼
   ┌─────────────────────────────────────────────────────────────┐
-  │  PHASE 4: Validation                                        │
-  │  └─> LLM-as-a-Judge (Claude Sonnet 4)                      │
+  │  Validation (LLM-as-a-Judge)                                │
+  │  └─> Claude Sonnet 4 validates quality & compliance         │
   └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -64,31 +64,31 @@ At the heart of this system lies the **ReAct (Reasoning-Acting-Observing) agenti
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Streamlit UI Layer                        │
-│              Multi-country Pension Advisory Portal            │
+│                     Streamlit UI Layer                      │
+│              Multi-country Pension Advisory Portal          │
 └───────────────────────────┬─────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              ReAct Agentic Loop (react_loop.py)               │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │ 1. REASON: Analyze query → Select tools               │  │
-│  │ 2. ACT: Execute SQL functions (Unity Catalog)          │  │
-│  │ 3. OBSERVE: Analyze results → Refine understanding     │  │
-│  │ 4. ITERATE: Continue until sufficient information      │  │
-│  └────────────────────────────────────────────────────────┘  │
+│              ReAct Agentic Loop (react_loop.py)             │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ 1. REASON: Analyze query → Select tools                │ │
+│  │ 2. ACT: Execute SQL functions (Unity Catalog)          │ │
+│  │ 3. OBSERVE: Analyze results → Refine understanding     │ │
+│  │ 4. ITERATE: Continue until sufficient information      │ │
+│  └────────────────────────────────────────────────────────┘ │
 └───────────────────────────┬─────────────────────────────────┘
                             │
        ┌────────────────────┼────────────────────┐
        ▼                    ▼                    ▼
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
 │   Unity     │     │  Foundation  │     │   MLflow    │
-│  Catalog    │     │    Models     │     │             │
+│  Catalog    │     │    Models    │     │             │
 │             │     │              │     │ • Traces    │
 │ • Member    │     │ • Claude 4   │     │ • Prompts   │
 │   Profiles  │     │ • GPT-4      │     │ • Metrics   │
 │ • SQL Tools │     │ • Llama 3    │     │ • Dashboard │
-│ • Audit Log │     │ • BGE (emb)   │     │ • Artifacts │
+│ • Audit Log │     │ • BGE (emb)  │     │ • Artifacts │
 └─────────────┘     └──────────────┘     └─────────────┘
 ```
 
@@ -110,83 +110,83 @@ Understanding how the components interact is crucial for maintaining and extendi
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        app.py (UI Layer)                        │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ User selects country & member profile                    │  │
-│  │ User enters query → clicks "Get Recommendation"         │  │
-│  └───────────────────────────┬──────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ User selects country & member profile                    │   │
+│  │ User enters query → clicks "Get Recommendation"          │   │
+│  └───────────────────────────┬──────────────────────────────┘   │
 └──────────────────────────────┼──────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              agent_processor.py (Orchestration)                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ agent_query() function:                                  │  │
-│  │ 1. Initialize observability (MLflow)                    │  │
-│  │ 2. Track Phase 1: Data Retrieval                       │  │
-│  │ 3. Create SuperAdvisorAgent instance                    │  │
-│  │ 4. Track Phase 2: Anonymization                        │  │
-│  │ 5. Call agent.process_query()                           │  │
-│  │ 6. Track Phases 3-6: Classification, Tools, Synthesis  │  │
-│  │ 7. Track Phase 7: Name Restoration                     │  │
-│  │ 8. Track Phase 8: Audit Logging                        │  │
-│  │ 9. End observability run                                │  │
-│  └───────────────────────────┬──────────────────────────────┘  │
-└───────────────────────────────┼──────────────────────────────────┘
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ agent_query() function:                                  │   │
+│  │ 1. Initialize observability (MLflow)                     │   │
+│  │ 2. Retrieve member data from Unity Catalog               │   │
+│  │ 3. Create SuperAdvisorAgent instance                     │   │
+│  │ 4. Anonymize PII for privacy protection                  │   │
+│  │ 5. Call agent.process_query()                            │   │
+│  │ 6. Execute: Classification, Tools, Synthesis, Validation │   │
+│  │ 7. Restore member name in response                       │   │
+│  │ 8. Log to governance table and MLflow (async)            │   │
+│  │ 9. End observability run                                 │   │
+│  └───────────────────────────-┬─────────────────────────────┘  │
+└───────────────────────────────┼─────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   agent.py (Agent Class)                        │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ SuperAdvisorAgent.process_query():                       │  │
-│  │ 1. Get member profile (via tools.get_member_profile())   │  │
-│  │ 2. Build context with anonymization                      │  │
-│  │ 3. Create AgentState                                     │  │
-│  │ 4. Delegate to react_loop.run_agentic_loop()            │  │
-│  └───────────────────────────┬──────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ SuperAdvisorAgent.process_query():                       │   │
+│  │ 1. Get member profile (via tools.get_member_profile())   │   │
+│  │ 2. Build context with anonymization                      │   │
+│  │ 3. Create AgentState                                     │   │
+│  │ 4. Delegate to react_loop.run_agentic_loop()             │   │
+│  └───────────────────────────┬──────────────────────────────┘   │
 └──────────────────────────────┼──────────────────────────────────┘
-                                │
-                                ▼
+                               │
+                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              react_loop.py (Core Agentic Loop)                  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ ReactAgenticLoop.run_agentic_loop():                    │  │
-│  │                                                          │  │
-│  │ PHASE 3: Classification                                 │  │
-│  │  └─> classifier.classify_query_topic()                  │  │
-│  │      ├─ Stage 1: Regex patterns                         │  │
-│  │      ├─ Stage 2: Embedding similarity                    │  │
-│  │      └─ Stage 3: LLM fallback                           │  │
-│  │                                                          │  │
-│  │ PHASE 4: Tool Selection & Execution                     │  │
-│  │  └─> reason_and_select_tools()                          │  │
-│  │      └─> act_execute_tools()                            │  │
-│  │          └─> tools.call_tool()                           │  │
-│  │              └─> Unity Catalog SQL functions            │  │
-│  │                                                          │  │
-│  │ PHASE 5: Response Synthesis                            │  │
-│  │  └─> synthesize_response()                              │  │
-│  │      └─> agent.generate_response()                      │  │
-│  │          └─> Foundation Model API (Claude)              │  │
-│  │                                                          │  │
-│  │ PHASE 6: Validation                                     │  │
-│  │  └─> observe_and_validate()                             │  │
-│  │      └─> validator.validate()                           │  │
-│  │          └─> Foundation Model API (Judge LLM)           │  │
-│  │                                                          │  │
-│  │ Return result_dict with response, citations, etc.       │  │
-│  └───────────────────────────┬──────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ ReactAgenticLoop.run_agentic_loop():                     │   │
+│  │                                                          │   │
+│  │ Classification (REASON)                                  │   │
+│  │  └─> classifier.classify_query_topic()                   │   │
+│  │      ├─ Stage 1: Regex patterns                          │   │
+│  │      ├─ Stage 2: Embedding similarity                    │   │
+│  │      └─ Stage 3: LLM fallback                            │   │
+│  │                                                          │   │
+│  │ Tool Selection & Execution (ACT)                         │   │
+│  │  └─> reason_and_select_tools()                           │   │
+│  │      └─> act_execute_tools()                             │   │
+│  │          └─> tools.call_tool()                           │   │
+│  │              └─> Unity Catalog SQL functions             │   │
+│  │                                                          │   │
+│  │ Response Synthesis (OBSERVE)                             │   │
+│  │  └─> synthesize_response()                               │   │
+│  │      └─> agent.generate_response()                       │   │
+│  │          └─> Foundation Model API (Claude)               │   │
+│  │                                                          │   │
+│  │ Validation (Quality Check)                               │   │
+│  │  └─> observe_and_validate()                              │   │
+│  │      └─> validator.validate()                            │   │
+│  │          └─> Foundation Model API (Judge LLM)            │   │
+│  │                                                          │   │
+│  │ Return result_dict with response, citations, etc.        │   │
+│  └───────────────────────────┬──────────────────────────────┘   │
 └──────────────────────────────┼──────────────────────────────────┘
-                                │
-                                ▼
+                               │
+                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              agent_processor.py (Completion)                    │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ 1. Extract results from result_dict                      │  │
-│  │ 2. Calculate cost breakdown                              │  │
-│  │ 3. Log to governance table                               │  │
-│  │ 4. End MLflow run                                        │  │
-│  │ 5. Return structured response to app.py                  │  │
-│  └──────────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ 1. Extract results from result_dict                      │   │
+│  │ 2. Calculate cost breakdown                              │   │
+│  │ 3. Log to the governance table                               │   
+│  │ 4. End MLflow run                                        │   │
+│  │ 5. Return structured response to app.py                  │   │
+│  └──────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -237,11 +237,11 @@ Understanding how the components interact is crucial for maintaining and extendi
 
 ---
 
-## 8-Phase Agent Execution Flow
+## Agent Execution Flow
 
-The pension advisor system executes each query through 8 distinct phases, orchestrated by `agent_processor.py`. Each phase is tracked, timed, and logged for complete observability.
+The pension advisor system executes each query through a series of distinct steps, orchestrated by `agent_processor.py`. Each step is tracked, timed, and logged for complete observability.
 
-### Phase 1: Data Retrieval
+### Data Retrieval
 **Purpose**: Fetch member profile and regulatory data from Unity Catalog
 
 **Operations**:
@@ -257,7 +257,7 @@ member = get_member_profile(user_id="AU001")
 # Returns: {name: "John Smith", age: 65, balance: 450000, country: "AU"}
 ```
 
-### Phase 2: Anonymization
+### Privacy Protection (Anonymization)
 **Purpose**: Protect member privacy by replacing names with tokens during LLM processing
 
 **Operations**:
@@ -269,7 +269,7 @@ member = get_member_profile(user_id="AU001")
 
 **Why**: Ensures PII is never sent to LLM APIs or logged to MLflow
 
-### Phase 3: Classification
+### Intelligent Classification
 **Purpose**: Intelligent query topic classification to optimize costs
 
 **3-Stage Cascade (Fast → Slow)**:
@@ -290,7 +290,7 @@ member = get_member_profile(user_id="AU001")
 **Duration**: 1ms - 300ms depending on stage
 **Cost**: $0 - $0.001 depending on stage
 
-### Phase 4: Tool Selection & Execution
+### Tool Selection & Execution
 **Purpose**: Execute Unity Catalog SQL functions to retrieve required data
 
 **Operations**:
@@ -311,7 +311,7 @@ SELECT main.retirement_tools.get_preservation_age('1965-03-15', 'AU')
 -- Returns: 60 (preservation age for person born 1965 in Australia)
 ```
 
-### Phase 5: Response Synthesis
+### Response Synthesis
 **Purpose**: Generate natural language response using LLM
 
 **Operations**:
@@ -336,8 +336,8 @@ Query: "When can I access my super?"
 Generate response...
 ```
 
-### Phase 6: Validation
-**Purpose**: Ensure response quality using LLM-as-a-Judge
+### LLM-as-a-Judge Validation
+**Purpose**: Ensure response quality before showing to user
 
 **Operations**:
 - **Validator LLM**: Claude Sonnet 4 (fast, cost-effective)
@@ -358,12 +358,12 @@ Generate response...
 - **FAIL**: Has violations (blocks user from seeing response)
 - **RETRY**: confidence < 0.70, no violations (retry synthesis)
 
-### Phase 7: Name Restoration
+### Name Restoration
 **Purpose**: Replace anonymous tokens with real names before showing to user
 
 **Operations**:
 - Find all instances of "[MEMBER_NAME]" in response
-- Replace with real name from Phase 2 mapping
+- Replace with real name from anonymization step
 - Add personalized greeting
 - **Duration**: <10ms
 - **Cost**: None
@@ -374,7 +374,7 @@ Before: "Hi [MEMBER_NAME], your preservation age is 60."
 After:  "Hi John Smith, your preservation age is 60."
 ```
 
-### Phase 8: Audit Logging (Asynchronous)
+### Audit Logging (Asynchronous)
 **Purpose**: Comprehensive governance logging for compliance and monitoring
 
 **Operations** (runs in background thread):
@@ -408,14 +408,14 @@ After:  "Hi John Smith, your preservation age is 60."
 ### End-to-End Timing Summary
 
 **Typical Query Execution**:
-- Phase 1 (Retrieval): 0.15s
-- Phase 2 (Anonymization): <0.01s
-- Phase 3 (Classification): 0.05s
-- Phase 4 (Tool Execution): 0.30s
-- Phase 5 (Synthesis): 18.5s (LLM API latency)
-- Phase 6 (Validation): 2.1s
-- Phase 7 (Restoration): <0.01s
-- Phase 8 (Logging): 0.20s (async)
+- Data Retrieval: 0.15s
+- Anonymization: <0.01s
+- Classification: 0.05s
+- Tool Execution: 0.30s
+- Response Synthesis: 18.5s (LLM API latency)
+- Validation: 2.1s
+- Name Restoration: <0.01s
+- Audit Logging: 0.20s (async)
 - **Total**: ~21s (dominated by LLM API calls)
 
 **Cost Breakdown**:
@@ -527,19 +527,17 @@ Five fully functional quality scorers for production monitoring:
 
 #### Two-Layer Quality Approach
 
-**Layer 1: Real-time LLM-as-a-Judge** (Phase 1)
+**Layer 1: Real-time LLM-as-a-Judge**
 - Runs during response generation (blocking)
 - 100% coverage
 - Prevents bad responses from reaching users
 - ~$0.002 per query
-- **Status:** Production-ready (Phase 1)
 
 **Layer 2: Background Automated Scorers**
 - Runs after response sent (async)
 - 10% sampled for cost efficiency
 - Tracks trends and drift over time
 - ~$0.0002 per query (sampled)
-- **Status:** Production-ready
 
 **Both layers complement each other:**
 - Real-time validation = Quality gate
@@ -683,7 +681,7 @@ production_monitoring:
 
 ### Cost Impact
 
-**Phase 4 Monitoring Costs:**
+**Monitoring & Observability Costs:**
 
 | Feature | Cost per Query | Notes |
 |---------|----------------|-------|
@@ -716,28 +714,23 @@ production_monitoring:
 - `src/config/config.yaml` - Added production_monitoring section
 - `src/config/config.yaml.example` - Updated template
 
-**Documentation:**
-- `docs/PHASE_4_COMPLETION_SUMMARY.md` - Complete Phase 4 documentation
-
-### Getting Started with Phase 4
+### Getting Started with Production Monitoring
 
 **1. MLflow Tracing (Already Active)**
 - Automatic tracing enabled via `@mlflow.trace` decorator
 - View traces in MLflow Experiments UI
 - No additional setup required
+- See notebook: `02-agent-demo/07-production-monitoring.py`
 
-**2. Automated Scorers (Optional)**
+**2. Automated Quality Scoring (Optional)**
 
 ```bash
 # In Databricks:
-# Run notebook 10 to create scoring_results table
-%run ./02-agent-demo/10-setup-scoring-table
+# Run the automated scoring notebook
+%run ./02-agent-demo/08-automated-scoring-job
 
-# Run notebook 09 to start scoring (or schedule as job)
-%run ./02-agent-demo/09-automated-scoring-job
-
-# View results in Observability page
-# Navigate to Observability → Automated Quality Scoring tab
+# View results in Observability dashboard
+# Navigate to Governance & Observability → Observability tab
 ```
 
 **3. Schedule Automated Scoring Job**
@@ -754,14 +747,14 @@ job = w.jobs.create(
         Task(
             task_key="automated_scoring",
             notebook_task=NotebookTask(
-                notebook_path="/path/to/09-automated-scoring-job",
+                notebook_path="/Workspace/path/to/02-agent-demo/08-automated-scoring-job",
                 base_parameters={
                     "sampling_rate": "0.1",
                     "lookback_hours": "6"
                 }
             ),
             new_cluster=ClusterSpec(
-                spark_version="15.3.x-scala2.12",
+                spark_version="15.4.x-scala2.12",
                 node_type_id="i3.xlarge",
                 num_workers=2
             )
@@ -769,42 +762,32 @@ job = w.jobs.create(
     ],
     schedule=CronSchedule(
         quartz_cron_expression="0 0 */6 * * ?",  # Every 6 hours
-        timezone_id="Australia/Sydney"
+        timezone_id="UTC"
     )
 )
+
+print(f"✅ Scoring job created: {job.job_id}")
 ```
 
 ### Testing
 
-**All features have been tested:**
-- PASS: Automated scorers: 6/6 tests passing (test_scorers.py)
-- PASS: Multi-country PII: 17/17 patterns validated
-- PASS: MLflow tracing: All imports working
-- PASS: Observability integration: UI rendering correctly
-- PASS: Validation policy: Strict blocking confirmed
+**Comprehensive test coverage:**
+- ✅ Automated scorers: Quality metrics (relevance, faithfulness, toxicity)
+- ✅ Multi-country PII detection: 17+ patterns across AU, US, UK, IN
+- ✅ MLflow tracing: Full execution graph capture
+- ✅ Observability integration: Real-time metrics dashboard
+- ✅ AI guardrails: Input/output validation policies
 
-### Git Branch
+### Quick Start
 
-**Branch:** `feature/ai-guardrails-mlflow-scoring`
-
-**Recent Commits:**
-- `c29d0a8` - Implement strict validation policy
-- `9bf07c3` - Remove model name from validation display
-- `ff2953c` - Add tokens and cost to validation display
-- `99c9b42` - Phase 4 full automated scoring implementation
-- `ef07f37` - Phase 4 production monitoring with tracing
-
-### What's Next
-
-**For Production Deployment:**
-1. Test MLflow tracing in Databricks workspace
-2. Run notebook 10 to create scoring_results table
-3. Test automated scoring with notebook 09
-4. Schedule scoring job for every 6 hours
-5. Monitor quality trends in Observability page
-6. Merge feature branch to main after validation
-
-**Ready for production!** All Phase 1-4 components are complete and tested.
+**To deploy this application:**
+1. Fork repository from `databricks-solutions/databricks-blogposts`
+2. Configure `src/config/config.yaml` with your settings
+3. Run `01-setup/01-unity-catalog-setup.py` to create infrastructure
+4. Deploy to Databricks Apps (see "Deploying to Databricks Apps" section)
+5. Test MLflow tracing in production
+6. Schedule automated scoring job (optional)
+7. Monitor quality trends in Observability dashboard
 
 ---
 
@@ -1332,28 +1315,32 @@ ai_guardrails:
 
 Interactive Databricks notebooks demonstrating the complete system:
 
-**Setup & Data** (_resources/)
+**Setup & Configuration** (_resources/)
 - `00-setup.py` - Initialize catalog and schemas
-- `00-load-data.py` - Generate demo data with Faker
-- `bundle_config.yaml` - dbdemos configuration
+- `bundle_config.yaml` - Databricks Asset Bundles configuration
+- `logo.png` - Application logo
 
-**Infrastructure** (01-setup/)
-- `01-unity-catalog-setup.py` - Create UC functions
+**Infrastructure Setup** (01-setup/)
+- `01-unity-catalog-setup.py` - Create catalog, tables, UC functions, and grant permissions
 - `02-governance-setup.py` - Configure row-level security and audit logging
 
 **Agent Framework** (02-agent-demo/)
-- `01-agent-overview.py` - Architecture and design patterns
-- `02-build-agent.py` - Build and test the agent
-- `03-tool-integration.py` - Unity Catalog function calling
-- `04-validation.py` - LLM-as-a-Judge validation
+- `01-agent-overview.py` - Architecture and design patterns walkthrough
+- `02-build-agent.py` - Build and test the ReAct agent
+- `03-tool-integration.py` - Unity Catalog function calling examples
+- `04-validation.py` - LLM-as-a-Judge validation patterns
+- `05-mlflow-deployment.py` - Deploy agent as MLflow serving endpoint
+- `06-ai-guardrails.py` - AI guardrails integration (PII, toxicity, jailbreak detection)
+- `07-production-monitoring.py` - MLflow tracing and automated quality scorers
+- `08-automated-scoring-job.py` - Automated quality scoring workflow
 
-**Observability** (03-monitoring-demo/)
-- `01-mlflow-tracking.py` - Experiment tracking and metrics
-- `02-observability.py` - Latency and tool usage monitoring
-- `03-dashboard.py` - Governance dashboard
+**Observability & Monitoring** (03-monitoring-demo/)
+- `01-mlflow-tracking.py` - MLflow experiment tracking, metrics, and cost analysis
+- `02-observability.py` - Query patterns, latency, and tool usage monitoring
+- `03-dashboard.py` - Governance dashboard with query history
 
 **User Interface** (04-ui-demo/)
-- `01-streamlit-ui.py` - Interactive web interface demo
+- `01-streamlit-ui.py` - Streamlit web interface demonstration
 
 ---
 
@@ -1433,11 +1420,11 @@ Every response includes:
 
 **Typical Query Cost Components**:
 
-| Phase | Operation | Model | Tokens | LLM Token Cost |
-|-------|-----------|-------|--------|----------------|
-| Phase 3 | Classification (5% queries) | Claude Sonnet 4 | ~300 | $0.0001 |
-| Phase 5 | Response Synthesis | Claude Opus 4.1 | ~2,000 | $0.0029 |
-| Phase 6 | Validation | Claude Sonnet 4 | ~500 | $0.0004 |
+| Component | Operation | Model | Tokens | LLM Token Cost |
+|-----------|-----------|-------|--------|----------------|
+| Classification | Query classification (5% queries) | Claude Sonnet 4 | ~300 | $0.0001 |
+| Response Synthesis | Natural language generation | Claude Opus 4.1 | ~2,000 | $0.0029 |
+| Validation | LLM-as-a-Judge quality check | Claude Sonnet 4 | ~500 | $0.0004 |
 | | **Total LLM Token Cost per Query** | | **~2,800** | **$0.0034** |
 
 **Note**: This represents Claude Foundation Model API costs only, not total cost of ownership (TCO).
@@ -1572,83 +1559,181 @@ Every query is logged to Unity Catalog with:
 ### Project Structure
 
 ```
-multi-country-pension-advisor/
-├── agent.py                 # Main agent orchestrator
-├── react_loop.py            # ReAct agentic loop implementation
-├── agent_processor.py       # Execution orchestration & MLflow
-├── classifier.py            # 3-stage cascade classifier
-├── prompts_registry.py      # Prompt registry with MLflow
-├── validation.py            # LLM-as-a-Judge validation
-├── country_config.py        # Country-agnostic configuration
-├── observability.py         # MLflow & Lakehouse Monitoring
-├── tools.py                 # Unity Catalog function wrappers
-├── app.py                   # Streamlit UI
-├── agents/
-│   └── orchestrator.py      # Phase tracking and timing utilities
-├── prompts/
-│   ├── template_manager.py  # Jinja2 template management
-│   └── templates/           # Jinja2 template files
-├── validation/
-│   ├── json_parser.py       # JSON extraction and parsing
-│   └── token_calculator.py  # Token counting utilities
-├── ui/
-│   ├── theme_config.py      # Country-specific UI themes
-│   ├── html_builder.py      # HTML component builders
-│   └── tab_base.py          # Base class for monitoring tabs
-├── shared/
-│   └── logging_config.py    # Centralized logging configuration
-└── utils/
-    ├── formatting.py        # Currency formatting, SQL escaping
-    ├── audit.py             # Governance logging
-    ├── lakehouse.py         # Unity Catalog utilities
-    └── progress.py          # Real-time progress tracking
+2025-11-agentic-ai-pension-advisor/
+├── app.py                          # Streamlit UI (root level)
+├── app.yaml                        # Databricks Apps configuration
+├── requirements.txt                # Python dependencies
+├── .env.example                    # Environment variables template
+├── 01-setup/                       # Setup notebooks
+│   ├── 01-unity-catalog-setup.py  # Create catalog, tables, functions
+│   └── 02-governance-setup.py     # Row-level security configuration
+├── 02-agent-demo/                  # Agent demonstration notebooks
+│   ├── 01-agent-overview.py       # Architecture walkthrough
+│   ├── 02-build-agent.py          # Build and test agent
+│   ├── 03-tool-integration.py     # UC function calling
+│   ├── 04-validation.py           # LLM-as-a-Judge validation
+│   ├── 05-mlflow-deployment.py    # Deploy to MLflow serving
+│   ├── 06-ai-guardrails.py        # AI guardrails integration
+│   ├── 07-production-monitoring.py # MLflow tracing & scorers
+│   └── 08-automated-scoring-job.py # Quality scoring automation
+├── 03-monitoring-demo/             # Observability notebooks
+│   ├── 01-mlflow-tracking.py      # Experiment tracking
+│   ├── 02-observability.py        # Query patterns & metrics
+│   └── 03-dashboard.py            # Governance dashboard
+├── sql_ddls/                       # Database schemas
+│   ├── super_advisory_demo_schema.sql     # Table definitions
+│   ├── super_advisory_demo_functions.sql  # UC functions
+│   └── migration_add_judge_confidence.sql # Schema migration
+└── src/                            # Source code
+    ├── agent.py                    # Main agent orchestrator
+    ├── agent_processor.py          # Execution orchestration & MLflow
+    ├── react_loop.py               # ReAct agentic loop
+    ├── classifier.py               # 3-stage cascade classifier
+    ├── prompts_registry.py         # Prompt registry with MLflow
+    ├── validation.py               # LLM-as-a-Judge validation
+    ├── country_config.py           # Country-agnostic configuration
+    ├── observability.py            # MLflow & Lakehouse Monitoring
+    ├── monitoring.py               # AgentMonitor metrics class
+    ├── tools.py                    # Unity Catalog function wrappers
+    ├── ai_guardrails.py            # AI guardrails integration
+    ├── mlflow_model.py             # MLflow model wrapper
+    ├── scorers.py                  # Automated quality scorers
+    ├── ui_components.py            # UI component builders
+    ├── ui_dashboard.py             # Dashboard layout
+    ├── ui_monitoring_tabs.py       # Monitoring tab implementations
+    ├── agents/
+    │   ├── orchestrator.py         # Phase tracking and timing
+    │   ├── context_formatter.py    # Context formatting utilities
+    │   └── response_builder.py     # Response construction
+    ├── config/
+    │   ├── __init__.py             # Configuration exports
+    │   ├── config_loader.py        # YAML configuration loader
+    │   ├── config.yaml             # Application configuration
+    │   └── config.yaml.example     # Configuration template
+    ├── country_content/
+    │   ├── disclaimers.py          # Country-specific disclaimers
+    │   ├── prompts.py              # Country-specific prompts
+    │   └── regulations.py          # Regulatory content
+    ├── prompts/
+    │   ├── template_manager.py     # Jinja2 template engine
+    │   ├── country_prompts.py      # Country-specific prompt logic
+    │   └── templates/              # Jinja2 template files (.j2)
+    │       ├── system_prompt.j2
+    │       ├── validation_prompt.j2
+    │       ├── advisor_context.j2
+    │       ├── ai_classify_query.j2
+    │       ├── off_topic_decline.j2
+    │       └── welcome_message.j2
+    ├── tools/
+    │   ├── tool_config.yaml        # Tool definitions and metadata
+    │   └── tool_executor.py        # Tool execution engine
+    ├── validation/
+    │   ├── json_parser.py          # JSON extraction and parsing
+    │   └── token_calculator.py     # Token counting utilities
+    ├── ui/
+    │   ├── theme_config.py         # Country-specific UI themes
+    │   ├── html_builder.py         # HTML component builders
+    │   └── tab_base.py             # Base class for monitoring tabs
+    ├── shared/
+    │   ├── logging_config.py       # Centralized logging configuration
+    │   └── progress_tracker.py     # Progress tracking utilities
+    └── utils/
+        ├── formatting.py           # Currency formatting, SQL escaping
+        ├── audit.py                # Governance logging
+        ├── lakehouse.py            # Unity Catalog utilities
+        ├── progress.py             # Real-time progress tracking
+        └── urls.py                 # URL utilities
 ```
 
-### New Packages (Refactored)
+### Package Descriptions
 
-**agents/** - Agent infrastructure
-- `orchestrator.py`: Context manager for automatic phase tracking, timing, and error handling
-  - Reduces boilerplate in agent_processor.py from 400+ lines to <150 lines
-  - Provides reusable `track_phase()` context manager
-  - Automatic MLflow logging and progress tracking
+**Core Agent Files:**
+- `agent.py`: SuperAdvisorAgent class - main agent orchestrator
+- `agent_processor.py`: High-level orchestration with MLflow integration and phase tracking
+- `react_loop.py`: ReAct (Reasoning-Acting-Observing) agentic loop implementation
+- `classifier.py`: 3-stage cascade classifier (regex → embedding → LLM)
+- `prompts_registry.py`: Prompt registry with MLflow versioning and A/B testing
+- `validation.py`: LLM-as-a-Judge validation with confidence scoring
 
-**prompts/** - Prompt management
-- `template_manager.py`: Jinja2 template engine for all prompts
-  - Eliminates hard-coded prompts throughout the codebase
+**Configuration & Content:**
+- `country_config.py`: Country-agnostic configuration and metadata
+- `config/`: YAML-based configuration system
+  - `config.yaml`: Application settings (LLM endpoints, warehouse IDs, MLflow paths)
+  - `config_loader.py`: Configuration loader with environment variable overrides
+- `country_content/`: Country-specific content (disclaimers, prompts, regulations)
+
+**Observability & Monitoring:**
+- `observability.py`: MLflow experiment tracking and Lakehouse Monitoring integration
+- `monitoring.py`: AgentMonitor class for real-time metrics collection
+- `ai_guardrails.py`: AI guardrails integration (PII detection, toxicity filtering)
+- `scorers.py`: Automated quality scorers (relevance, faithfulness, country compliance)
+
+**MLflow & Deployment:**
+- `mlflow_model.py`: MLflow model wrapper for serving endpoint deployment
+- Enables model registry, versioning, and production deployment patterns
+
+**Tool Integration:**
+- `tools.py`: Unity Catalog function wrappers
+- `tools/`: Tool execution framework
+  - `tool_config.yaml`: Tool definitions and metadata
+  - `tool_executor.py`: Dynamic tool execution engine
+
+**UI Components:**
+- `ui_components.py`: Reusable UI components (cards, badges, metrics)
+- `ui_dashboard.py`: Multi-tab dashboard layout
+- `ui_monitoring_tabs.py`: Observability, governance, and MLflow tabs
+
+**agents/** - Agent Infrastructure
+- `orchestrator.py`: Phase tracking context manager
+  - Automatic timing, error handling, and MLflow logging
+  - Reduces boilerplate in agent_processor.py
+- `context_formatter.py`: Context formatting and prompt construction
+- `response_builder.py`: Response synthesis and formatting
+
+**prompts/** - Prompt Management
+- `template_manager.py`: Jinja2 template engine
+  - Eliminates hard-coded prompts
   - Country-specific prompt generation with caching
   - Integration with country_config for dynamic variables
+- `country_prompts.py`: Country-specific prompt logic
+- `templates/`: Jinja2 template files (.j2)
+  - `system_prompt.j2`: Main agent system prompt
+  - `validation_prompt.j2`: LLM-as-a-Judge validation
+  - `advisor_context.j2`: Member context template
+  - `ai_classify_query.j2`: Query classification
+  - `off_topic_decline.j2`: Off-topic response
+  - `welcome_message.j2`: Country-specific welcome
 
-**validation/** - Validation utilities
+**validation/** - Validation Utilities
 - `json_parser.py`: Extract and parse JSON from LLM responses
 - `token_calculator.py`: Token counting for cost estimation
 
-**ui/** - UI components
-- `theme_config.py`: Centralized country theme definitions (colors, flags, gradients)
-  - Extracted from ui_components.py and ui_dashboard.py
-  - Single source of truth for all country styling
-- `html_builder.py`: Reusable HTML builders for cards, badges, metrics
-  - Generic card builders
-  - Specialized components (member cards, question cards, activity items)
-  - System status banners
+**ui/** - UI Component Framework
+- `theme_config.py`: Country theme definitions (colors, flags, gradients)
+- `html_builder.py`: Reusable HTML builders (cards, badges, metrics)
 - `tab_base.py`: Abstract base class for monitoring tabs
-  - Eliminates ~425 lines of duplicated code across 5 tabs
-  - Automatic data loading, error handling, and empty state management
-  - Consistent UI patterns across all tabs
+  - Eliminates ~425 lines of duplicated code
+  - Automatic data loading, error handling, empty state management
 
-**shared/** - Shared infrastructure
-- `logging_config.py`: Centralized logging configuration
-  - Structured logging with ColoredFormatter
-  - Configurable log levels and file output
-  - Consistent logging patterns across all modules
+**shared/** - Shared Infrastructure
+- `logging_config.py`: Centralized logging with ColoredFormatter
+- `progress_tracker.py`: Real-time progress tracking utilities
+
+**utils/** - Utility Functions
+- `formatting.py`: Currency formatting, SQL escaping
+- `audit.py`: Governance table logging
+- `lakehouse.py`: Unity Catalog utilities
+- `progress.py`: Real-time progress tracking
+- `urls.py`: URL utilities and helpers
 
 ### Logging Setup
 
 **Configuration**
 
-All modules use structured logging via `shared/logging_config.py`:
+All modules use structured logging via `src/shared/logging_config.py`:
 
 ```python
-from shared.logging_config import get_logger, setup_logging
+from src.shared.logging_config import get_logger, setup_logging
 
 # Initialize logging (in app.py or main entry point)
 setup_logging(
@@ -1678,93 +1763,6 @@ logger.debug(f"Response: {response}")
 - Development: Use `DEBUG` level for detailed tracing
 - Error handling: Always use `exc_info=True` for exceptions
 - Consistency: All production code uses `logger`, no print statements
-
-### Code Flow Architecture
-
-Understanding how the components interact is crucial for maintaining and extending the system:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        app.py (UI Layer)                        │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ User selects country & member profile                    │  │
-│  │ User enters query → clicks "Get Recommendation"         │  │
-│  └───────────────────────────┬──────────────────────────────┘  │
-└───────────────────────────────┼──────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              agent_processor.py (Orchestration)                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ agent_query() function:                                  │  │
-│  │ 1. Initialize observability (MLflow)                    │  │
-│  │ 2. Track Phase 1: Data Retrieval                       │  │
-│  │ 3. Create SuperAdvisorAgent instance                    │  │
-│  │ 4. Track Phase 2: Anonymization                        │  │
-│  │ 5. Call agent.process_query()                           │  │
-│  │ 6. Track Phases 3-6: Classification, Tools, Synthesis  │  │
-│  │ 7. Track Phase 7: Name Restoration                     │  │
-│  │ 8. Track Phase 8: Audit Logging                        │  │
-│  │ 9. End observability run                                │  │
-│  └───────────────────────────┬──────────────────────────────┘  │
-└───────────────────────────────┼──────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   agent.py (Agent Class)                        │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ SuperAdvisorAgent.process_query():                       │  │
-│  │ 1. Get member profile (via tools.get_member_profile())   │  │
-│  │ 2. Build context with anonymization                      │  │
-│  │ 3. Create AgentState                                     │  │
-│  │ 4. Delegate to react_loop.run_agentic_loop()            │  │
-│  └───────────────────────────┬──────────────────────────────┘  │
-└───────────────────────────────┼──────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              react_loop.py (Core Agentic Loop)                  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ ReactAgenticLoop.run_agentic_loop():                    │  │
-│  │                                                          │  │
-│  │ PHASE 3: Classification                                 │  │
-│  │  └─> classifier.classify_query_topic()                   │  │
-│  │      ├─ Stage 1: Regex patterns                         │  │
-│  │      ├─ Stage 2: Embedding similarity                    │  │
-│  │      └─ Stage 3: LLM fallback                           │  │
-│  │                                                          │  │
-│  │ PHASE 4: Tool Selection & Execution                     │  │
-│  │  └─> reason_and_select_tools()                          │  │
-│  │      └─> act_execute_tools()                            │  │
-│  │          └─> tools.call_tool()                         │  │
-│  │              └─> Unity Catalog SQL functions            │  │
-│  │                                                          │  │
-│  │ PHASE 5: Response Synthesis                            │  │
-│  │  └─> synthesize_response()                              │  │
-│  │      └─> agent.generate_response()                      │  │
-│  │          └─> Foundation Model API (Claude)             │  │
-│  │                                                          │  │
-│  │ PHASE 6: Validation                                     │  │
-│  │  └─> observe_and_validate()                             │  │
-│  │      └─> validator.validate()                          │  │
-│  │          └─> Foundation Model API (Judge LLM)          │  │
-│  │                                                          │  │
-│  │ Return result_dict with response, citations, etc.       │  │
-│  └───────────────────────────┬──────────────────────────────┘  │
-└──────────────────────────────┼──────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              agent_processor.py (Completion)                    │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ 1. Extract results from result_dict                      │  │
-│  │ 2. Calculate cost breakdown                              │  │
-│  │ 3. Log to governance table                               │  │
-│  │ 4. End MLflow run                                        │  │
-│  │ 5. Return structured response to app.py                  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
 
 ### Supporting Components
 
@@ -2313,7 +2311,7 @@ Automated scoring is a **Databricks-recommended MLOps practice** that provides c
 
 **Two-Layer Quality Architecture:**
 
-1. **Layer 1: Real-Time LLM-as-a-Judge** (Phase 6 of agent execution)
+1. **Layer 1: Real-Time LLM-as-a-Judge** (validation step)
    - **Coverage**: 100% of queries
    - **Timing**: Synchronous (blocks response)
    - **Purpose**: Quality gate - blocks bad responses from reaching users
@@ -2447,22 +2445,6 @@ User Query → Agent Processing → Response (sent to user immediately)
 **Pie Charts:**
 - **Larger slices**: Higher percentages
 - **Compare slices**: Relative proportions
-
----
-
-## Documentation
-
-### Core Guides
-- **`README.md`** (this file) - Overview and production practices
-- **`CLASSIFIER_GUIDE.md`** - Intelligent off-topic detection
-- **`MONITORING_GUIDE.md`** - Lakehouse Monitoring setup
-- **`COUNTRY_CONFIG_MIGRATION.md`** - Adding new countries
-
-### Production Best Practices
-- **Prompt Registry Pattern**: Centralized prompt management
-- **MLflow Integration**: Experiment tracking and versioning
-- **Observability Stack**: Multi-layer monitoring approach
-- **Cost Optimization**: Intelligent cascade classification
 
 ---
 
