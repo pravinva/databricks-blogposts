@@ -311,7 +311,7 @@ result = ask_agent(
 # MAGIC **Next Steps:**
 # MAGIC - **[03-tool-integration]($./03-tool-integration)**: Deep dive into Unity Catalog function tools
 # MAGIC - **[04-validation]($./04-validation)**: LLM-as-a-Judge validation details
-# MAGIC - **[$../03-monitoring-demo/01-mlflow-tracking](../03-monitoring-demo/01-mlflow-tracking)**: Track agent performance
+# MAGIC - **[03-monitoring-demo/01-mlflow-tracking]($../03-monitoring-demo/01-mlflow-tracking)**: Track agent performance
 
 # COMMAND ----------
 
