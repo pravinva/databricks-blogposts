@@ -115,8 +115,11 @@ TBLPROPERTIES (
 # Grant SELECT permission to account users for observability dashboards
 spark.sql(f"GRANT SELECT ON TABLE {SCORING_TABLE} TO `account users`")
 
+# Grant MODIFY permission for INSERT operations
+spark.sql(f"GRANT MODIFY ON TABLE {SCORING_TABLE} TO `account users`")
+
 print(f"✅ Table ready: {SCORING_TABLE}")
-print(f"✅ Permissions granted: SELECT to account users")
+print(f"✅ Permissions granted: SELECT and MODIFY to account users")
 
 # COMMAND ----------
 
