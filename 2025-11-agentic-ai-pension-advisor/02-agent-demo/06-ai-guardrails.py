@@ -510,8 +510,8 @@ print("  • Integrated with MLflow")
 # MAGIC - Verified integration with agent pipeline
 # MAGIC
 # MAGIC **What's Next:**
-# MAGIC - **[$./07-production-monitoring](07-production-monitoring)**: Monitor agent in production with MLflow tracing
-# MAGIC - **[$./08-automated-scoring-job](08-automated-scoring-job)**: Automated quality scoring pipeline
+# MAGIC - **[07-production-monitoring]($./07-production-monitoring)**: Monitor agent in production with MLflow tracing
+# MAGIC - **[08-automated-scoring-job]($./08-automated-scoring-job)**: Automated quality scoring pipeline
 # MAGIC - **[$../03-monitoring-demo/01-mlflow-tracking](../03-monitoring-demo/01-mlflow-tracking)**: Advanced monitoring and dashboards
 # MAGIC
 # MAGIC **Resources:**

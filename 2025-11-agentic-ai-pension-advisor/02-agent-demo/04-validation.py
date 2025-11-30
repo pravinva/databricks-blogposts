@@ -244,9 +244,9 @@ display(pass_rate)
 # MAGIC - Validation metrics
 # MAGIC
 # MAGIC **Next Steps:**
-# MAGIC - **[$./05-mlflow-deployment](05-mlflow-deployment)**: Package agent as MLflow model
-# MAGIC - **[$./06-ai-guardrails](06-ai-guardrails)**: Add AI safety guardrails
-# MAGIC - **[$./08-automated-scoring-job](08-automated-scoring-job)**: Automated quality scoring
+# MAGIC - **[05-mlflow-deployment]($./05-mlflow-deployment)**: Package agent as MLflow model
+# MAGIC - **[06-ai-guardrails]($./06-ai-guardrails)**: Add AI safety guardrails
+# MAGIC - **[08-automated-scoring-job]($./08-automated-scoring-job)**: Automated quality scoring
 
 # COMMAND ----------
 

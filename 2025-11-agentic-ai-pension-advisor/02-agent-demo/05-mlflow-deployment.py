@@ -521,9 +521,9 @@ print(f"  Both methods use same agent_query() internally")
 # MAGIC 5. **Production Ready:** Batch processing at scale with UC governance
 # MAGIC
 # MAGIC **Next Steps:**
-# MAGIC - **[$./06-ai-guardrails](06-ai-guardrails)**: Add safety guardrails
-# MAGIC - **[$./07-production-monitoring](07-production-monitoring)**: Monitor in production
-# MAGIC - **[$./08-automated-scoring-job](08-automated-scoring-job)**: Quality scoring pipeline
+# MAGIC - **[06-ai-guardrails]($./06-ai-guardrails)**: Add safety guardrails
+# MAGIC - **[07-production-monitoring]($./07-production-monitoring)**: Monitor in production
+# MAGIC - **[08-automated-scoring-job]($./08-automated-scoring-job)**: Quality scoring pipeline
 # MAGIC
 # MAGIC **Resources:**
 # MAGIC - Implementation Plan: `docs/IMPLEMENTATION_PLAN_AI_GUARDRAILS_MLFLOW.md`

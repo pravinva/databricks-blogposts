@@ -354,7 +354,7 @@ if recent_runs:
 # MAGIC
 # MAGIC 1. **Run this notebook** in Databricks to see tracing in action
 # MAGIC 2. **View traces** in MLflow UI for detailed execution analysis
-# MAGIC 3. **[$./08-automated-scoring-job](08-automated-scoring-job)**: Set up automated quality scoring
+# MAGIC 3. **[08-automated-scoring-job]($./08-automated-scoring-job)**: Set up automated quality scoring
 # MAGIC 4. **Monitor trends** in MLflow experiments dashboard
 # MAGIC
 # MAGIC **For most use cases, MLflow Tracing + LLM-as-a-Judge real-time validation is sufficient!**

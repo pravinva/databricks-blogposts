@@ -266,9 +266,9 @@ else:
 # MAGIC - Processing pipeline
 # MAGIC
 # MAGIC **Next Steps:**
-# MAGIC - **[$./02-build-agent](02-build-agent)**: See the agent in action
-# MAGIC - **[$./03-tool-integration](03-tool-integration)**: Deep dive into tool calling
-# MAGIC - **[$./04-validation](04-validation)**: Learn about response validation
+# MAGIC - **[02-build-agent]($./02-build-agent)**: See the agent in action
+# MAGIC - **[03-tool-integration]($./03-tool-integration)**: Deep dive into tool calling
+# MAGIC - **[04-validation]($./04-validation)**: Learn about response validation
 
 # COMMAND ----------
 
