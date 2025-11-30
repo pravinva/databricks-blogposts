@@ -499,9 +499,7 @@ print("  • Integrated with MLflow")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Next Steps
-# MAGIC
-# MAGIC **Phase 1 Complete! ✅**
+# MAGIC ## Summary
 # MAGIC
 # MAGIC You've successfully:
 # MAGIC - Integrated AI Guardrails into the pension advisor
@@ -509,19 +507,17 @@ print("  • Integrated with MLflow")
 # MAGIC - Measured performance and cost impact
 # MAGIC - Verified integration with agent pipeline
 # MAGIC
-# MAGIC **What's Next:**
+# MAGIC **Next Steps:**
 # MAGIC - **[07-production-monitoring]($./07-production-monitoring)**: Monitor agent in production with MLflow tracing
 # MAGIC - **[08-automated-scoring-job]($./08-automated-scoring-job)**: Automated quality scoring pipeline
 # MAGIC - **[03-monitoring-demo/01-mlflow-tracking]($../03-monitoring-demo/01-mlflow-tracking)**: Advanced monitoring and dashboards
 # MAGIC
-# MAGIC **Resources:**
-# MAGIC - Implementation Plan: `docs/IMPLEMENTATION_PLAN_AI_GUARDRAILS_MLFLOW.md`
-# MAGIC - Phase 1 Summary: `docs/PHASE_1_COMPLETION_SUMMARY.md`
-# MAGIC - Guardrails Module: `src/ai_guardrails.py`
-# MAGIC - Config: `src/config/config.yaml`
+# MAGIC **Key Modules:**
+# MAGIC - Guardrails: `src/ai_guardrails.py`
+# MAGIC - Configuration: `src/config/config.yaml`
 
 # COMMAND ----------
 
 print("✅ AI Guardrails demo complete!")
 print("   All scenarios tested and validated")
-print("   Phase 1 implementation successful")
+print("   AI Guardrails implementation successful")

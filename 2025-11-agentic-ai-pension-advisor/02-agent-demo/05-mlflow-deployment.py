@@ -525,10 +525,10 @@ print(f"  Both methods use same agent_query() internally")
 # MAGIC - **[07-production-monitoring]($./07-production-monitoring)**: Monitor in production
 # MAGIC - **[08-automated-scoring-job]($./08-automated-scoring-job)**: Quality scoring pipeline
 # MAGIC
-# MAGIC **Resources:**
-# MAGIC - Implementation Plan: `docs/IMPLEMENTATION_PLAN_AI_GUARDRAILS_MLFLOW.md`
+# MAGIC **Key Modules:**
 # MAGIC - MLflow Model: `src/mlflow_model.py`
-# MAGIC - This Notebook: `02-agent-demo/05-mlflow-deployment.py`
+# MAGIC - Agent Processor: `src/agent_processor.py`
+# MAGIC - Configuration: `src/config/config.yaml`
 
 # COMMAND ----------
 
