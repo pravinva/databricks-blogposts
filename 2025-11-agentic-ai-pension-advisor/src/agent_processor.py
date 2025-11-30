@@ -110,11 +110,11 @@ class AuditLogger:
                 '{tool_used}',
                 '{judge_response_escaped}',
                 '{judge_verdict_text}',
+                {judge_confidence},
                 '{error_text}',
                 '{validation_mode}',
                 {validation_attempts},
-                {elapsed},
-                {judge_confidence}
+                {elapsed}
             )
             """
 
