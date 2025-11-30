@@ -42,11 +42,11 @@ def render_realtime_metrics_tab():
             # Make both sides timezone-aware for comparison
             from datetime import timezone
             df['timestamp'] = df['timestamp'].dt.tz_localize('UTC') if df['timestamp'].dt.tz is None else df['timestamp']
-            cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+            cutoff = datetime.now(timezone.utc) - timedelta(days=7)  # Show last 7 days of data
             df = df[df['timestamp'] >= cutoff]
         
         if df.empty:
-            st.info("ℹ️ No queries in the last 24 hours")
+            st.info("ℹ️ No queries in the last 7 days")
             return
         
         # Convert numeric columns
