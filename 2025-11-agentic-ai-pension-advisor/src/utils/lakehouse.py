@@ -176,24 +176,26 @@ def get_member_by_id(member_id: str) -> Optional[Dict]:
 
 def get_members_by_country(country_code: str, default_return: Optional[pd.DataFrame] = None) -> pd.DataFrame:
     """
-    Get all members for a specific country.
-    
+    Get 3 random members for a specific country.
+
+    Members are randomly selected on each query to provide variety in the UI.
+
     Args:
         country_code: Country code (AU, US, UK, IN)
         default_return: Default value to return on error
-        
+
     Returns:
-        DataFrame with member profiles
+        DataFrame with up to 3 random member profiles
     """
     if default_return is None:
         default_return = pd.DataFrame()
-    
+
     from src.config import get_member_profiles_table_path
-    
+
     try:
         table_path = get_member_profiles_table_path()
-        query = f"SELECT * FROM {table_path} WHERE country = '{country_code}'"
-        
+        query = f"SELECT * FROM {table_path} WHERE country = '{country_code}' ORDER BY RAND() LIMIT 3"
+
         df = execute_sql_query(query)
 
         if df.empty:
