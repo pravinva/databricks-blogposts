@@ -506,7 +506,7 @@ COUNTRY_CONFIG = {
         'faker': fake_au,
         'preservation_age': 60,
         'member_prefix': 'AU',
-        'count': 10,
+        'count': 20,
         'currency_range': (68000, 1250000),
         'income_range': (0, 125000),
         'persona_types': ['Below Average', 'Middle Income', 'Comfortable', 'High Net Worth']
@@ -515,7 +515,7 @@ COUNTRY_CONFIG = {
         'faker': fake_us,
         'preservation_age': 59,
         'member_prefix': 'US',
-        'count': 10,
+        'count': 20,
         'currency_range': (125000, 580000),
         'income_range': (25000, 95000),
         'persona_types': ['Pre-retirement Planner', 'Wealth Accumulator', 'Retiree Drawdown']
@@ -524,7 +524,7 @@ COUNTRY_CONFIG = {
         'faker': fake_uk,
         'preservation_age': 55,
         'member_prefix': 'UK',
-        'count': 10,
+        'count': 20,
         'currency_range': (195000, 280000),
         'income_range': (60000, 75000),
         'persona_types': ['Pre-retirement Planner', 'Wealth Accumulator', 'Retiree Drawdown']
@@ -533,7 +533,7 @@ COUNTRY_CONFIG = {
         'faker': fake_in,
         'preservation_age': 58,
         'member_prefix': 'IN',
-        'count': 10,
+        'count': 20,
         'currency_range': (68000, 220000),
         'income_range': (12000, 45000),
         'persona_types': ['Pre-retirement Planner', 'Wealth Accumulator', 'Retiree Drawdown']
