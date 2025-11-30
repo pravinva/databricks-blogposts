@@ -243,7 +243,7 @@ citation_data = [
 
 # Create temp view
 from pyspark.sql.types import StructType, StructField, StringType
-schema = StructType([
+citation_schema = StructType([
     StructField("citation_id", StringType(), False),
     StructField("country", StringType(), False),
     StructField("authority", StringType(), False),
@@ -255,7 +255,7 @@ schema = StructType([
     StructField("tool_type", StringType(), False)
 ])
 
-df_citations = spark.createDataFrame(citation_data, schema)
+df_citations = spark.createDataFrame(citation_data, citation_schema)
 df_citations.createOrReplaceTempView("new_citations")
 
 # MERGE to update existing and insert new citations
