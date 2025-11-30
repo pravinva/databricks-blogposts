@@ -11,13 +11,43 @@ from pathlib import Path
 from typing import Dict, Any
 
 # Load configuration from YAML
-_config_yaml_path = Path(__file__).parent / 'config.yaml'
+def _find_config_yaml():
+    """Find config.yaml in multiple possible locations."""
+    # Try multiple possible paths
+    possible_paths = [
+        Path(__file__).parent / 'config.yaml',  # Same directory as this file
+        Path(__file__).parent.parent.parent / 'src' / 'config' / 'config.yaml',  # From repo root
+        Path.cwd() / 'src' / 'config' / 'config.yaml',  # From current working directory
+    ]
+
+    # For Databricks Repos - try to find the repo root and navigate from there
+    current_path = Path(__file__).resolve()
+    for parent in current_path.parents:
+        # Look for repo root indicators
+        if (parent / 'src' / 'config' / 'config.yaml').exists():
+            possible_paths.append(parent / 'src' / 'config' / 'config.yaml')
+            break
+        # Stop if we hit common workspace boundaries
+        if parent.name in ['Workspace', 'Repos', 'Users']:
+            break
+
+    for path in possible_paths:
+        if path.exists():
+            return path
+
+    # If not found, raise error with all attempted paths
+    paths_tried = '\n  - '.join(str(p) for p in possible_paths)
+    raise FileNotFoundError(
+        f"Configuration file not found. Tried:\n  - {paths_tried}\n\n"
+        f"Current working directory: {Path.cwd()}\n"
+        f"__file__ location: {Path(__file__)}\n\n"
+        f"💡 For Databricks notebooks: Ensure config.yaml is uploaded or use environment variables"
+    )
+
+_config_yaml_path = _find_config_yaml()
 
 def _load_yaml_config():
     """Load configuration from YAML file."""
-    if not _config_yaml_path.exists():
-        raise FileNotFoundError(f"Configuration file not found: {_config_yaml_path}")
-
     with open(_config_yaml_path, 'r') as f:
         return yaml.safe_load(f)
 

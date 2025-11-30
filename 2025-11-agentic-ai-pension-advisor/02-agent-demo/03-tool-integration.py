@@ -18,17 +18,27 @@
 
 import sys
 import os
-repo_root = os.path.abspath(
-    os.path.join(os.getcwd(), "..")
-)
-if repo_root not in sys.path:
-    sys.path.insert(0, repo_root)
+from pathlib import Path
+
+# Determine repo root - works in both local and Databricks environments
+current_dir = Path(os.getcwd())
+# Try to find repo root by looking for 'src' directory
+repo_root = current_dir.parent if (current_dir.parent / 'src').exists() else current_dir
+
+print(f"📂 Setup:")
+print(f"  Current directory: {current_dir}")
+print(f"  Repo root: {repo_root}")
+print(f"  Config path: {repo_root / 'src' / 'config' / 'config.yaml'}")
+print(f"  Config exists: {(repo_root / 'src' / 'config' / 'config.yaml').exists()}")
+
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
 
 from src.tools import AVAILABLE_TOOLS, call_individual_tool
 from src.config import SQL_WAREHOUSE_ID
 import pandas as pd
 
-print("✓ Tool modules imported")
+print("\n✓ Tool modules imported")
 print(f"  Warehouse ID: {SQL_WAREHOUSE_ID}")
 
 # COMMAND ----------
