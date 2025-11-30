@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 06: AI Guardrails Integration Demo
 # MAGIC
-# MAGIC **📚 Navigation:** [← Previous: 05-MLflow Deployment](.//05-mlflow-deployment) | [Next: 07-Production Monitoring →](.//07-production-monitoring)
+# MAGIC **📚 Navigation:** [← Previous: 05-MLflow Deployment](05-mlflow-deployment) | [Next: 07-Production Monitoring →](07-production-monitoring)
 # MAGIC
 # MAGIC This notebook demonstrates enterprise-grade safety guardrails integrated into the pension advisor agent.
 # MAGIC

@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 04: Response Validation - LLM-as-a-Judge
 # MAGIC
-# MAGIC **📚 Navigation:** [← Previous: 03-Tool Integration](.//03-tool-integration) | [Next: 05-MLflow Deployment →](.//05-mlflow-deployment)
+# MAGIC **📚 Navigation:** [← Previous: 03-Tool Integration](03-tool-integration) | [Next: 05-MLflow Deployment →](05-mlflow-deployment)
 # MAGIC
 # MAGIC This notebook demonstrates the validation system that ensures agent
 # MAGIC responses are accurate, compliant, and high-quality.
