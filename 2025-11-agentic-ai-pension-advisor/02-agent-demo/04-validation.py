@@ -244,8 +244,9 @@ display(pass_rate)
 # MAGIC - Validation metrics
 # MAGIC
 # MAGIC **Next Steps:**
-# MAGIC - **03-monitoring-demo/01-mlflow-tracking**: Track validation metrics
-# MAGIC - **03-monitoring-demo/03-dashboard**: Visualize validation results
+# MAGIC - **[$./05-mlflow-deployment](05-mlflow-deployment)**: Package agent as MLflow model
+# MAGIC - **[$./06-ai-guardrails](06-ai-guardrails)**: Add AI safety guardrails
+# MAGIC - **[$./08-automated-scoring-job](08-automated-scoring-job)**: Automated quality scoring
 
 # COMMAND ----------
 

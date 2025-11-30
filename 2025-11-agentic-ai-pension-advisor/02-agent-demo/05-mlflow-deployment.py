@@ -11,7 +11,7 @@
 # MAGIC - Register to Unity Catalog for versioning
 # MAGIC - Enable batch inference at scale
 # MAGIC - Support model aliases (@champion, @challenger)
-# MAGIC - Prepare for serving endpoint deployment 
+# MAGIC - Production-ready batch processing 
 # MAGIC
 # MAGIC **Architecture:**
 # MAGIC ```
@@ -518,13 +518,12 @@ print(f"  Both methods use same agent_query() internally")
 # MAGIC 2. **Reproducibility:** Exact same model behavior in dev/prod
 # MAGIC 3. **Batch Inference:** Process 1000s of queries efficiently
 # MAGIC 4. **Alias Management:** Easy promotion from @challenger → @champion
-# MAGIC 5. **Serving Ready:** Can deploy to endpoint in Phase 3
+# MAGIC 5. **Production Ready:** Batch processing at scale with UC governance
 # MAGIC
-# MAGIC **Next Steps :**
-# MAGIC 1. Deploy serving endpoint (optional, based on scale)
-# MAGIC 2. Enable inference tables for monitoring
-# MAGIC 3. Remove custom MLflow/Cost tabs from UI
-# MAGIC 4. Add links to Databricks native UIs
+# MAGIC **Next Steps:**
+# MAGIC - **[$./06-ai-guardrails](06-ai-guardrails)**: Add safety guardrails
+# MAGIC - **[$./07-production-monitoring](07-production-monitoring)**: Monitor in production
+# MAGIC - **[$./08-automated-scoring-job](08-automated-scoring-job)**: Quality scoring pipeline
 # MAGIC
 # MAGIC **Resources:**
 # MAGIC - Implementation Plan: `docs/IMPLEMENTATION_PLAN_AI_GUARDRAILS_MLFLOW.md`

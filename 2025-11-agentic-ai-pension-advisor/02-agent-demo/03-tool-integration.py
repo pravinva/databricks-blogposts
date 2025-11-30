@@ -324,8 +324,9 @@ else:
 # MAGIC - Result formatting
 # MAGIC
 # MAGIC **Next Steps:**
-# MAGIC - **04-validation**: LLM-as-a-Judge validation
-# MAGIC - **03-monitoring-demo/01-mlflow-tracking**: Track tool performance
+# MAGIC - **[$./04-validation](04-validation)**: LLM-as-a-Judge validation
+# MAGIC - **[$./05-mlflow-deployment](05-mlflow-deployment)**: Package agent as MLflow model
+# MAGIC - **[$./06-ai-guardrails](06-ai-guardrails)**: Add AI safety guardrails
 
 # COMMAND ----------
 

@@ -409,9 +409,10 @@ else:
 # MAGIC 6. ✅ Checked for quality alerts
 # MAGIC
 # MAGIC **Next Steps:**
-# MAGIC - View results in Observability page
-# MAGIC - Set up alerting based on quality thresholds
-# MAGIC - Schedule this notebook to run every 6 hours
+# MAGIC - **View results** in Streamlit app Observability tab
+# MAGIC - **Set up Databricks job** to run this notebook on schedule (every 6 hours recommended)
+# MAGIC - **Configure alerting** based on quality score thresholds
+# MAGIC - **Monitor trends** over time to detect quality degradation
 # MAGIC
 # MAGIC **Scheduling Instructions:**
 # MAGIC ```python
