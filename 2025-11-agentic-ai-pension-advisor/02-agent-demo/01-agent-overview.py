@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 01: Multi-Country Agent Architecture Overview
 # MAGIC
-# MAGIC **📚 Navigation:** [Next: 02-Build Agent →](02-build-agent)
+# MAGIC **📚 Navigation:** [Next: 02-Build Agent →]($./02-build-agent)
 # MAGIC
 # MAGIC This notebook provides an overview of the retirement advisory agent architecture
 # MAGIC and how it handles multi-country queries with LLM orchestration.

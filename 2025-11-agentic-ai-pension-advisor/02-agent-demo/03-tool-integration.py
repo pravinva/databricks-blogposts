@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 03: Tool Integration Deep Dive
 # MAGIC
-# MAGIC **📚 Navigation:** [← Previous: 02-Build Agent](02-build-agent) | [Next: 04-Validation →](04-validation)
+# MAGIC **📚 Navigation:** [← Previous: 02-Build Agent]($./02-build-agent) | [Next: 04-Validation →]($./04-validation)
 # MAGIC
 # MAGIC This notebook explores how the agent integrates with Unity Catalog functions
 # MAGIC as tools for retirement calculations.

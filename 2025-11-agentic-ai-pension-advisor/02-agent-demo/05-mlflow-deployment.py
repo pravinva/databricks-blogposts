@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 05: MLflow Model Deployment - Pension Advisor Agent
 # MAGIC
-# MAGIC **📚 Navigation:** [← Previous: 04-Validation](04-validation) | [Next: 06-AI Guardrails →](06-ai-guardrails)
+# MAGIC **📚 Navigation:** [← Previous: 04-Validation]($./04-validation) | [Next: 06-AI Guardrails →]($./06-ai-guardrails)
 # MAGIC
 # MAGIC This notebook demonstrates MLflow Model Packaging
 # MAGIC

@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 07: Production Monitoring with MLflow Tracing & Automated Scorers
 # MAGIC
-# MAGIC **📚 Navigation:** [← Previous: 06-AI Guardrails](06-ai-guardrails) | [Next: 08-Automated Scoring →](08-automated-scoring-job)
+# MAGIC **📚 Navigation:** [← Previous: 06-AI Guardrails]($./06-ai-guardrails) | [Next: 08-Automated Scoring →]($./08-automated-scoring-job)
 # MAGIC
 # MAGIC This notebook demonstrates **Production Monitoring** capabilities:
 # MAGIC
