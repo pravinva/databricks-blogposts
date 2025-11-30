@@ -106,11 +106,11 @@ CREATE TABLE IF NOT EXISTS {catalog}.member_data.governance (
   tool_used STRING COMMENT 'Tool used for query execution',
   judge_response STRING COMMENT 'Validation response JSON',
   judge_verdict STRING COMMENT 'Quality assessment verdict (Pass/Fail)',
+  judge_confidence DOUBLE COMMENT 'Validation confidence score (0.0-1.0)',
   error_info STRING COMMENT 'Error information if any',
   validation_mode STRING COMMENT 'Validation strategy used',
   validation_attempts BIGINT COMMENT 'Number of validation attempts',
-  total_time_seconds DOUBLE COMMENT 'Total execution time',
-  judge_confidence DOUBLE COMMENT 'Validation confidence score (0.0-1.0)'
+  total_time_seconds DOUBLE COMMENT 'Total execution time'
 )
 USING delta
 PARTITIONED BY (country)
