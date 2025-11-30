@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 08: Automated Quality Scoring Job
 # MAGIC
-# MAGIC **📚 Navigation:** [← Previous: 07-Production Monitoring](07-production-monitoring)
+# MAGIC **📚 Navigation:** [← Previous: 07-Production Monitoring](.//07-production-monitoring)
 # MAGIC
 # MAGIC This notebook runs automated quality scorers on production queries to monitor quality trends over time.
 # MAGIC
