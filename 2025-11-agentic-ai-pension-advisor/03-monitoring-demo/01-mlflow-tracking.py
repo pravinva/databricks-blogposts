@@ -47,7 +47,7 @@ try:
 
         # Select relevant columns
         display_cols = []
-        for col in ['run_id', 'start_time', 'status', 'metrics.cost', 'metrics.total_time_seconds', 'params.country', 'tags.query_type']:
+        for col in ['run_id', 'start_time', 'status', 'metrics.total.cost_usd', 'metrics.total.duration_sec', 'params.country', 'params.user_id']:
             if col in runs.columns:
                 display_cols.append(col)
 
@@ -90,23 +90,34 @@ try:
         max_results=50
     )
 
-    if len(runs) > 0 and 'metrics.cost' in runs.columns:
-        total_cost = runs['metrics.cost'].sum()
-        avg_cost = runs['metrics.cost'].mean()
-        max_cost = runs['metrics.cost'].max()
+    if len(runs) > 0 and 'metrics.total.cost_usd' in runs.columns:
+        total_cost = runs['metrics.total.cost_usd'].sum()
+        avg_cost = runs['metrics.total.cost_usd'].mean()
+        max_cost = runs['metrics.total.cost_usd'].max()
 
         print(f"Cost Analysis (last {len(runs)} runs):")
         print(f"  Total: ${total_cost:.4f}")
         print(f"  Average per query: ${avg_cost:.4f}")
         print(f"  Max: ${max_cost:.4f}")
 
+        # Cost breakdown by component
+        if 'metrics.synthesis.cost_usd' in runs.columns:
+            synthesis_cost = runs['metrics.synthesis.cost_usd'].sum()
+            validation_cost = runs['metrics.validation.cost_usd'].sum()
+            classification_cost = runs['metrics.classification.cost_usd'].sum()
+
+            print(f"\nCost Breakdown:")
+            print(f"  Synthesis (Opus 4): ${synthesis_cost:.4f} ({synthesis_cost/total_cost*100:.1f}%)")
+            print(f"  Validation (Sonnet 4): ${validation_cost:.4f} ({validation_cost/total_cost*100:.1f}%)")
+            print(f"  Classification: ${classification_cost:.4f} ({classification_cost/total_cost*100:.1f}%)")
+
         # Cost by country
         if 'params.country' in runs.columns:
-            country_costs = runs.groupby('params.country')['metrics.cost'].agg(['sum', 'mean', 'count'])
+            country_costs = runs.groupby('params.country')['metrics.total.cost_usd'].agg(['sum', 'mean', 'count'])
             print(f"\nCost by Country:")
             display(country_costs)
     else:
-        print("No cost data available yet")
+        print("No cost data available yet. Expected metric: metrics.total.cost_usd")
 except Exception as e:
     print(f"Cost analysis not available: {e}")
 
@@ -124,23 +135,32 @@ try:
         max_results=50
     )
 
-    if len(runs) > 0 and 'metrics.total_time_seconds' in runs.columns:
-        avg_time = runs['metrics.total_time_seconds'].mean()
-        p95_time = runs['metrics.total_time_seconds'].quantile(0.95)
-        p99_time = runs['metrics.total_time_seconds'].quantile(0.99)
+    if len(runs) > 0 and 'metrics.total.duration_sec' in runs.columns:
+        avg_time = runs['metrics.total.duration_sec'].mean()
+        p95_time = runs['metrics.total.duration_sec'].quantile(0.95)
+        p99_time = runs['metrics.total.duration_sec'].quantile(0.99)
 
         print(f"Performance Analysis (last {len(runs)} runs):")
         print(f"  Average latency: {avg_time:.2f}s")
         print(f"  P95 latency: {p95_time:.2f}s")
         print(f"  P99 latency: {p99_time:.2f}s")
 
+        # Performance breakdown by phase
+        if 'metrics.synthesis.duration_sec' in runs.columns:
+            synthesis_time = runs['metrics.synthesis.duration_sec'].mean()
+            validation_time = runs['metrics.validation.duration_sec'].mean()
+
+            print(f"\nAverage Time by Phase:")
+            print(f"  Synthesis: {synthesis_time:.2f}s")
+            print(f"  Validation: {validation_time:.2f}s")
+
         # Performance by country
         if 'params.country' in runs.columns:
-            country_perf = runs.groupby('params.country')['metrics.total_time_seconds'].agg(['mean', 'min', 'max', 'count'])
+            country_perf = runs.groupby('params.country')['metrics.total.duration_sec'].agg(['mean', 'min', 'max', 'count'])
             print(f"\nPerformance by Country:")
             display(country_perf)
     else:
-        print("No performance data available yet")
+        print("No performance data available yet. Expected metric: metrics.total.duration_sec")
 except Exception as e:
     print(f"Performance analysis not available: {e}")
 
