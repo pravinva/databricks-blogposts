@@ -161,8 +161,8 @@ print(f"Granting permissions to current user: {current_user}")
 
 try:
     # Grant to current user
-    spark.sql(f"GRANT SELECT, INSERT, MODIFY ON TABLE {catalog}.member_data.governance TO `{current_user}`")
-    print(f"✓ Granted SELECT, INSERT, MODIFY on governance table to {current_user}")
+    spark.sql(f"GRANT SELECT, MODIFY ON TABLE {catalog}.member_data.governance TO `{current_user}`")
+    print(f"✓ Granted SELECT, MODIFY on governance table to {current_user}")
 
     # Grant to all users (if you want broader access)
     spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.governance TO `account users`")
