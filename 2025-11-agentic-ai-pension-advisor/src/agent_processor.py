@@ -39,46 +39,10 @@ class AuditLogger:
         except Exception as e:
             logger.info(f"⚠️ MLflow init: {e}")
     
-    def log_to_mlflow(self, session_id, user_id, country, query_string, 
-                      answer, judge_verdict, tools_called, elapsed, 
-                      cost_breakdown=None, error_info=None):
-        """Log to MLflow with detailed cost breakdown"""
-        try:
-            with mlflow.start_run(run_name=f"query-{session_id}"):
-                mlflow.log_param("user_id", user_id)
-                mlflow.log_param("session_id", session_id)
-                mlflow.log_param("country", country)
-                mlflow.log_param("tools_used", ",".join(tools_called) if tools_called else "none")
-                mlflow.log_param("validation_mode", judge_verdict.get("validation_mode", "llm_judge"))
-                
-                mlflow.log_metric("query_length", len(query_string))
-                mlflow.log_metric("response_length", len(answer) if answer else 0)
-                mlflow.log_metric("validation_confidence", judge_verdict.get("confidence", 0))
-                mlflow.log_metric("runtime_sec", elapsed)
-                mlflow.log_metric("validation_attempts", judge_verdict.get("attempts", 1))
-                
-                # 🆕 ADD: Log cost metrics
-                if cost_breakdown:
-                    mlflow.log_metric("total_cost_usd", cost_breakdown.get('total', {}).get('total_cost', 0))
-                    mlflow.log_metric("synthesis_cost_usd", cost_breakdown.get('synthesis', {}).get('cost', 0))
-                    mlflow.log_metric("validation_cost_usd", cost_breakdown.get('validation', {}).get('cost', 0))
-                    mlflow.log_metric("total_tokens", cost_breakdown.get('total', {}).get('total_tokens', 0))
-                    mlflow.log_metric("synthesis_tokens", cost_breakdown.get('total', {}).get('synthesis_tokens', 0))
-                    mlflow.log_metric("validation_tokens", cost_breakdown.get('total', {}).get('validation_tokens', 0))
-                
-                if judge_verdict:
-                    mlflow.log_dict(judge_verdict, "validation.json")
-                
-                if cost_breakdown:
-                    mlflow.log_dict(cost_breakdown, "cost_breakdown.json")
-                
-                if error_info:
-                    mlflow.log_text(error_info, "error.txt")
-                
-                logger.info(f"✅ MLflow logged: {session_id}")
-        except Exception as e:
-            logger.info(f"⚠️ MLflow logging failed: {e}")
-    
+    # REMOVED: log_to_mlflow() method - DEAD CODE, never called
+    # MLflow logging is now handled by Observability class (obs.end_agent_run())
+    # See line 617 in async_phase8_logging() function
+
     def log_to_governance_table(self, session_id, user_id, country, query_string,
                                answer, judge_verdict, tools_called, cost, citations,
                                elapsed, error_info=None, classification_method=None):
@@ -388,15 +352,15 @@ def agent_query(
         # PHASE 5: RESPONSE SYNTHESIS (Extract actual synthesis duration from results)
         logger.info("\n📍 PHASE 5: Response Synthesis")
         mark_phase_running('phase_5_synthesis')
-        
+
         answer = result_dict.get('response', '')
         response_dict = result_dict
         citations = result_dict.get('citations', [])
         synthesis_results = result_dict.get('synthesis_results', [])
-        
+
         # Calculate actual synthesis time from results
         synthesis_duration = sum(s.get('duration', 0) for s in synthesis_results)
-        
+
         logger.info(f"✓ Response synthesized: {len(answer)} chars")
         logger.info(f"⏱️  Phase 5 actual synthesis time: {synthesis_duration:.2f}s")
         
@@ -537,16 +501,31 @@ def agent_query(
         logger.info(f"   Phase 5 (Synthesis):     {synthesis_duration:.2f}s (actual LLM time)")
         logger.info(f"   Phase 6 (Validation):    {validation_duration:.2f}s (actual LLM time)")
         logger.info(f"   Phase 7 (Restoration):   <0.01s (not tracked separately)")
-        logger.info(f"   Phase 8 (Logging):       (running in background...)")
+        logger.info(f"   Phase 8 (Logging):       (MLflow sync, governance async...)")
         logger.info(f"{'='*70}\n")
 
-        # PHASE 8: AUDIT LOGGING (ASYNCHRONOUS)
-        # Launch background thread for governance + MLflow logging
-        import threading
+        # PHASE 8: AUDIT LOGGING
+        # MLflow logging MUST run synchronously (before finally block closes the run)
+        # Governance logging can run async (doesn't depend on MLflow run)
 
-        # Mark Phase 8 as running BEFORE starting thread (threads can't access session_state)
         mark_phase_running('phase_8_logging')
         phase8_start = time.time()
+
+        # ✅ FIX: End MLflow run SYNCHRONOUSLY (before finally block)
+        if obs:
+            try:
+                logger.info(f"🔍 Ending MLflow run synchronously...")
+                obs.end_agent_run(
+                    response=answer or "",
+                    success=True,
+                    error=None
+                )
+                logger.info(f"✅ MLflow logging complete")
+            except Exception as obs_error:
+                logger.error(f"⚠️ Error ending observability run: {obs_error}", exc_info=True)
+
+        # Launch background thread for governance logging ONLY
+        import threading
 
         def async_phase8_logging():
             """Background thread for Phase 8 logging - doesn't block response"""
@@ -590,22 +569,8 @@ def agent_query(
                 except Exception as gov_error:
                     logger.error(f"⚠️ Governance logging failed: {gov_error}", exc_info=True)
 
-                # End observability run (MLflow logging)
-                if obs:
-                    try:
-                        obs.end_agent_run(
-                            response=answer or "",
-                            success=True,
-                            error=None
-                        )
-                    except Exception as obs_error:
-                        logger.info(f"⚠️ Error ending observability run: {obs_error}")
-                        try:
-                            import mlflow
-                            if mlflow.active_run():
-                                mlflow.end_run()
-                        except:
-                            pass
+                # MLflow logging already completed synchronously (above)
+                # No need to call obs.end_agent_run() here
 
                 phase8_duration = time.time() - phase8_start
                 logger.info(f"✅ Phase 8 completed in background ({phase8_duration:.3f}s)")
