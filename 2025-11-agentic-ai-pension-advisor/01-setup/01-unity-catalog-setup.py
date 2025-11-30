@@ -151,6 +151,41 @@ print(f"✓ Created table: {catalog}.member_data.member_profiles")
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Grant Permissions
+
+# COMMAND ----------
+
+# Grant permissions on governance table (needed for INSERT operations)
+current_user = spark.sql("SELECT current_user()").collect()[0][0]
+print(f"Granting permissions to current user: {current_user}")
+
+try:
+    # Grant to current user
+    spark.sql(f"GRANT SELECT, INSERT, MODIFY ON TABLE {catalog}.member_data.governance TO `{current_user}`")
+    print(f"✓ Granted SELECT, INSERT, MODIFY on governance table to {current_user}")
+
+    # Grant to all users (if you want broader access)
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.governance TO `account users`")
+    print(f"✓ Granted SELECT on governance table to all users")
+
+    # Grant on member_profiles (needed for queries)
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.member_profiles TO `{current_user}`")
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.member_profiles TO `account users`")
+    print(f"✓ Granted SELECT on member_profiles table")
+
+    # Grant on citation_registry (needed for citations)
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.citation_registry TO `{current_user}`")
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.citation_registry TO `account users`")
+    print(f"✓ Granted SELECT on citation_registry table")
+
+except Exception as e:
+    print(f"⚠️ Permission grant warning: {e}")
+    print(f"   You may need admin privileges to grant permissions")
+    print(f"   Or permissions may already be inherited from schema/catalog")
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Load Initial Citation Data
 # MAGIC
 # MAGIC Load regulatory citations needed by UC functions
