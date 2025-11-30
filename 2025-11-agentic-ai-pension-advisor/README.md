@@ -1040,6 +1040,294 @@ CountryConfig(
    streamlit run app.py
    ```
 
+---
+
+## Deploying to Databricks Apps
+
+### Overview
+
+Deploy this Streamlit application to Databricks Apps for a fully managed, enterprise-grade deployment with automatic scaling, authentication, and workspace integration.
+
+### Prerequisites
+
+- Databricks workspace with **Apps** enabled (contact your Databricks account team if not available)
+- Unity Catalog with tables and functions set up (run `01-setup/01-unity-catalog-setup.py`)
+- SQL Warehouse ID
+- Foundation Model API access enabled
+
+### Deployment Steps
+
+#### 1. Fork the Repository
+
+**Important:** Fork this repository to your own GitHub account to customize configuration:
+
+1. Navigate to https://github.com/databricks-solutions/databricks-blogposts
+2. Click **Fork** (top right)
+3. Clone your fork:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/databricks-blogposts.git
+   cd databricks-blogposts/2025-11-agentic-ai-pension-advisor
+   ```
+
+**Why fork?** This allows you to:
+- Commit your own `config.yaml` to your private fork
+- Customize prompts, UI, and business logic
+- Maintain your changes while pulling upstream updates
+
+#### 2. Prepare Configuration
+
+**Create your config.yaml:**
+```bash
+# Copy the example config
+cp src/config/config.yaml.example src/config/config.yaml
+
+# Edit src/config/config.yaml with your settings
+```
+
+Update these critical values in `src/config/config.yaml`:
+```yaml
+databricks:
+  sql_warehouse_id: "YOUR_WAREHOUSE_ID"  # Required
+  unity_catalog: "your_catalog"          # Default: pension_blog
+  unity_schema: "member_data"            # Default: member_data
+
+mlflow:
+  prod_experiment_path: "/Users/your.email@company.com/pension-advisor-prod"
+  offline_eval_path: "/Users/your.email@company.com/pension-advisor-eval"
+```
+
+**Configuration Options:**
+
+- **Option A (Recommended):** Commit config.yaml to your private fork
+  ```bash
+  git add src/config/config.yaml
+  git commit -m "Add deployment configuration"
+  git push origin main
+  ```
+
+- **Option B:** Use environment variables in Databricks Apps (overrides config.yaml):
+  ```
+  DATABRICKS_SQL_WAREHOUSE_ID=your_warehouse_id
+  DATABRICKS_UNITY_CATALOG=your_catalog
+  MLFLOW_EXPERIMENT_PATH=/Users/your.email@company.com/pension-advisor-prod
+  ```
+
+#### 3. Set Up Unity Catalog (One-Time)
+
+Run the setup notebook to create tables, functions, and grant permissions:
+
+```python
+# In Databricks workspace, run:
+01-setup/01-unity-catalog-setup.py
+```
+
+This creates:
+- Catalog and schemas (member_data, pension_calculators)
+- Tables (member_profiles, governance, citation_registry)
+- Unity Catalog functions for pension calculations
+- Proper permissions for your user/service principal
+
+#### 4. Deploy to Databricks Apps
+
+**Option A: Deploy via Databricks UI**
+
+1. Navigate to your Databricks workspace
+2. Click **Apps** in the sidebar
+3. Click **Create App**
+4. Configure the app:
+   - **Name:** `pension-advisor` (or your preferred name)
+   - **Source:** Git repository
+   - **Git URL:** `https://github.com/YOUR_USERNAME/databricks-blogposts.git` ⚠️ Use YOUR fork
+   - **Branch:** `main`
+   - **Path:** `2025-11-agentic-ai-pension-advisor`
+   - **Entry Point:** `app.py`
+   - **Python Version:** 3.11
+5. Click **Create**
+
+**Option B: Deploy via Databricks CLI**
+
+```bash
+# Install Databricks CLI
+pip install databricks-cli
+
+# Configure authentication
+databricks configure --token
+
+# Deploy the app (from your fork)
+databricks apps create pension-advisor \
+  --source-code-path https://github.com/YOUR_USERNAME/databricks-blogposts.git \
+  --branch main \
+  --source-code-subpath 2025-11-agentic-ai-pension-advisor \
+  --entry-point app.py \
+  --python-version 3.11
+```
+
+#### 5. Configure App Environment
+
+After deployment, configure the app in the Databricks Apps UI:
+
+**Environment Variables** (Optional - config.yaml takes precedence):
+```
+DATABRICKS_SQL_WAREHOUSE_ID=your_warehouse_id
+DATABRICKS_UNITY_CATALOG=your_catalog
+MLFLOW_EXPERIMENT_PATH=/Users/your.email@company.com/pension-advisor-prod
+```
+
+**Compute Configuration:**
+- **Recommended:** Medium (2-4 cores, 8-16 GB RAM)
+- **Auto-scaling:** Enabled
+- **Min instances:** 1
+- **Max instances:** 3
+
+#### 6. Grant App Permissions
+
+The Databricks App needs permissions to access Unity Catalog:
+
+```sql
+-- Grant to the app service principal
+GRANT USE CATALOG ON CATALOG your_catalog TO `app-pension-advisor`;
+GRANT USE SCHEMA ON SCHEMA your_catalog.member_data TO `app-pension-advisor`;
+GRANT SELECT ON TABLE your_catalog.member_data.member_profiles TO `app-pension-advisor`;
+GRANT SELECT ON TABLE your_catalog.member_data.citation_registry TO `app-pension-advisor`;
+GRANT SELECT, INSERT, MODIFY ON TABLE your_catalog.member_data.governance TO `app-pension-advisor`;
+
+-- Grant function execution
+GRANT EXECUTE ON FUNCTION your_catalog.pension_calculators.get_preservation_age TO `app-pension-advisor`;
+GRANT EXECUTE ON FUNCTION your_catalog.pension_calculators.calculate_retirement_income TO `app-pension-advisor`;
+-- (Repeat for all functions)
+```
+
+#### 7. Test the Deployment
+
+1. Navigate to your app URL: `https://<workspace>.cloud.databricks.com/apps/pension-advisor`
+2. Test a query: "What is my preservation age?" (use test member ID: AU001)
+3. Verify:
+   - Query executes successfully
+   - Response appears in UI
+   - Governance table logs the query: `SELECT * FROM your_catalog.member_data.governance ORDER BY timestamp DESC LIMIT 10`
+   - MLflow logs the run: Check experiment path in MLflow UI
+
+#### 8. Monitor the App
+
+**Application Logs:**
+```bash
+# View logs via CLI
+databricks apps logs pension-advisor --follow
+
+# Or view in UI: Apps → pension-advisor → Logs
+```
+
+**Observability Dashboard:**
+- Navigate to the app
+- Click "Governance" tab to see query metrics, costs, and validation results
+
+**MLflow Tracking:**
+- Navigate to MLflow Experiments
+- Find your experiment path (e.g., `/Users/you@company.com/pension-advisor-prod`)
+- View traces, metrics, and artifacts
+
+### Configuration Reference
+
+#### config.yaml Structure
+
+```yaml
+# LLM Configuration
+llm:
+  endpoint: "databricks-claude-opus-4-1"    # Main synthesis LLM
+  temperature: 0.2
+  max_tokens: 750
+
+validation_llm:
+  endpoint: "databricks-claude-sonnet-4"    # Validation LLM
+  temperature: 0.1
+  max_tokens: 300
+  confidence_threshold: 0.70
+  max_validation_attempts: 2
+
+# Databricks Configuration
+databricks:
+  sql_warehouse_id: "YOUR_WAREHOUSE_ID"     # ⚠️ REQUIRED
+  unity_catalog: "pension_blog"
+  unity_schema: "member_data"
+  governance_table: "governance"
+  member_profiles_table: "member_profiles"
+
+# MLflow Configuration
+mlflow:
+  prod_experiment_path: "/Users/your.email@company.com/pension-advisor-prod"
+  offline_eval_path: "/Users/your.email@company.com/pension-advisor-eval"
+
+# AI Guardrails (Optional)
+ai_guardrails:
+  enabled: true
+  endpoint: "databricks-ai-guardrails"
+  input_policies:
+    pii_detection: true
+    toxicity_threshold: 0.7
+  output_policies:
+    pii_masking: true
+    toxicity_threshold: 0.8
+```
+
+### Troubleshooting
+
+**Issue: "Table not found" error**
+- Ensure setup notebook completed successfully
+- Verify catalog/schema names match config.yaml
+- Check Unity Catalog permissions
+
+**Issue: "Warehouse not found" error**
+- Verify SQL Warehouse ID in config.yaml
+- Ensure warehouse is running
+- Check service principal has access to warehouse
+
+**Issue: "Permission denied" on governance table**
+- Run the permissions grants from Step 6
+- Or grant at schema level: `GRANT ALL PRIVILEGES ON SCHEMA your_catalog.member_data TO <principal>`
+
+**Issue: App crashes on startup**
+- Check app logs: `databricks apps logs pension-advisor`
+- Verify config.yaml has required fields (sql_warehouse_id, experiment paths)
+- Ensure all dependencies in requirements.txt are compatible
+
+**Issue: Queries work but governance table is empty**
+- Check INSERT permissions on governance table
+- Verify table schema matches (run `DESCRIBE TABLE your_catalog.member_data.governance`)
+- Check for schema mismatches in app logs
+
+### Production Considerations
+
+**Security:**
+- Use workspace secrets for sensitive configuration (not environment variables)
+- Enable row-level security on member_profiles table
+- Restrict governance table access to authorized users only
+
+**Cost Optimization:**
+- Use Serverless SQL Warehouse for elastic scaling
+- Monitor query costs in Governance dashboard
+- Adjust LLM cascade classification thresholds to optimize cost vs accuracy
+
+**Scaling:**
+- Start with 1-2 app instances, scale based on usage
+- Consider serving endpoint for high-volume deployments (see `02-agent-demo/05-mlflow-deployment.py`)
+- Use connection pooling for SQL Warehouse (configured by default)
+
+**Monitoring:**
+- Set up alerts on governance table for error rates
+- Monitor MLflow experiments for cost and latency trends
+- Review validation confidence scores for quality degradation
+
+---
+
+### Next Steps
+
+- **Run Demo Notebooks:** Explore `02-agent-demo/` for detailed walkthroughs
+- **Customize Prompts:** Edit prompts in `src/prompts_registry.py` and track with MLflow
+- **Add Countries:** Extend `src/country_config.py` and add country-specific calculators
+- **Production Monitoring:** Set up automated quality scoring (see `02-agent-demo/08-automated-scoring-job.py`)
+
+---
+
 ### Demo Notebooks
 
 Interactive Databricks notebooks demonstrating the complete system:
