@@ -1,5 +1,11 @@
-# Minimal requirements for Databricks notebooks
-# Most packages (pandas, mlflow, databricks-sdk, plotly, pydantic) are pre-installed in Databricks Runtime
+# Requirements for Databricks Serverless notebooks
+# Serverless has a minimal runtime, so we need to install more packages
+
+# MLflow (not always in serverless runtime)
+mlflow>=2.8.0
+
+# Databricks SDK (needed for WorkspaceClient, SQL execution)
+databricks-sdk>=0.12.0
 
 # Configuration Management (required for src.config to load config.yaml)
 PyYAML>=6.0.0
