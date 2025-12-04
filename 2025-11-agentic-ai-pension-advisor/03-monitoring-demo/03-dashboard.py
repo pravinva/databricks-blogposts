@@ -14,6 +14,17 @@
 
 # COMMAND ----------
 
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+
 import sys
 import os
 repo_root = os.path.abspath(
@@ -29,16 +40,6 @@ from datetime import datetime, timedelta
 print("✓ Dashboard modules imported")
 print(f"  Catalog: {UNITY_CATALOG}")
 print(f"  Schema: {UNITY_SCHEMA}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Install Dependencies
-
-# COMMAND ----------
-
-# MAGIC %pip install -q -r ../requirements.txt
-# MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
 

@@ -6,6 +6,17 @@
 
 # COMMAND ----------
 
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+
 import sys
 import os
 repo_root = os.path.abspath(
@@ -18,16 +29,6 @@ from src.config import UNITY_CATALOG, UNITY_SCHEMA
 
 print("✓ Observability modules imported")
 print(f"  Governance table: {UNITY_CATALOG}.{UNITY_SCHEMA}.governance")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Install Dependencies
-
-# COMMAND ----------
-
-# MAGIC %pip install -q -r ../requirements.txt
-# MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
 

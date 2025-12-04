@@ -16,6 +16,16 @@
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
 import sys
 import os
 from pathlib import Path
@@ -40,16 +50,6 @@ import pandas as pd
 
 print("\n✓ Tool modules imported")
 print(f"  Warehouse ID: {SQL_WAREHOUSE_ID}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Install Dependencies
-
-# COMMAND ----------
-
-# MAGIC %pip install -q -r ../requirements.txt
-# MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
 

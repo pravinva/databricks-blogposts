@@ -15,6 +15,17 @@
 
 # COMMAND ----------
 
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+
 import sys
 import os
 repo_root = os.path.abspath(
@@ -30,16 +41,6 @@ from src.config import JUDGE_LLM_ENDPOINT, LLM_JUDGE_CONFIDENCE_THRESHOLD
 print("✓ Validation modules imported")
 print(f"  Judge LLM: {JUDGE_LLM_ENDPOINT}")
 print(f"  Confidence threshold: {LLM_JUDGE_CONFIDENCE_THRESHOLD}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Install Dependencies
-
-# COMMAND ----------
-
-# MAGIC %pip install -q -r ../requirements.txt
-# MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
 

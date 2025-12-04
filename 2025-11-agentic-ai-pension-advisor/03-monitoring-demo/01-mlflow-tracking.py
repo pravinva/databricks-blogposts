@@ -6,6 +6,17 @@
 
 # COMMAND ----------
 
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+
 import sys
 import os
 repo_root = os.path.abspath(
@@ -20,16 +31,6 @@ import pandas as pd
 
 print(f"✓ MLflow experiment: {MLFLOW_PROD_EXPERIMENT_PATH}")
 print(f"✓ Tracking URI: databricks")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Install Dependencies
-
-# COMMAND ----------
-
-# MAGIC %pip install -q -r ../requirements.txt
-# MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
 
