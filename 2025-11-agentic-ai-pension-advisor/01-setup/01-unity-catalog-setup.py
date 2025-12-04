@@ -29,14 +29,16 @@ repo_root = os.path.abspath(
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
-from src.config import UNITY_CATALOG, UNITY_SCHEMA
+from src.config import UNITY_CATALOG, UNITY_SCHEMA, FUNCTIONS_SCHEMA
 
-catalog = spark.conf.get("demo.catalog", UNITY_CATALOG)
-schema = spark.conf.get("demo.schema", UNITY_SCHEMA)
+catalog = UNITY_CATALOG
+schema = UNITY_SCHEMA
+functions_schema = FUNCTIONS_SCHEMA
 
-print(f"Setting up UC functions in:")
+print(f"Setting up UC resources in:")
 print(f"  Catalog: {catalog}")
-print(f"  Schema: pension_calculators")
+print(f"  Data Schema: {schema}")
+print(f"  Functions Schema: {functions_schema}")
 
 # COMMAND ----------
 
@@ -56,9 +58,9 @@ spark.sql(f"USE CATALOG {catalog}")
 print(f"✓ Using catalog '{catalog}'")
 
 # Create schemas
-spark.sql("CREATE SCHEMA IF NOT EXISTS member_data")
-spark.sql("CREATE SCHEMA IF NOT EXISTS pension_calculators")
-print(f"✓ Schemas created: member_data, pension_calculators")
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {schema}")
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {functions_schema}")
+print(f"✓ Schemas created: {schema}, {functions_schema}")
 
 # COMMAND ----------
 
@@ -71,7 +73,7 @@ print(f"✓ Schemas created: member_data, pension_calculators")
 
 # Create citation_registry table
 spark.sql(f"""
-CREATE TABLE IF NOT EXISTS {catalog}.member_data.citation_registry (
+CREATE TABLE IF NOT EXISTS {catalog}.{schema}.citation_registry (
   citation_id STRING COMMENT 'Unique citation identifier (e.g., AU-TAX-001)',
   country STRING COMMENT 'Country code (AU, US, UK, IN)',
   authority STRING COMMENT 'Regulatory authority name',
@@ -86,13 +88,13 @@ CREATE TABLE IF NOT EXISTS {catalog}.member_data.citation_registry (
 USING delta
 COMMENT 'Registry of regulatory citations for compliance'
 """)
-print(f"✓ Created table: {catalog}.member_data.citation_registry")
+print(f"✓ Created table: {catalog}.{schema}.citation_registry")
 
 # COMMAND ----------
 
 # Create governance table for audit logging
 spark.sql(f"""
-CREATE TABLE IF NOT EXISTS {catalog}.member_data.governance (
+CREATE TABLE IF NOT EXISTS {catalog}.{schema}.governance (
   event_id STRING COMMENT 'Unique event identifier',
   timestamp TIMESTAMP COMMENT 'Event timestamp',
   user_id STRING COMMENT 'Member ID who made query',
@@ -116,13 +118,13 @@ USING delta
 PARTITIONED BY (country)
 COMMENT 'Audit log for all agent queries and tool executions'
 """)
-print(f"✓ Created table: {catalog}.member_data.governance")
+print(f"✓ Created table: {catalog}.{schema}.governance")
 
 # COMMAND ----------
 
 # Create member_profiles table
 spark.sql(f"""
-CREATE TABLE IF NOT EXISTS {catalog}.member_data.member_profiles (
+CREATE TABLE IF NOT EXISTS {catalog}.{schema}.member_profiles (
   member_id STRING COMMENT 'Unique member identifier',
   name STRING COMMENT 'Member full name',
   age INT COMMENT 'Member age',
@@ -146,7 +148,7 @@ CREATE TABLE IF NOT EXISTS {catalog}.member_data.member_profiles (
 USING delta
 COMMENT 'Member profile information for retirement calculations'
 """)
-print(f"✓ Created table: {catalog}.member_data.member_profiles")
+print(f"✓ Created table: {catalog}.{schema}.member_profiles")
 
 # COMMAND ----------
 
@@ -161,21 +163,21 @@ print(f"Granting permissions to current user: {current_user}")
 
 try:
     # Grant to current user
-    spark.sql(f"GRANT SELECT, MODIFY ON TABLE {catalog}.member_data.governance TO `{current_user}`")
+    spark.sql(f"GRANT SELECT, MODIFY ON TABLE {catalog}.{schema}.governance TO `{current_user}`")
     print(f"✓ Granted SELECT, MODIFY on governance table to {current_user}")
 
     # Grant to all users (if you want broader access)
-    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.governance TO `account users`")
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.{schema}.governance TO `account users`")
     print(f"✓ Granted SELECT on governance table to all users")
 
     # Grant on member_profiles (needed for queries)
-    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.member_profiles TO `{current_user}`")
-    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.member_profiles TO `account users`")
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.{schema}.member_profiles TO `{current_user}`")
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.{schema}.member_profiles TO `account users`")
     print(f"✓ Granted SELECT on member_profiles table")
 
     # Grant on citation_registry (needed for citations)
-    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.citation_registry TO `{current_user}`")
-    spark.sql(f"GRANT SELECT ON TABLE {catalog}.member_data.citation_registry TO `account users`")
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.{schema}.citation_registry TO `{current_user}`")
+    spark.sql(f"GRANT SELECT ON TABLE {catalog}.{schema}.citation_registry TO `account users`")
     print(f"✓ Granted SELECT on citation_registry table")
 
 except Exception as e:
@@ -260,7 +262,7 @@ df_citations.createOrReplaceTempView("new_citations")
 
 # MERGE to update existing and insert new citations
 spark.sql(f"""
-MERGE INTO {catalog}.member_data.citation_registry AS target
+MERGE INTO {catalog}.{schema}.citation_registry AS target
 USING new_citations AS source
 ON target.citation_id = source.citation_id
 WHEN MATCHED THEN UPDATE SET
@@ -283,7 +285,7 @@ WHEN NOT MATCHED THEN INSERT (
 )
 """)
 
-citation_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.member_data.citation_registry").collect()[0].cnt
+citation_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.{schema}.citation_registry").collect()[0].cnt
 print(f"✓ Merged citations - total records: {citation_count}")
 
 # COMMAND ----------
@@ -302,11 +304,13 @@ sql_file_path = "../sql_ddls/super_advisory_demo_functions.sql"
 with open(sql_file_path, 'r') as f:
     sql_content = f.read()
 
-# Replace hardcoded catalog name with configured catalog
+# Replace hardcoded catalog and schema names with configured values
 sql_content = sql_content.replace("pension_blog", catalog)
+sql_content = sql_content.replace("pension_calculators", functions_schema)
 
 print(f"✓ Loaded UC functions SQL from {sql_file_path}")
 print(f"  Replaced 'pension_blog' with '{catalog}'")
+print(f"  Replaced 'pension_calculators' with '{functions_schema}'")
 print(f"  Size: {len(sql_content):,} characters")
 
 # COMMAND ----------
@@ -386,7 +390,7 @@ print(f"  Errors: {error_count}")
 
 # COMMAND ----------
 
-display(spark.sql(f"SHOW USER FUNCTIONS IN {catalog}.pension_calculators"))
+display(spark.sql(f"SHOW USER FUNCTIONS IN {catalog}.{functions_schema}"))
 
 # COMMAND ----------
 
@@ -403,7 +407,7 @@ display(spark.sql(f"SHOW USER FUNCTIONS IN {catalog}.pension_calculators"))
 # COMMAND ----------
 
 result_au = spark.sql(f"""
-SELECT {catalog}.pension_calculators.au_calculate_tax(
+SELECT {catalog}.{functions_schema}.au_calculate_tax(
     'M12345',  -- member_id
     67,        -- member_age
     60,        -- preservation_age
@@ -422,7 +426,7 @@ display(result_au)
 # COMMAND ----------
 
 result_us = spark.sql(f"""
-SELECT {catalog}.pension_calculators.us_calculate_401k_tax(
+SELECT {catalog}.{functions_schema}.us_calculate_401k_tax(
     'M67890',  -- member_id
     '401k',    -- account_type
     50000.0,   -- withdrawal_amount
@@ -440,7 +444,7 @@ display(result_us)
 # COMMAND ----------
 
 result_uk = spark.sql(f"""
-SELECT {catalog}.pension_calculators.uk_check_state_pension(
+SELECT {catalog}.{functions_schema}.uk_check_state_pension(
     'M11223',    -- member_id
     67,          -- member_age
     35,          -- ni_qualifying_years
@@ -458,7 +462,7 @@ display(result_uk)
 # COMMAND ----------
 
 result_in = spark.sql(f"""
-SELECT {catalog}.pension_calculators.in_calculate_epf_tax(
+SELECT {catalog}.{functions_schema}.in_calculate_epf_tax(
     'M44556',   -- member_id
     55,         -- member_age
     500000.0,   -- super_balance (EPF balance)
@@ -489,7 +493,7 @@ display(result_in)
 # Grant EXECUTE to all account users (customize as needed)
 try:
     spark.sql(f"""
-    GRANT EXECUTE ON FUNCTION {catalog}.pension_calculators.au_calculate_tax
+    GRANT EXECUTE ON FUNCTION {catalog}.{functions_schema}.au_calculate_tax
     TO `account users`
     """)
     print("✓ Granted EXECUTE permission to account users")
@@ -512,7 +516,7 @@ except Exception as e:
 # COMMAND ----------
 
 print("✅ Unity Catalog functions setup complete!")
-print(f"   Functions created in: {catalog}.pension_calculators")
+print(f"   Functions created in: {catalog}.{functions_schema}")
 print(f"   Total functions: 18 (AU: 3, US: 6, UK: 3, IN: 6)")
 print(f"   Tested: au_calculate_tax, us_calculate_401k_tax, uk_check_state_pension, in_calculate_epf_tax")
 
@@ -684,7 +688,7 @@ display(member_profiles_df.head(5))
 spark_member_profiles = spark.createDataFrame(member_profiles_df)
 
 # Write to Delta table
-table_name = f"{catalog}.member_data.member_profiles"
+table_name = f"{catalog}.{schema}.member_profiles"
 print(f"Writing to {table_name}...")
 
 spark_member_profiles.write \
@@ -709,7 +713,7 @@ SELECT
     AVG(age) as avg_age,
     AVG(super_balance) as avg_balance,
     AVG(annual_income_outside_super) as avg_income
-FROM {catalog}.member_data.member_profiles
+FROM {catalog}.{schema}.member_profiles
 GROUP BY country
 ORDER BY country
 """))
@@ -745,7 +749,7 @@ except Exception as e:
 # Grant schema-level permissions
 try:
     spark.sql(f"GRANT USE SCHEMA ON SCHEMA {catalog}.{schema} TO `account users`")
-    spark.sql(f"GRANT USE SCHEMA ON SCHEMA {catalog}.pension_calculators TO `account users`")
+    spark.sql(f"GRANT USE SCHEMA ON SCHEMA {catalog}.{functions_schema} TO `account users`")
     print(f"✓ Granted USE SCHEMA on {schema} and pension_calculators")
 except Exception as e:
     print(f"Note: {e}")
@@ -773,7 +777,7 @@ except Exception as e:
 # COMMAND ----------
 
 # Grant EXECUTE on all UC functions
-functions = spark.sql(f"SHOW USER FUNCTIONS IN {catalog}.pension_calculators").collect()
+functions = spark.sql(f"SHOW USER FUNCTIONS IN {catalog}.{functions_schema}").collect()
 
 for func_row in functions:
     func_name = func_row.function
@@ -809,9 +813,9 @@ print(f"  Functions: EXECUTE on all {len(functions)} functions")
 
 # COMMAND ----------
 
-mp_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.member_data.member_profiles").collect()[0].cnt
-cr_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.member_data.citation_registry").collect()[0].cnt
-gov_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.member_data.governance").collect()[0].cnt
+mp_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.{schema}.member_profiles").collect()[0].cnt
+cr_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.{schema}.citation_registry").collect()[0].cnt
+gov_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.{schema}.governance").collect()[0].cnt
 
 print("✅ Unity Catalog setup complete!")
 print(f"   Catalog: {catalog}")

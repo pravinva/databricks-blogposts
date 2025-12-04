@@ -28,8 +28,8 @@ if repo_root not in sys.path:
 
 from src.config import UNITY_CATALOG, UNITY_SCHEMA
 
-catalog = spark.conf.get("demo.catalog", UNITY_CATALOG)
-schema = spark.conf.get("demo.schema", UNITY_SCHEMA)
+catalog = UNITY_CATALOG
+schema = UNITY_SCHEMA
 
 # Set current catalog
 spark.sql(f"USE CATALOG {catalog}")

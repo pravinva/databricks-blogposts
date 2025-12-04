@@ -30,9 +30,11 @@ classifier_llm:
 databricks:
   sql_warehouse_id: "YOUR_WAREHOUSE_ID_HERE"  # Get from Databricks SQL Warehouses page
   unity_catalog: "pension_blog"  # Update with your catalog name
-  unity_schema: "member_data"
+  unity_schema: "pension_advisory"  # Single schema for all tables and functions
+  functions_schema: "pension_advisory"  # Schema for SQL UDFs (same as unity_schema)
   governance_table: "governance"
   member_profiles_table: "member_profiles"
+  citation_registry_table: "citation_registry"
 
 # MLflow Configuration
 # IMPORTANT: Update these paths for your environment

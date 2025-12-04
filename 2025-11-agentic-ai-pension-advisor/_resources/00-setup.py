@@ -67,16 +67,11 @@ print(f"✓ Schema 'pension_calculators' ready (for UC functions)")
 
 # COMMAND ----------
 
-# Set configuration for other notebooks to use
-spark.conf.set("demo.catalog", catalog)
-spark.conf.set("demo.schema", schema)
-spark.conf.set("demo.reset_data", str(reset_all_data))
-
+# Configuration variables are now loaded directly from src.config in each notebook
 # Cloud storage path for streaming checkpoints
 cloud_storage_path = f"/tmp/{catalog}/{schema}"
-spark.conf.set("demo.storage_path", cloud_storage_path)
 
-print(f"✓ Configuration set:")
+print(f"✓ Configuration (loaded from src.config):")
 print(f"  - Catalog: {catalog}")
 print(f"  - Schema: {schema}")
 print(f"  - Storage path: {cloud_storage_path}")

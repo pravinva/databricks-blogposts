@@ -24,7 +24,7 @@ description: |
 # Installation requirements
 custom_schema_supported: true
 default_catalog: "pension_blog"  # Change this to match your config.yaml unity_catalog value
-default_schema: "member_data"
+default_schema: "pension_advisory"  # Single schema for all tables and functions
 
 # Databricks Runtime requirements
 min_dbr_version: "14.3"
