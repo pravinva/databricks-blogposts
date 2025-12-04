@@ -1,8 +1,9 @@
 # Requirements for Databricks Serverless notebooks
 # Serverless has a minimal runtime, so we need to install more packages
 
-# Streamlit (for app.py - ensure version supports use_container_width)
-streamlit>=1.35.0
+# Core Framework
+# Pin to 1.51.0 - older versions (1.37-1.40) have "Bad setIn index" widget state bugs
+streamlit==1.51.0
 
 # MLflow (not always in serverless runtime)
 mlflow>=2.8.0
