@@ -293,7 +293,7 @@ def render_mlflow_traces_tab():
         with col1:
             st.info("💡 **Tip:** Prompts are not automatically registered. Click the button below to register them now.")
         with col2:
-            if st.button("🚀 Register Prompts Now", type="primary", width="stretch"):
+            if st.button("Register Prompts Now", type="primary"):
                 try:
                     from src.prompts_registry import register_prompts_now
                     with st.spinner("Registering prompts with MLflow..."):
