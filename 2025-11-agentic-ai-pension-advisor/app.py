@@ -83,18 +83,18 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("⚖️ Validation Mode")
+st.sidebar.subheader("Validation Mode")
 
 mode_options = {
-    "🎯 LLM Judge Only": "llm_judge",
-    "⚡ Hybrid (Fast + Smart)": "hybrid",
-    "🚀 Deterministic Only": "deterministic",
+    "LLM Judge Only": "llm_judge",
+    "Hybrid (Fast + Smart)": "hybrid",
+    "Deterministic Only": "deterministic",
 }
 
 selected = st.sidebar.radio("Choose strategy:", options=list(mode_options.keys()), index=0)
 st.session_state.validation_mode = mode_options[selected]
 
-# ✅ CRITICAL: Initialize query execution flag
+# CRITICAL: Initialize query execution flag
 if "query_executing" not in st.session_state:
     st.session_state.query_executing = False
 
@@ -141,7 +141,7 @@ if page == "Advisory":
         members_df = get_members_by_country(country_code)
         if safe_dataframe_check(members_df):
             if len(members_df) > 4:
-                # ✅ CRITICAL: Use fixed random_state to ensure same members are always selected
+                # CRITICAL: Use fixed random_state to ensure same members are always selected
                 # random_state=None would pick different members on each rerun, causing widget key mismatches
                 members_df = members_df.sample(n=4, random_state=42)
             st.session_state.members_list = members_df.to_dict("records")
@@ -153,7 +153,7 @@ if page == "Advisory":
     members = st.session_state.members_list
     
     if not members:
-        st.warning(f"⚠️ No members found for {country_display}.")
+        st.warning(f"No members found for {country_display}.")
     else:
         cols = st.columns(min(3, len(members)))
         for idx, member in enumerate(members):
@@ -161,7 +161,7 @@ if page == "Advisory":
                 member_id = member.get('member_id')
                 is_selected = (st.session_state.selected_member == member_id)
                 button_type = "primary" if is_selected else "secondary"
-                button_label = f"{'✓ ' if is_selected else ''}Select {member.get('name','Unknown')}"
+                button_label = f"{'' if is_selected else ''}Select {member.get('name','Unknown')}"
                 
                 if st.button(button_label, key=f"btn_{member_id}_{country_code}", type=button_type):
                     st.session_state.selected_member = member_id
@@ -169,7 +169,7 @@ if page == "Advisory":
 
                 render_member_card(member, is_selected, country_display)
 
-    # ✅ Don't auto-select first member - causes widget state changes on every render
+    # Don't auto-select first member - causes widget state changes on every render
     # Only use selected member if one has been explicitly chosen
     if st.session_state.selected_member:
         member = next((m for m in members if m.get('member_id') == st.session_state.selected_member), None)
@@ -181,7 +181,7 @@ if page == "Advisory":
     
     sample_questions = {
         "Australia": [
-            "💰 What's the maximum amount I can withdraw from my superannuation this year?",
+            "What's the maximum amount I can withdraw from my superannuation this year?",
             "🎂 At what age can I access my super without restrictions?",
             "🏥 Can I access my super early for medical reasons or financial hardship?"
         ],
@@ -192,13 +192,13 @@ if page == "Advisory":
         ],
         "United Kingdom": [
             "💷 How much of my pension can I take tax-free?",
-            "✈️ Can I transfer my UK pension abroad?",
+            "Can I transfer my UK pension abroad?",
             "⏰ How can I access my pension before state age?"
         ],
         "India": [
             "💸 What percentage of my EPF can I withdraw before retirement?",
             "🏠 Can I withdraw PF for housing?",
-            "📊 How is my EPS calculated?"
+            "How is my EPS calculated?"
         ]
     }
     
@@ -206,41 +206,41 @@ if page == "Advisory":
     cols = st.columns(3)
     for i, q in enumerate(sample_questions.get(country_display, [])):
         with cols[i]:
-            # ✅ Include country_code in key to avoid conflicts when switching countries
+            # Include country_code in key to avoid conflicts when switching countries
             if st.button(q, key=f"sample_q_{country_code}_{i}"):
                 st.session_state.query_input = q
     
     question = st.text_input("Your question:", key="query_input")
     
-    # ✅ Show/Hide Logs Toggle (like the GitHub implementation)
+    # Show/Hide Logs Toggle (like the GitHub implementation)
     # Initialize to False (not shown by default)
     if 'show_processing_logs' not in st.session_state:
         st.session_state.show_processing_logs = False
     
-    # ✅ CRITICAL: Use session_state value directly for checkbox to ensure it respects our reset
+    # CRITICAL: Use session_state value directly for checkbox to ensure it respects our reset
     show_logs = st.checkbox(
         "🔍 Show Processing Logs",
         value=st.session_state.show_processing_logs,
         key="show_logs_checkbox"
     )
     
-    # ✅ CRITICAL: Update session_state from checkbox value
+    # CRITICAL: Update session_state from checkbox value
     # This ensures checkbox state is synced with session_state
     st.session_state.show_processing_logs = show_logs
     
-    # ✅ CRITICAL: Show progress tracker if phases exist OR if query is executing
+    # CRITICAL: Show progress tracker if phases exist OR if query is executing
     # This ensures progress shows even when switching pages mid-execution
     has_phases = 'phases' in st.session_state and len(st.session_state.phases) > 0
     is_executing = st.session_state.get('query_executing', False)
     
-    # ✅ Show progress if checkbox is checked AND (phases exist OR query is executing)
+    # Show progress if checkbox is checked AND (phases exist OR query is executing)
     # This ensures progress shows when switching back to Advisory page during execution
     if (has_phases or is_executing) and show_logs:
-        # ✅ CRITICAL: Create placeholder for real-time updates
+        # CRITICAL: Create placeholder for real-time updates
         if 'progress_placeholder' not in st.session_state:
             st.session_state.progress_placeholder = st.empty()
         
-        # ✅ Render progress display (updates via direct placeholder updates during execution)
+        # Render progress display (updates via direct placeholder updates during execution)
         # No fragment needed - direct updates from mark_phase_running/complete work perfectly
         from src.utils.progress import render_progress_fragment
         try:
@@ -248,26 +248,26 @@ if page == "Advisory":
         except:
             pass
         
-        # ✅ Show indicator if query is executing
+        # Show indicator if query is executing
         if is_executing:
-            st.info("🔄 Query is currently processing... Progress will update in real-time.")
+            st.info("Query is currently processing... Progress will update in real-time.")
     elif has_phases and not show_logs:
-        # ✅ CRITICAL: Hide logs when checkbox is unchecked
+        # CRITICAL: Hide logs when checkbox is unchecked
         # Clear the placeholder to hide progress display
         if 'progress_placeholder' in st.session_state:
             st.session_state.progress_placeholder.empty()
     
-    # ✅ CRITICAL: Show status if query is executing but logs are hidden
+    # CRITICAL: Show status if query is executing but logs are hidden
     if is_executing and not show_logs:
-        st.info("🔄 Query is currently processing... Enable 'Show Processing Logs' to see progress.")
+        st.info("Query is currently processing... Enable 'Show Processing Logs' to see progress.")
     
-    if st.button("🚀 Get Recommendation", type="primary"):
+    if st.button("Get Recommendation", type="primary"):
         if not question:
             st.warning("Please enter a question first.")
         elif not st.session_state.selected_member:
             st.warning("Please select a member profile first.")
         else:
-            # ✅ NEW: Check if this is a new user/question or continuation
+            # NEW: Check if this is a new user/question or continuation
             is_new_context = (
                 st.session_state.get('last_member') != st.session_state.selected_member or
                 st.session_state.get('last_question') != question
@@ -282,39 +282,39 @@ if page == "Advisory":
             st.session_state.last_member = st.session_state.selected_member
             st.session_state.last_question = question
 
-            # ✅ NEW: Auto-show processing logs for new query
+            # NEW: Auto-show processing logs for new query
             st.session_state.show_processing_logs = True
 
-            # ✅ CRITICAL: Clear old phases/logs for new query
+            # CRITICAL: Clear old phases/logs for new query
             # Delete phases so initialize_progress_tracker() recreates it properly
             if 'phases' in st.session_state:
                 del st.session_state.phases
 
-            # ✅ CRITICAL: Initialize phases FIRST (will trigger rerun)
+            # CRITICAL: Initialize phases FIRST (will trigger rerun)
             initialize_progress_tracker()
             st.session_state.query_executing = True
             st.session_state.current_query = question  # Store query for execution block
 
-            # ✅ CRITICAL: Force immediate rerun to show progress
+            # CRITICAL: Force immediate rerun to show progress
             st.rerun()
     
-    # ✅ CRITICAL: Handle query execution (if query_executing flag is set)
+    # CRITICAL: Handle query execution (if query_executing flag is set)
     # This runs after st.rerun() when button is clicked
-    # ✅ FIXED: Check if query already completed to prevent re-execution
+    # FIXED: Check if query already completed to prevent re-execution
     if st.session_state.get('query_executing', False):
-        # ✅ CRITICAL: If agent_output already exists, query already completed
+        # CRITICAL: If agent_output already exists, query already completed
         # Don't re-execute, just mark as complete
         if st.session_state.get('agent_output'):
             st.session_state.query_executing = False
         else:
             # Process query with spinner
-            with st.spinner("🔄 Processing your request..."):
+            with st.spinner("Processing your request..."):
                 try:
-                    # ✅ FIXED: agent_query now returns a dictionary, not 7 separate values
+                    # FIXED: agent_query now returns a dictionary, not 7 separate values
                     result = agent_query(
                         user_id=st.session_state.selected_member,
                         session_id=st.session_state.session_id,
-                        country=country_code,  # ✅ Use country_code (AU, US, UK, IN) not display name
+                        country=country_code,  # Use country_code (AU, US, UK, IN) not display name
                         query_string=st.session_state.get('current_query', question),
                         validation_mode=st.session_state.validation_mode,
                     )
@@ -330,7 +330,7 @@ if page == "Advisory":
                     total_cost = result.get('cost', 0.0)
                     cost_breakdown = result.get('cost_breakdown', {})
 
-                    # ✅ NEW: Store current output
+                    # NEW: Store current output
                     current_output = {
                         "answer": answer,
                         "citations": citations,
@@ -348,7 +348,7 @@ if page == "Advisory":
                     # Set as current output
                     st.session_state.agent_output = current_output
 
-                    # ✅ NEW: Add to conversation history (newest at top)
+                    # NEW: Add to conversation history (newest at top)
                     if 'conversation_history' not in st.session_state:
                         st.session_state.conversation_history = []
 
@@ -364,10 +364,10 @@ if page == "Advisory":
                     st.code(traceback.format_exc())
                     st.session_state.query_executing = False
                 finally:
-                    # ✅ CRITICAL: Always mark query as complete
+                    # CRITICAL: Always mark query as complete
                     st.session_state.query_executing = False
     
-    # ✅ CRITICAL: Answer display - Show conversation history (newest first)
+    # CRITICAL: Answer display - Show conversation history (newest first)
     if 'conversation_history' in st.session_state and st.session_state.conversation_history:
         st.markdown("---")
 
@@ -390,8 +390,8 @@ if page == "Advisory":
             answer_failed = not validation_passed
 
             if answer_failed:
-                # ❌ VALIDATION FAILED - Show safe fallback message to user
-                st.subheader("📊 Response Status")
+                # VALIDATION FAILED - Show safe fallback message to user
+                st.subheader("Response Status")
 
                 st.markdown("""
             <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
@@ -431,7 +431,7 @@ if page == "Advisory":
 
                 # 🔒 INTERNAL REVIEW SECTION - Collapsed by default
                 with st.expander("🔧 INTERNAL REVIEW - AI Generated Response (For Dev Team Only)", expanded=False):
-                    st.warning("⚠️ This response FAILED validation and was NOT shown to the user.")
+                    st.warning("This response FAILED validation and was NOT shown to the user.")
                     st.markdown("**AI Generated Answer (Do Not Share With User):**")
                     st.code(output["answer"], language=None)
 
@@ -454,11 +454,11 @@ if page == "Advisory":
                     """)
 
             else:
-                # ✅ VALIDATION PASSED - Show answer with professional styling
+                # VALIDATION PASSED - Show answer with professional styling
                 if idx == 0:  # Most recent answer
-                    st.subheader("📊 Your Personalized Recommendation")
+                    st.subheader("Your Personalized Recommendation")
                 else:
-                    st.subheader("📊 Previous Response")
+                    st.subheader("Previous Response")
 
                 # Use simple st.success for clean display (no HTML issues)
                 st.success(output["answer"])
@@ -510,12 +510,12 @@ elif page == "Governance":
     # (MLflow and Cost tabs removed - use sidebar links to Databricks native UIs)
     tab1, tab2, tab3 = st.tabs([
         "🔒 Governance",
-        "⚙️ Config",
-        "📊 Observability"
+        "Config",
+        "Observability"
     ])
     
     with tab1:  # Governance - Dashboard overview + Audit trail
-        st.markdown("### 📊 Governance Dashboard")
+        st.markdown("### Governance Dashboard")
         st.caption("Overview of system performance and audit trail")
 
         # Model Registry Section
@@ -554,11 +554,11 @@ elif page == "Governance":
                 if alias_info:
                     st.caption(" | ".join(alias_info))
         else:
-            st.warning(f"⚠️ Model Registry: {model_info.get('error', 'Unknown error')}")
+            st.warning(f"Model Registry: {model_info.get('error', 'Unknown error')}")
 
         st.markdown("---")
 
-        # ✅ Import dashboard components
+        # Import dashboard components
         from src.ui_dashboard import (
             get_dashboard_data,
             calculate_key_metrics,
@@ -621,13 +621,13 @@ elif page == "Governance":
             
             st.markdown("---")
         else:
-            st.info("📊 No data available for the last 24 hours. Run some queries to populate the dashboard!")
+            st.info("No data available for the last 24 hours. Run some queries to populate the dashboard!")
         
-        # ✅ Audit Trail with full width right under key metrics
+        # Audit Trail with full width right under key metrics
         st.markdown("### 📋 Audit Trail")
         render_enhanced_audit_tab()
         
-        # ✅ Recent Activity Feed below Audit Trail (optional - can be removed if not needed)
+        # Recent Activity Feed below Audit Trail (optional - can be removed if not needed)
         if not df.empty:
             st.markdown("---")
             render_activity_feed(df, limit=10)
@@ -658,12 +658,12 @@ elif page == "Governance":
         col1, col2 = st.columns([1, 1])
 
         with col1:
-            st.markdown("### 📊 Performance Metrics")
+            st.markdown("### Performance Metrics")
             st.caption("Request volume, latency, and LLM token costs")
             render_realtime_metrics_tab()
 
         with col2:
-            st.markdown("### ✅ Quality & Validation")
+            st.markdown("### Quality & Validation")
             st.caption("Pass rates, confidence scores, and violations")
             render_quality_monitoring_tab()
 
