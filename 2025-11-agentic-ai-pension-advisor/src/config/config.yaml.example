@@ -29,7 +29,7 @@ classifier_llm:
 # IMPORTANT: Update these values for your environment
 databricks:
   sql_warehouse_id: "YOUR_WAREHOUSE_ID_HERE"  # Get from Databricks SQL Warehouses page
-  unity_catalog: "pension_blog"  # Update with your catalog name
+  unity_catalog: "financial_services"  # Update with your catalog name (e.g., pension_blog, financial_services)
   unity_schema: "pension_advisory"  # Single schema for all tables and functions
   functions_schema: "pension_advisory"  # Schema for SQL UDFs (same as unity_schema)
   governance_table: "governance"
