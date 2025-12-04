@@ -13,9 +13,19 @@
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Configuration
 # MAGIC
-# MAGIC These can be overridden via widgets or environment variables
+# MAGIC Configuration is loaded from config.yaml
 
 # COMMAND ----------
 
