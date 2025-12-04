@@ -6,7 +6,7 @@
 # MAGIC catalog, schemas, tables, data, and UC functions.
 # MAGIC
 # MAGIC **What this notebook does:**
-# MAGIC - Creates catalog and schemas (member_data, pension_calculators)
+# MAGIC - Creates catalog and schemas (configured via config.yaml)
 # MAGIC - Creates tables (member_profiles, citation_registry, governance)
 # MAGIC - Loads citation registry data (regulatory references)
 # MAGIC - Creates Unity Catalog functions for retirement calculations
@@ -725,7 +725,7 @@ ORDER BY country
 # MAGIC
 # MAGIC Grant all necessary permissions for Databricks Apps and service principals:
 # MAGIC - USE CATALOG on configured catalog
-# MAGIC - USE SCHEMA on member_data and pension_calculators
+# MAGIC - USE SCHEMA on configured schemas
 # MAGIC - SELECT on all tables
 # MAGIC - EXECUTE on all UC functions
 # MAGIC
@@ -750,7 +750,7 @@ except Exception as e:
 try:
     spark.sql(f"GRANT USE SCHEMA ON SCHEMA {catalog}.{schema} TO `account users`")
     spark.sql(f"GRANT USE SCHEMA ON SCHEMA {catalog}.{functions_schema} TO `account users`")
-    print(f"✓ Granted USE SCHEMA on {schema} and pension_calculators")
+    print(f"✓ Granted USE SCHEMA on {schema} and {functions_schema}")
 except Exception as e:
     print(f"Note: {e}")
 
@@ -789,7 +789,7 @@ for func_row in functions:
 
 print(f"\n✓ All permissions granted successfully")
 print(f"  Catalog: USE CATALOG on {catalog}")
-print(f"  Schemas: USE SCHEMA on {schema} and pension_calculators")
+print(f"  Schemas: USE SCHEMA on {schema} and {functions_schema}")
 print(f"  Tables: SELECT on member_profiles, governance, citation_registry")
 print(f"  Governance: MODIFY on governance (for audit logging)")
 print(f"  Functions: EXECUTE on all {len(functions)} functions")
@@ -819,7 +819,7 @@ gov_count = spark.sql(f"SELECT COUNT(*) as cnt FROM {catalog}.{schema}.governanc
 
 print("✅ Unity Catalog setup complete!")
 print(f"   Catalog: {catalog}")
-print(f"   Schemas: member_data, pension_calculators")
+print(f"   Schemas: {schema}, {functions_schema}")
 print(f"   Member profiles: {mp_count}")
 print(f"   Citations: {cr_count}")
 print(f"   Governance logs: {gov_count} (will populate when agent runs)")

@@ -192,12 +192,12 @@ def log_model_to_mlflow(
     Args:
         model_name: Name for the model (e.g., "pension_advisor")
         catalog: Unity Catalog name (e.g., "pension_blog")
-        schema: Schema name (e.g., "member_data")
+        schema: Schema name (e.g., "pension_advisory")
         description: Model description
         example_input: Example input DataFrame for signature inference
 
     Returns:
-        Model URI (e.g., "models:/pension_blog.member_data.pension_advisor@champion")
+        Model URI (e.g., "models:/pension_blog.pension_advisory.pension_advisor@champion")
     """
     import mlflow
     from mlflow.models import infer_signature

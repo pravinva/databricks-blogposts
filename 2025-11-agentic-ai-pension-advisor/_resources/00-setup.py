@@ -19,18 +19,26 @@
 
 # COMMAND ----------
 
-# Widgets for configuration
-dbutils.widgets.text("catalog", "pension_blog", "Catalog Name")
-dbutils.widgets.text("schema", "member_data", "Schema Name")
-dbutils.widgets.dropdown("reset_all_data", "false", ["true", "false"], "Reset All Data")
+# Import configuration from config.yaml
+import sys
+import os
+repo_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
 
-# Get widget values
-catalog = dbutils.widgets.get("catalog")
-schema = dbutils.widgets.get("schema")
+from src.config import UNITY_CATALOG, UNITY_SCHEMA, FUNCTIONS_SCHEMA
+
+catalog = UNITY_CATALOG
+schema = UNITY_SCHEMA
+functions_schema = FUNCTIONS_SCHEMA
+
+# Reset data widget
+dbutils.widgets.dropdown("reset_all_data", "false", ["true", "false"], "Reset All Data")
 reset_all_data = dbutils.widgets.get("reset_all_data") == "true"
 
 print(f"Catalog: {catalog}")
 print(f"Schema: {schema}")
+print(f"Functions Schema: {functions_schema}")
 print(f"Reset data: {reset_all_data}")
 
 # COMMAND ----------
@@ -47,16 +55,15 @@ print(f"✓ Catalog '{catalog}' ready")
 # Use the catalog
 spark.sql(f"USE CATALOG {catalog}")
 
-# Create schema if it doesn't exist
+# Create schemas if they don't exist
 spark.sql(f"CREATE SCHEMA IF NOT EXISTS {schema}")
 print(f"✓ Schema '{schema}' ready")
 
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {functions_schema}")
+print(f"✓ Schema '{functions_schema}' ready (for UC functions)")
+
 # Use the schema
 spark.sql(f"USE SCHEMA {schema}")
-
-# Create pension_calculators schema for UC functions
-spark.sql(f"CREATE SCHEMA IF NOT EXISTS pension_calculators")
-print(f"✓ Schema 'pension_calculators' ready (for UC functions)")
 
 # COMMAND ----------
 

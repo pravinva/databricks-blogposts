@@ -6,13 +6,13 @@
 
 -- NOTE: Catalog and schema should be created before running these statements
 -- USE CATALOG pension_blog;
--- USE SCHEMA pension_calculators;
+-- USE SCHEMA pension_advisory;
 
 
 -- Function: au_calculate_tax
 -- Australia: ATO Tax Calculator - Superannuation withdrawal tax per Division 301
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.au_calculate_tax(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.au_calculate_tax(
     member_id STRING,
     member_age INT,
     preservation_age INT,
@@ -82,7 +82,7 @@ RETURN
 -- Function: au_check_pension_impact
 -- Australia: Centrelink Age Pension Calculator - Asset test per Part 3.10
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.au_check_pension_impact(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.au_check_pension_impact(
     member_id STRING,
     member_age INT,
     marital_status STRING,
@@ -176,7 +176,7 @@ RETURN
 -- Function: au_project_balance
 -- Australia: Superannuation Projection - Balance projection using ASFA/APRA standards
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.au_project_balance(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.au_project_balance(
     member_id STRING,
     member_age INT,
     super_balance DOUBLE,
@@ -302,7 +302,7 @@ RETURN
 -- Function: in_calculate_epf_tax
 -- Calculate EPF withdrawal tax based on age and service years
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.in_calculate_epf_tax(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.in_calculate_epf_tax(
     member_id STRING,
     member_age INT,
     super_balance DOUBLE,
@@ -378,7 +378,7 @@ RETURN
 -- Function: in_calculate_eps_benefits
 -- Calculate EPS (Employee Pension Scheme) benefits for Indian members
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.in_calculate_eps_benefits(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.in_calculate_eps_benefits(
     member_id STRING,
     member_age INT,
     epf_balance DOUBLE,
@@ -462,7 +462,7 @@ RETURN
 -- Function: in_calculate_nps
 -- Calculate NPS benefits with 40% annuity requirement and 60% tax-free lump sum
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.in_calculate_nps(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.in_calculate_nps(
     member_id STRING,
     member_age INT,
     super_balance DOUBLE
@@ -521,7 +521,7 @@ RETURN
 -- Function: in_calculate_nps_benefits
 -- India: NPS Benefits Calculator - Calculates lump sum and annuity per PFRDA regulations
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.in_calculate_nps_benefits(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.in_calculate_nps_benefits(
     member_id STRING,
     member_age INT,
     nps_corpus DOUBLE,
@@ -590,7 +590,7 @@ RETURN
 -- Function: in_project_retirement
 -- Project EPF/NPS retirement corpus growth
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.in_project_retirement(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.in_project_retirement(
     member_id STRING,
     member_age INT,
     super_balance DOUBLE,
@@ -675,7 +675,7 @@ RETURN
 
 -- Function: in_project_retirement_corpus
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.in_project_retirement_corpus(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.in_project_retirement_corpus(
     member_id STRING,
     member_age INT,
     current_epf_balance DOUBLE,
@@ -763,7 +763,7 @@ RETURN
 -- Function: uk_calculate_pension_tax
 -- UK: Pension Tax Calculator - Tax-free lump sum and withdrawal tax per Finance Act 2004
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.uk_calculate_pension_tax(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.uk_calculate_pension_tax(
     member_id STRING,
     member_age INT,
     pension_pot DOUBLE,
@@ -836,7 +836,7 @@ RETURN
 
 -- Function: uk_check_state_pension
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.uk_check_state_pension(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.uk_check_state_pension(
     member_id STRING,
     member_age INT,
     ni_qualifying_years INT,
@@ -915,7 +915,7 @@ RETURN
 -- Function: uk_project_pension_balance
 -- UK: Pension Drawdown Projection - Projects pension pot with flexible drawdown per FCA guidance
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.uk_project_pension_balance(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.uk_project_pension_balance(
     member_id STRING,
     member_age INT,
     pension_pot DOUBLE,
@@ -1066,7 +1066,7 @@ RETURN
 -- Function: us_calculate_401k_tax
 -- Calculate 401k/IRA withdrawal tax with early penalty if under 59.5
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.us_calculate_401k_tax(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.us_calculate_401k_tax(
     member_id STRING,
     account_type STRING,
     withdrawal_amount DOUBLE,
@@ -1155,7 +1155,7 @@ RETURN
 -- Function: us_calculate_tax
 -- Calculate 401k/IRA withdrawal tax with early penalty if under 59.5
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.us_calculate_tax(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.us_calculate_tax(
     member_id STRING,
     member_age INT,
     super_balance DOUBLE,
@@ -1238,7 +1238,7 @@ RETURN
 -- Function: us_check_social_security
 -- Check Social Security eligibility and estimated benefits
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.us_check_social_security(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.us_check_social_security(
     member_id STRING,
     member_age INT,
     marital_status STRING,
@@ -1314,7 +1314,7 @@ RETURN
 -- Function: us_project_401k
 -- Project 401(k) balance growth over time
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.us_project_401k(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.us_project_401k(
     member_id STRING,
     member_age INT,
     super_balance DOUBLE,
@@ -1455,7 +1455,7 @@ RETURN
 
 -- Function: us_project_401k_balance
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.us_project_401k_balance(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.us_project_401k_balance(
     member_id STRING,
     member_age INT,
     retirement_age INT,
@@ -1518,7 +1518,7 @@ RETURN
 -- Function: us_project_retirement_balance
 -- Project retirement account balance with growth, contributions, and withdrawals
 
-CREATE OR REPLACE FUNCTION pension_blog.pension_calculators.us_project_retirement_balance(
+CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.us_project_retirement_balance(
     member_id STRING,
     member_age INT,
     account_balance DOUBLE,
@@ -1692,55 +1692,55 @@ RETURN
 -- Apply these grants after creating all functions (if needed manually)
 
 -- au_calculate_tax
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.au_calculate_tax TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.au_calculate_tax TO `account users`;
 
 -- au_check_pension_impact
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.au_check_pension_impact TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.au_check_pension_impact TO `account users`;
 
 -- au_project_balance
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.au_project_balance TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.au_project_balance TO `account users`;
 
 -- in_calculate_epf_tax
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.in_calculate_epf_tax TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.in_calculate_epf_tax TO `account users`;
 
 -- in_calculate_eps_benefits
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.in_calculate_eps_benefits TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.in_calculate_eps_benefits TO `account users`;
 
 -- in_calculate_nps
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.in_calculate_nps TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.in_calculate_nps TO `account users`;
 
 -- in_calculate_nps_benefits
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.in_calculate_nps_benefits TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.in_calculate_nps_benefits TO `account users`;
 
 -- in_project_retirement
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.in_project_retirement TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.in_project_retirement TO `account users`;
 
 -- in_project_retirement_corpus
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.in_project_retirement_corpus TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.in_project_retirement_corpus TO `account users`;
 
 -- uk_calculate_pension_tax
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.uk_calculate_pension_tax TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.uk_calculate_pension_tax TO `account users`;
 
 -- uk_check_state_pension
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.uk_check_state_pension TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.uk_check_state_pension TO `account users`;
 
 -- uk_project_pension_balance
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.uk_project_pension_balance TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.uk_project_pension_balance TO `account users`;
 
 -- us_calculate_401k_tax
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.us_calculate_401k_tax TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.us_calculate_401k_tax TO `account users`;
 
 -- us_calculate_tax
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.us_calculate_tax TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.us_calculate_tax TO `account users`;
 
 -- us_check_social_security
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.us_check_social_security TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.us_check_social_security TO `account users`;
 
 -- us_project_401k
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.us_project_401k TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.us_project_401k TO `account users`;
 
 -- us_project_401k_balance
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.us_project_401k_balance TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.us_project_401k_balance TO `account users`;
 
 -- us_project_retirement_balance
--- GRANT EXECUTE ON FUNCTION pension_blog.pension_calculators.us_project_retirement_balance TO `account users`;
+-- GRANT EXECUTE ON FUNCTION pension_blog.pension_advisory.us_project_retirement_balance TO `account users`;

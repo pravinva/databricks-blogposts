@@ -26,10 +26,11 @@ repo_root = os.path.abspath(
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
-from src.config import UNITY_CATALOG, UNITY_SCHEMA
+from src.config import UNITY_CATALOG, UNITY_SCHEMA, FUNCTIONS_SCHEMA
 
 catalog = UNITY_CATALOG
 schema = UNITY_SCHEMA
+functions_schema = FUNCTIONS_SCHEMA
 
 # Set current catalog
 spark.sql(f"USE CATALOG {catalog}")
@@ -177,7 +178,7 @@ try:
 
     # Grant EXECUTE on UC functions to advisor group
     spark.sql(f"""
-    GRANT EXECUTE ON FUNCTION {catalog}.pension_calculators.au_calculate_tax
+    GRANT EXECUTE ON FUNCTION {catalog}.{functions_schema}.au_calculate_tax
     TO `advisor_group`
     """)
 

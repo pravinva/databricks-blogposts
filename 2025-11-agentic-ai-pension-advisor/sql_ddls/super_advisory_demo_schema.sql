@@ -1,20 +1,21 @@
 -- ============================================================================
 -- SuperAdvisory Demo - Complete Schema Setup Script
 -- Generated: 2025-10-28 13:17:36.070038
+-- NOTE: This file contains template values that are replaced by the setup notebook
+-- The setup notebook (01-unity-catalog-setup.py) will replace schema names based on config.yaml
 -- ============================================================================
 
--- Create Catalog and Schemas
+-- Create Catalog and Schema
 CREATE CATALOG IF NOT EXISTS pension_blog;
 USE CATALOG pension_blog;
-CREATE SCHEMA IF NOT EXISTS member_data;
-CREATE SCHEMA IF NOT EXISTS pension_calculators;
+CREATE SCHEMA IF NOT EXISTS pension_advisory;
 
 -- ============================================================================
 -- TABLE DEFINITIONS
 -- ============================================================================
 
 -- Table: citation_registry
-CREATE TABLE pension_blog.member_data.citation_registry (
+CREATE TABLE pension_blog.pension_advisory.citation_registry (
   citation_id STRING COMMENT 'Unique citation identifier (e.g., AU-TAX-001)',
   country STRING COMMENT 'Country code (AU, US, UK, IN)',
   authority STRING COMMENT 'Regulatory authority name',
@@ -43,7 +44,7 @@ TBLPROPERTIES (
 ;
 
 -- Table: governance
-CREATE TABLE pension_blog.member_data.governance (
+CREATE TABLE pension_blog.pension_advisory.governance (
   event_id STRING COMMENT 'Unique event identifier',
   timestamp STRING COMMENT 'ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS.mmm)',
   user_id STRING COMMENT 'Member ID who made query',
@@ -84,7 +85,7 @@ TBLPROPERTIES (
 ;
 
 -- Table: member_profiles
-CREATE TABLE pension_blog.member_data.member_profiles (
+CREATE TABLE pension_blog.pension_advisory.member_profiles (
   account_based_pension BIGINT COMMENT 'Annual amount drawn from account-based pension if member has already started pension phase (0 if not in pension phase). Measured in AUD',
   age BIGINT COMMENT 'Current age of the member in years (used for preservation age calculations and pension eligibility)',
   annual_income_outside_super BIGINT COMMENT 'Annual income from sources other than superannuation in AUD (salary, business income, investments). Used for tax and Age Pension calculations',
@@ -124,7 +125,7 @@ TBLPROPERTIES (
 -- ============================================================================
 
 -- Data for: citation_registry (19 rows)
-INSERT INTO pension_blog.member_data.citation_registry
+INSERT INTO pension_blog.pension_advisory.citation_registry
   (citation_id, country, authority, regulation_name, regulation_code, effective_date, source_url, description, last_verified, tool_type)
 VALUES
   ('AU-PENSION-001', 'AU', 'Department of Social Services (DSS)', 'Social Security Act 1991', 'Part 3.10 - Asset Test', 2024-09-20, 'https://www.dss.gov.au/seniors/age-pension/age-pension-assets-test', 'Age Pension asset test thresholds and taper rates for homeowners and non-homeowners', 2025-10-25 14:07:21.567000, 'benefit'),
@@ -148,7 +149,7 @@ VALUES
   ('IN-EPS-001', 'IN', 'Employees Provident Fund Organisation (EPFO)', 'Employees'' Provident Fund Organisation (EPFO)', 'Employee Pension Scheme', 1995-11-16, 'https://www.epfindia.gov.in/site_en/About_Pension.php', 'Pension formula: (Salary × Service) / 70. Min ₹1,000, Max ₹7,500/month.', 2025-10-28 00:00:00, 'eps_benefit');
 
 -- Data for: governance (154 rows)
-INSERT INTO pension_blog.member_data.governance
+INSERT INTO pension_blog.pension_advisory.governance
   (event_id, timestamp, user_id, session_id, country, query_string, agent_response, result_preview, cost, citations, tool_used, judge_response, judge_verdict, error_info, validation_mode, validation_attempts, total_time_seconds)
 VALUES
   ('f3809ff1-1a7d-4a3d-982c-8ccf29f60b1e', '2025-10-25T14:08:24.556207', 'AU016', '4c121df8-f1ee-46cb-bc43-19003e9bed0f', 'Australia', 'what is the  tax implication of withrawing 100k from my super account', 'Hi Patricia,
@@ -4910,7 +4911,7 @@ AttributeError: SuperAdvisorAgent object has no attribute query
 ', 'llm_judge', 0, 0.9997038841247559);
 
 -- Data for: member_profiles (29 rows)
-INSERT INTO pension_blog.member_data.member_profiles
+INSERT INTO pension_blog.pension_advisory.member_profiles
   (account_based_pension, age, annual_income_outside_super, debt, dependents, employment_status, financial_literacy, gender, health_status, home_ownership, member_id, name, other_assets, persona_type, preservation_age, risk_profile, super_balance, marital_status, country)
 VALUES
   (0, 65, 8000, 0, 0, 'Retired', 'High', 'Male', 'Good', 'Owned Outright', 'AU004', 'James Zhang', 280000, 'Comfortable', 60, 'Growth', 680000, 'Married', 'AU'),
@@ -4951,28 +4952,28 @@ GRANT ALL PRIVILEGES ON CATALOG pension_blog TO `57e7dc57-63b9-4114-a2ad-0a62267
 GRANT MANAGE ON CATALOG pension_blog TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
 
 -- Schema-level permissions
-GRANT USE SCHEMA ON SCHEMA pension_blog.member_data TO `account users`;
-GRANT ALL PRIVILEGES ON SCHEMA pension_blog.member_data TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
-GRANT MANAGE ON SCHEMA pension_blog.member_data TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
-GRANT USE SCHEMA ON SCHEMA pension_blog.pension_calculators TO `account users`;
-GRANT ALL PRIVILEGES ON SCHEMA pension_blog.pension_calculators TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
-GRANT MANAGE ON SCHEMA pension_blog.pension_calculators TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
+GRANT USE SCHEMA ON SCHEMA pension_blog.pension_advisory TO `account users`;
+GRANT ALL PRIVILEGES ON SCHEMA pension_blog.pension_advisory TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
+GRANT MANAGE ON SCHEMA pension_blog.pension_advisory TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
+GRANT USE SCHEMA ON SCHEMA pension_blog.pension_advisory TO `account users`;
+GRANT ALL PRIVILEGES ON SCHEMA pension_blog.pension_advisory TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
+GRANT MANAGE ON SCHEMA pension_blog.pension_advisory TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
 
 -- Table-level permissions
 -- citation_registry
-GRANT SELECT ON TABLE pension_blog.member_data.citation_registry TO `account users`;
-GRANT ALL PRIVILEGES ON TABLE pension_blog.member_data.citation_registry TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
-GRANT MANAGE ON TABLE pension_blog.member_data.citation_registry TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
+GRANT SELECT ON TABLE pension_blog.pension_advisory.citation_registry TO `account users`;
+GRANT ALL PRIVILEGES ON TABLE pension_blog.pension_advisory.citation_registry TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
+GRANT MANAGE ON TABLE pension_blog.pension_advisory.citation_registry TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
 -- governance
-GRANT SELECT ON TABLE pension_blog.member_data.governance TO `account users`;
-GRANT ALL PRIVILEGES ON TABLE pension_blog.member_data.governance TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
-GRANT MANAGE ON TABLE pension_blog.member_data.governance TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
+GRANT SELECT ON TABLE pension_blog.pension_advisory.governance TO `account users`;
+GRANT ALL PRIVILEGES ON TABLE pension_blog.pension_advisory.governance TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
+GRANT MANAGE ON TABLE pension_blog.pension_advisory.governance TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
 -- member_profiles
-GRANT MODIFY ON TABLE pension_blog.member_data.member_profiles TO `account users`;
-GRANT SELECT ON TABLE pension_blog.member_data.member_profiles TO `account users`;
-GRANT ALL PRIVILEGES ON TABLE pension_blog.member_data.member_profiles TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
+GRANT MODIFY ON TABLE pension_blog.pension_advisory.member_profiles TO `account users`;
+GRANT SELECT ON TABLE pension_blog.pension_advisory.member_profiles TO `account users`;
+GRANT ALL PRIVILEGES ON TABLE pension_blog.pension_advisory.member_profiles TO `57e7dc57-63b9-4114-a2ad-0a6226794a22`;
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.au_calculate_tax
+Function:      pension_blog.pension_advisory.au_calculate_tax
 -- Type:          SCALAR
 -- Input:         member_id         STRING 'Unique member identifier'
 --                member_age        INT    'Member age in years'
@@ -5139,9 +5140,9 @@ Function:      pension_blog.pension_calculators.au_calculate_tax
 -- )
 
 -- Function: au_check_pension_impact
--- Full Name: pension_blog.pension_calculators.au_check_pension_impact
+-- Full Name: pension_blog.pension_advisory.au_check_pension_impact
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.au_check_pension_impact
+Function:      pension_blog.pension_advisory.au_check_pension_impact
 -- Type:          SCALAR
 -- Input:         member_id           STRING
 --                member_age          INT   
@@ -5332,9 +5333,9 @@ Function:      pension_blog.pension_calculators.au_check_pension_impact
 -- )
 
 -- Function: au_project_balance
--- Full Name: pension_blog.pension_calculators.au_project_balance
+-- Full Name: pension_blog.pension_advisory.au_project_balance
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.au_project_balance
+Function:      pension_blog.pension_advisory.au_project_balance
 -- Type:          SCALAR
 -- Input:         member_id        STRING
 --                member_age       INT   
@@ -5557,9 +5558,9 @@ Function:      pension_blog.pension_calculators.au_project_balance
 -- )
 
 -- Function: in_calculate_epf_tax
--- Full Name: pension_blog.pension_calculators.in_calculate_epf_tax
+-- Full Name: pension_blog.pension_advisory.in_calculate_epf_tax
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.in_calculate_epf_tax
+Function:      pension_blog.pension_advisory.in_calculate_epf_tax
 -- Type:          SCALAR
 -- Input:         member_id         STRING
 --                member_age        INT   
@@ -5732,9 +5733,9 @@ Function:      pension_blog.pension_calculators.in_calculate_epf_tax
 -- )
 
 -- Function: in_calculate_eps_benefits
--- Full Name: pension_blog.pension_calculators.in_calculate_eps_benefits
+-- Full Name: pension_blog.pension_advisory.in_calculate_eps_benefits
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.in_calculate_eps_benefits
+Function:      pension_blog.pension_advisory.in_calculate_eps_benefits
 -- Type:          SCALAR
 -- Input:         member_id        STRING
 --                member_age       INT   
@@ -5916,9 +5917,9 @@ Function:      pension_blog.pension_calculators.in_calculate_eps_benefits
 --   ))
 
 -- Function: in_calculate_nps
--- Full Name: pension_blog.pension_calculators.in_calculate_nps
+-- Full Name: pension_blog.pension_advisory.in_calculate_nps
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.in_calculate_nps
+Function:      pension_blog.pension_advisory.in_calculate_nps
 -- Type:          SCALAR
 -- Input:         member_id     STRING
 --                member_age    INT   
@@ -6074,9 +6075,9 @@ Function:      pension_blog.pension_calculators.in_calculate_nps
 -- )
 
 -- Function: in_calculate_nps_benefits
--- Full Name: pension_blog.pension_calculators.in_calculate_nps_benefits
+-- Full Name: pension_blog.pension_advisory.in_calculate_nps_benefits
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.in_calculate_nps_benefits
+Function:      pension_blog.pension_advisory.in_calculate_nps_benefits
 -- Type:          SCALAR
 -- Input:         member_id            STRING 'Unique member identifier'
 --                member_age           INT    'Member age in years'
@@ -6242,9 +6243,9 @@ Function:      pension_blog.pension_calculators.in_calculate_nps_benefits
 -- )
 
 -- Function: in_project_retirement
--- Full Name: pension_blog.pension_calculators.in_project_retirement
+-- Full Name: pension_blog.pension_advisory.in_project_retirement
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.in_project_retirement
+Function:      pension_blog.pension_advisory.in_project_retirement
 -- Type:          SCALAR
 -- Input:         member_id        STRING
 --                member_age       INT   
@@ -6427,9 +6428,9 @@ Function:      pension_blog.pension_calculators.in_project_retirement
 -- )
 
 -- Function: in_project_retirement_corpus
--- Full Name: pension_blog.pension_calculators.in_project_retirement_corpus
+-- Full Name: pension_blog.pension_advisory.in_project_retirement_corpus
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.in_project_retirement_corpus
+Function:      pension_blog.pension_advisory.in_project_retirement_corpus
 -- Type:          SCALAR
 -- Input:         member_id                STRING
 --                member_age               INT   
@@ -6614,9 +6615,9 @@ Function:      pension_blog.pension_calculators.in_project_retirement_corpus
 -- )
 
 -- Function: uk_calculate_pension_tax
--- Full Name: pension_blog.pension_calculators.uk_calculate_pension_tax
+-- Full Name: pension_blog.pension_advisory.uk_calculate_pension_tax
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.uk_calculate_pension_tax
+Function:      pension_blog.pension_advisory.uk_calculate_pension_tax
 -- Type:          SCALAR
 -- Input:         member_id         STRING 'Unique member identifier'
 --                member_age        INT    'Member age in years'
@@ -6787,9 +6788,9 @@ Function:      pension_blog.pension_calculators.uk_calculate_pension_tax
 -- )
 
 -- Function: uk_check_state_pension
--- Full Name: pension_blog.pension_calculators.uk_check_state_pension
+-- Full Name: pension_blog.pension_advisory.uk_check_state_pension
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.uk_check_state_pension
+Function:      pension_blog.pension_advisory.uk_check_state_pension
 -- Type:          SCALAR
 -- Input:         member_id           STRING
 --                member_age          INT   
@@ -6965,9 +6966,9 @@ Function:      pension_blog.pension_calculators.uk_check_state_pension
 -- )
 
 -- Function: uk_project_pension_balance
--- Full Name: pension_blog.pension_calculators.uk_project_pension_balance
+-- Full Name: pension_blog.pension_advisory.uk_project_pension_balance
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.uk_project_pension_balance
+Function:      pension_blog.pension_advisory.uk_project_pension_balance
 -- Type:          SCALAR
 -- Input:         member_id        STRING 'Unique member identifier'
 --                member_age       INT    'Current age in years'
@@ -7215,9 +7216,9 @@ Function:      pension_blog.pension_calculators.uk_project_pension_balance
 -- )
 
 -- Function: us_calculate_401k_tax
--- Full Name: pension_blog.pension_calculators.us_calculate_401k_tax
+-- Full Name: pension_blog.pension_advisory.us_calculate_401k_tax
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.us_calculate_401k_tax
+Function:      pension_blog.pension_advisory.us_calculate_401k_tax
 -- Type:          SCALAR
 -- Input:         member_id         STRING
 --                account_type      STRING
@@ -7403,9 +7404,9 @@ Function:      pension_blog.pension_calculators.us_calculate_401k_tax
 -- )
 
 -- Function: us_calculate_tax
--- Full Name: pension_blog.pension_calculators.us_calculate_tax
+-- Full Name: pension_blog.pension_advisory.us_calculate_tax
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.us_calculate_tax
+Function:      pension_blog.pension_advisory.us_calculate_tax
 -- Type:          SCALAR
 -- Input:         member_id         STRING
 --                member_age        INT   
@@ -7585,9 +7586,9 @@ Function:      pension_blog.pension_calculators.us_calculate_tax
 -- )
 
 -- Function: us_check_social_security
--- Full Name: pension_blog.pension_calculators.us_check_social_security
+-- Full Name: pension_blog.pension_advisory.us_check_social_security
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.us_check_social_security
+Function:      pension_blog.pension_advisory.us_check_social_security
 -- Type:          SCALAR
 -- Input:         member_id      STRING
 --                member_age     INT   
@@ -7760,9 +7761,9 @@ Function:      pension_blog.pension_calculators.us_check_social_security
 -- )
 
 -- Function: us_project_401k
--- Full Name: pension_blog.pension_calculators.us_project_401k
+-- Full Name: pension_blog.pension_advisory.us_project_401k
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.us_project_401k
+Function:      pension_blog.pension_advisory.us_project_401k
 -- Type:          SCALAR
 -- Input:         member_id        STRING
 --                member_age       INT   
@@ -8001,9 +8002,9 @@ Function:      pension_blog.pension_calculators.us_project_401k
 -- )
 
 -- Function: us_project_401k_balance
--- Full Name: pension_blog.pension_calculators.us_project_401k_balance
+-- Full Name: pension_blog.pension_advisory.us_project_401k_balance
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.us_project_401k_balance
+Function:      pension_blog.pension_advisory.us_project_401k_balance
 -- Type:          SCALAR
 -- Input:         member_id           STRING
 --                member_age          INT   
@@ -8163,9 +8164,9 @@ Function:      pension_blog.pension_calculators.us_project_401k_balance
 -- )
 
 -- Function: us_project_retirement_balance
--- Full Name: pension_blog.pension_calculators.us_project_retirement_balance
+-- Full Name: pension_blog.pension_advisory.us_project_retirement_balance
 -- ----------------------------------------------------------------------------
-Function:      pension_blog.pension_calculators.us_project_retirement_balance
+Function:      pension_blog.pension_advisory.us_project_retirement_balance
 -- Type:          SCALAR
 -- Input:         member_id           STRING
 --                member_age          INT   

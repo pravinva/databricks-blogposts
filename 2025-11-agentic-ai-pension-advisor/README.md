@@ -497,7 +497,7 @@ Five fully functional quality scorers for production monitoring:
 - Generates summary statistics and quality alerts
 
 **Scoring Table Setup** (`02-agent-demo/10-setup-scoring-table.py` - 171 lines)
-- Creates `pension_blog.member_data.scoring_results` Delta table
+- Creates `pension_blog.pension_advisory.scoring_results` Delta table
 - Includes sample data for testing
 - Provides SQL query examples
 - Enables Change Data Feed for audit
@@ -979,7 +979,7 @@ CountryConfig(
 
 **Setup Notebooks:**
 1. **`01-setup/01-unity-catalog-setup.py`** - Create catalog, tables, and Unity Catalog functions
-   - Creates catalog and schemas (default: `pension_blog.member_data`)
+   - Creates catalog and schemas (default: `pension_blog.pension_advisory`)
    - Generates synthetic member data for 4 countries
    - Registers Unity Catalog SQL functions for retirement calculations
    - **Configure:** Update catalog name in notebook widget if using existing catalog
@@ -1111,7 +1111,7 @@ Update these critical values in `src/config/config.yaml`:
 databricks:
   sql_warehouse_id: "YOUR_WAREHOUSE_ID"  # Required
   unity_catalog: "your_catalog"          # Default: pension_blog
-  unity_schema: "member_data"            # Default: member_data
+  unity_schema: "pension_advisory"            # Default: pension_advisory
 
 mlflow:
   prod_experiment_path: "/Users/your.email@company.com/pension-advisor-prod"
@@ -1144,7 +1144,7 @@ Run the setup notebook to create tables, functions, and grant permissions:
 ```
 
 This creates:
-- Catalog and schemas (member_data, pension_calculators)
+- Catalog and schemas (pension_advisory, {functions_schema})
 - Tables (member_profiles, governance, citation_registry)
 - Unity Catalog functions for pension calculations
 - Proper permissions for your user/service principal
@@ -1208,14 +1208,14 @@ The Databricks App needs permissions to access Unity Catalog:
 ```sql
 -- Grant to the app service principal
 GRANT USE CATALOG ON CATALOG your_catalog TO `app-pension-advisor`;
-GRANT USE SCHEMA ON SCHEMA your_catalog.member_data TO `app-pension-advisor`;
-GRANT SELECT ON TABLE your_catalog.member_data.member_profiles TO `app-pension-advisor`;
-GRANT SELECT ON TABLE your_catalog.member_data.citation_registry TO `app-pension-advisor`;
-GRANT SELECT, INSERT, MODIFY ON TABLE your_catalog.member_data.governance TO `app-pension-advisor`;
+GRANT USE SCHEMA ON SCHEMA your_catalog.pension_advisory TO `app-pension-advisor`;
+GRANT SELECT ON TABLE your_catalog.{schema}.member_profiles TO `app-pension-advisor`;
+GRANT SELECT ON TABLE your_catalog.{schema}.citation_registry TO `app-pension-advisor`;
+GRANT SELECT, INSERT, MODIFY ON TABLE your_catalog.{schema}.governance TO `app-pension-advisor`;
 
 -- Grant function execution
-GRANT EXECUTE ON FUNCTION your_catalog.pension_calculators.get_preservation_age TO `app-pension-advisor`;
-GRANT EXECUTE ON FUNCTION your_catalog.pension_calculators.calculate_retirement_income TO `app-pension-advisor`;
+GRANT EXECUTE ON FUNCTION your_catalog.{functions_schema}.get_preservation_age TO `app-pension-advisor`;
+GRANT EXECUTE ON FUNCTION your_catalog.{functions_schema}.calculate_retirement_income TO `app-pension-advisor`;
 -- (Repeat for all functions)
 ```
 
@@ -1226,7 +1226,7 @@ GRANT EXECUTE ON FUNCTION your_catalog.pension_calculators.calculate_retirement_
 3. Verify:
    - Query executes successfully
    - Response appears in UI
-   - Governance table logs the query: `SELECT * FROM your_catalog.member_data.governance ORDER BY timestamp DESC LIMIT 10`
+   - Governance table logs the query: `SELECT * FROM your_catalog.{schema}.governance ORDER BY timestamp DESC LIMIT 10`
    - MLflow logs the run: Check experiment path in MLflow UI
 
 #### 8. Monitor the App
@@ -1270,7 +1270,7 @@ validation_llm:
 databricks:
   sql_warehouse_id: "YOUR_WAREHOUSE_ID"     # ⚠️ REQUIRED
   unity_catalog: "pension_blog"
-  unity_schema: "member_data"
+  unity_schema: "pension_advisory"
   governance_table: "governance"
   member_profiles_table: "member_profiles"
 
@@ -1305,7 +1305,7 @@ ai_guardrails:
 
 **Issue: "Permission denied" on governance table**
 - Run the permissions grants from Step 6
-- Or grant at schema level: `GRANT ALL PRIVILEGES ON SCHEMA your_catalog.member_data TO <principal>`
+- Or grant at schema level: `GRANT ALL PRIVILEGES ON SCHEMA your_catalog.pension_advisory TO <principal>`
 
 **Issue: App crashes on startup**
 - Check app logs: `databricks apps logs pension-advisor`
@@ -1314,7 +1314,7 @@ ai_guardrails:
 
 **Issue: Queries work but governance table is empty**
 - Check INSERT permissions on governance table
-- Verify table schema matches (run `DESCRIBE TABLE your_catalog.member_data.governance`)
+- Verify table schema matches (run `DESCRIBE TABLE your_catalog.{schema}.governance`)
 - Check for schema mismatches in app logs
 
 ### Production Considerations
@@ -1895,7 +1895,7 @@ Create country-specific calculation functions:
 
 ```sql
 -- RRSP Balance Query
-CREATE OR REPLACE FUNCTION super_advisory_demo.pension_calculators.CA_get_rrsp_balance(
+CREATE OR REPLACE FUNCTION super_advisory_demo.{functions_schema}.CA_get_rrsp_balance(
     member_id STRING
 )
 RETURNS STRUCT<
@@ -1908,11 +1908,11 @@ RETURN SELECT
     balance,
     contribution_room,
     'CAD' as currency
-FROM super_advisory_demo.member_data.member_profiles
+FROM super_advisory_demo.pension_advisory.member_profiles
 WHERE user_id = member_id AND country = 'CA';
 
 -- Tax Calculation
-CREATE OR REPLACE FUNCTION super_advisory_demo.pension_calculators.CA_calculate_tax(
+CREATE OR REPLACE FUNCTION super_advisory_demo.{functions_schema}.CA_calculate_tax(
     withdrawal_amount DOUBLE,
     member_id STRING
 )
@@ -1930,7 +1930,7 @@ LANGUAGE SQL
 Insert test member profile:
 
 ```sql
-INSERT INTO super_advisory_demo.member_data.member_profiles
+INSERT INTO super_advisory_demo.pension_advisory.member_profiles
 (user_id, name, age, country, super_balance, contribution_rate, employer_match)
 VALUES ('CA001', 'John Smith', 45, 'CA', 125000, 0.10, 0.05);
 ```
