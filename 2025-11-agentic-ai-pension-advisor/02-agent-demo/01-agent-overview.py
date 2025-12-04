@@ -61,6 +61,16 @@
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
 import sys
 import os
 repo_root = os.path.abspath(

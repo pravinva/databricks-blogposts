@@ -41,6 +41,16 @@
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ### Test Query with Tracing
 # MAGIC
 # MAGIC Let's run a query and see the trace captured automatically.

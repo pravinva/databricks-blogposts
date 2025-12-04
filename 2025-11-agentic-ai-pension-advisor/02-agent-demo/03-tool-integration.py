@@ -44,6 +44,16 @@ print(f"  Warehouse ID: {SQL_WAREHOUSE_ID}")
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Available Tools
 
 # COMMAND ----------

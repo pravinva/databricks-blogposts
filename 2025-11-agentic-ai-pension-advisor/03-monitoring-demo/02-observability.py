@@ -22,6 +22,16 @@ print(f"  Governance table: {UNITY_CATALOG}.{UNITY_SCHEMA}.governance")
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Query Latency Analysis
 
 # COMMAND ----------

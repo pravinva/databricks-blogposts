@@ -34,6 +34,16 @@ print(f"  Confidence threshold: {LLM_JUDGE_CONFIDENCE_THRESHOLD}")
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Validation Prompt Template
 # MAGIC
 # MAGIC The validation prompt evaluates responses based on:

@@ -33,6 +33,16 @@ print(f"  Schema: {UNITY_SCHEMA}")
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Query Audit Logs
 
 # COMMAND ----------

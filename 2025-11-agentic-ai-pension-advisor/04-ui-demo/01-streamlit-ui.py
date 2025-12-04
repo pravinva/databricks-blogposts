@@ -20,6 +20,16 @@
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Install Dependencies
+
+# COMMAND ----------
+
+# MAGIC %pip install -q -r ../requirements.txt
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
 # The Streamlit UI is built using modular components from ui/
 
 import sys
