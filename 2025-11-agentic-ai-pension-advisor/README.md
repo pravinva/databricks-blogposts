@@ -1203,21 +1203,44 @@ MLFLOW_EXPERIMENT_PATH=/Users/your.email@company.com/pension-advisor-prod
 
 #### 6. Grant App Permissions
 
-The Databricks App needs permissions to access Unity Catalog:
+The Databricks App uses a service principal that needs permissions to access Unity Catalog.
+
+**Find your app's service principal client ID:**
+1. Go to your app in Databricks Apps UI
+2. Click **"Environment"** tab
+3. Look for "Service principal" section
+4. Note the **client ID** (format: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+
+**Grant permissions using the client ID:**
 
 ```sql
--- Grant to the app service principal
-GRANT USE CATALOG ON CATALOG your_catalog TO `app-pension-advisor`;
-GRANT USE SCHEMA ON SCHEMA your_catalog.pension_advisory TO `app-pension-advisor`;
-GRANT SELECT ON TABLE your_catalog.{schema}.member_profiles TO `app-pension-advisor`;
-GRANT SELECT ON TABLE your_catalog.{schema}.citation_registry TO `app-pension-advisor`;
-GRANT SELECT, INSERT, MODIFY ON TABLE your_catalog.{schema}.governance TO `app-pension-advisor`;
+-- Replace the UUID below with your app's service principal client ID
+-- Example UUID: 12345678-abcd-1234-efgh-123456789abc
+-- Replace <catalog_name> and <schema_name> with your values
 
--- Grant function execution
-GRANT EXECUTE ON FUNCTION your_catalog.{functions_schema}.get_preservation_age TO `app-pension-advisor`;
-GRANT EXECUTE ON FUNCTION your_catalog.{functions_schema}.calculate_retirement_income TO `app-pension-advisor`;
--- (Repeat for all functions)
+-- Grant schema-level permissions (recommended - covers all tables and functions)
+GRANT USE CATALOG ON CATALOG <catalog_name>
+TO `12345678-abcd-1234-efgh-123456789abc`;
+
+GRANT USE SCHEMA ON SCHEMA <catalog_name>.<schema_name>
+TO `12345678-abcd-1234-efgh-123456789abc`;
+
+GRANT SELECT ON SCHEMA <catalog_name>.<schema_name>
+TO `12345678-abcd-1234-efgh-123456789abc`;
+
+GRANT EXECUTE ON SCHEMA <catalog_name>.<schema_name>
+TO `12345678-abcd-1234-efgh-123456789abc`;
+
+-- Grant write access to governance table
+GRANT INSERT, MODIFY ON TABLE <catalog_name>.<schema_name>.governance
+TO `12345678-abcd-1234-efgh-123456789abc`;
+
+-- Grant execute on registered model (for Model Registry monitoring)
+GRANT EXECUTE ON MODEL <catalog_name>.<schema_name>.pension_advisor
+TO `12345678-abcd-1234-efgh-123456789abc`;
 ```
+
+**Note:** Schema-level grants (`GRANT SELECT/EXECUTE ON SCHEMA`) automatically apply to all current and future tables/functions in that schema, which is simpler than granting permissions individually.
 
 #### 7. Test the Deployment
 
@@ -1292,6 +1315,57 @@ ai_guardrails:
 ```
 
 ### Troubleshooting
+
+#### Databricks App Deployment Issues
+
+**"Model not registered" error in Governance Dashboard**
+
+**Symptom:** Dashboard shows "Model Registry: Model not registered" even though the model exists.
+
+**Cause:** Permission denied - the Databricks App's service principal doesn't have EXECUTE permission on the model.
+
+**Error in logs:**
+```
+PERMISSION_DENIED: User does not have EXECUTE on Routine or Model 'financial_services.pension_advisory.pension_advisor'
+Config: client_id=43d5a7a3-282c-4200-bc93-4aee58fc2f0f
+```
+
+**Solution: Grant permissions to the App's Service Principal**
+
+Find your app's service principal client ID:
+1. Go to your app in Databricks Apps UI
+2. Click "Environment" tab
+3. Look for "Service principal" section - note the client ID
+
+Then grant permissions:
+```sql
+-- Replace <client-id> with your app's service principal client ID
+-- Example: 43d5a7a3-282c-4200-bc93-4aee58fc2f0f
+
+-- Grant schema-level permissions (recommended - covers all objects)
+GRANT USE SCHEMA ON SCHEMA financial_services.pension_advisory
+TO `<client-id>`;
+
+GRANT SELECT ON SCHEMA financial_services.pension_advisory
+TO `<client-id>`;
+
+GRANT EXECUTE ON SCHEMA financial_services.pension_advisory
+TO `<client-id>`;
+
+-- Or grant specific model permission only
+GRANT EXECUTE ON MODEL financial_services.pension_advisory.pension_advisor
+TO `<client-id>`;
+```
+
+**"No data available for the last 24 hours" in Dashboard**
+
+**Symptom:** Governance dashboard shows no data even though governance table has entries.
+
+**Cause:** Data is older than 24 hours - dashboard filters to last 24 hours only.
+
+**Solution:** Run a query through the "Ask a Question" page to generate fresh data with current timestamp.
+
+---
 
 **Issue: "Table not found" error**
 - Ensure setup notebook completed successfully
