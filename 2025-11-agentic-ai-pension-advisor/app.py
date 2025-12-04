@@ -163,7 +163,7 @@ if page == "Advisory":
                 button_type = "primary" if is_selected else "secondary"
                 button_label = f"{'✓ ' if is_selected else ''}Select {member.get('name','Unknown')}"
                 
-                if st.button(button_label, key=f"btn_{member_id}_{country_code}", width="stretch", type=button_type):
+                if st.button(button_label, key=f"btn_{member_id}_{country_code}", type=button_type):
                     st.session_state.selected_member = member_id
                     st.rerun()
 
@@ -207,7 +207,7 @@ if page == "Advisory":
     for i, q in enumerate(sample_questions.get(country_display, [])):
         with cols[i]:
             # ✅ Include country_code in key to avoid conflicts when switching countries
-            if st.button(q, key=f"sample_q_{country_code}_{i}", width="stretch"):
+            if st.button(q, key=f"sample_q_{country_code}_{i}"):
                 st.session_state.query_input = q
     
     question = st.text_input("Your question:", key="query_input")
@@ -261,7 +261,7 @@ if page == "Advisory":
     if is_executing and not show_logs:
         st.info("🔄 Query is currently processing... Enable 'Show Processing Logs' to see progress.")
     
-    if st.button("🚀 Get Recommendation", type="primary", width="stretch"):
+    if st.button("🚀 Get Recommendation", type="primary"):
         if not question:
             st.warning("Please enter a question first.")
         elif not st.session_state.selected_member:
