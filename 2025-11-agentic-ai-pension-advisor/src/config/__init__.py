@@ -27,8 +27,8 @@ def _find_config_yaml():
         if (parent / 'src' / 'config' / 'config.yaml').exists():
             possible_paths.append(parent / 'src' / 'config' / 'config.yaml')
             break
-        # Stop if we hit common workspace boundaries
-        if parent.name in ['Workspace', 'Repos', 'Users']:
+        # Stop if we hit root
+        if parent.parent == parent:
             break
 
     for path in possible_paths:
