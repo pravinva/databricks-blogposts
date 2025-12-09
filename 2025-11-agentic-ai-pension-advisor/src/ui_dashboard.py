@@ -210,7 +210,7 @@ def render_quick_charts(df: pd.DataFrame):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig)
     
     with col2:
         st.markdown("#### Cost Trend (Hourly)")
@@ -237,7 +237,7 @@ def render_quick_charts(df: pd.DataFrame):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig)
 
 
 def render_system_status(df: pd.DataFrame):

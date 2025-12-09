@@ -71,7 +71,7 @@ def safe_dataframe_check(df):
 # ============================================================================ #
 
 if os.path.exists("_resources/logo.png"):
-    st.sidebar.image("_resources/logo.png", width="stretch")
+    st.sidebar.image("_resources/logo.png", width=300)
 st.sidebar.title(BRANDCONFIG["brand_name"])
 st.sidebar.caption(BRANDCONFIG.get("subtitle", "Enterprise-Grade Agentic AI on Databricks"))
 st.sidebar.markdown("---")
@@ -138,6 +138,22 @@ if page == "Advisory":
     st.subheader("📋 Select Member Profile")
     
     if st.session_state.current_country_code != country_code:
+        # Clear ALL widget-related session state to prevent "Bad 'setIn' index" errors
+        # Preserve only essential app state when country changes
+        essential_keys = {
+            'page', 'country_display', 'session_id', 'user_id', 'validation_mode',
+            'current_country_code', 'members_list', 'selected_member'
+        }
+        keys_to_remove = [
+            key for key in list(st.session_state.keys()) 
+            if key not in essential_keys
+        ]
+        for key in keys_to_remove:
+            try:
+                del st.session_state[key]
+            except:
+                pass  # Key may have been auto-deleted
+        
         members_df = get_members_by_country(country_code)
         if safe_dataframe_check(members_df):
             if len(members_df) > 4:
@@ -152,22 +168,36 @@ if page == "Advisory":
     
     members = st.session_state.members_list
     
-    if not members:
-        st.warning(f"No members found for {country_display}.")
-    else:
-        cols = st.columns(min(3, len(members)))
-        for idx, member in enumerate(members):
-            with cols[idx % 3]:
-                member_id = member.get('member_id')
-                is_selected = (st.session_state.selected_member == member_id)
-                button_type = "primary" if is_selected else "secondary"
-                button_label = f"{'' if is_selected else ''}Select {member.get('name','Unknown')}"
-                
-                if st.button(button_label, key=f"btn_{member_id}_{country_code}", type=button_type):
-                    st.session_state.selected_member = member_id
-                    st.rerun()
+    # CRITICAL FIX: Always render EXACTLY 4 member slots to ensure stable widget indices
+    # This prevents widget index shifts when different countries have different member counts
+    members_container = st.container()
+    with members_container:
+        if not members:
+            st.warning(f"No members found for {country_display}.")
+        else:
+            # Always create 4 columns (max members we show)
+            cols = st.columns(4)
+            
+            # Pad members list to always have 4 entries (use None for empty slots)
+            padded_members = members + [None] * (4 - len(members))
+            
+            for idx, member in enumerate(padded_members[:4]):  # Always iterate exactly 4 times
+                with cols[idx]:
+                    if member:  # Real member
+                        member_id = member.get('member_id')
+                        is_selected = (st.session_state.selected_member == member_id)
+                        button_type = "primary" if is_selected else "secondary"
+                        button_label = f"Select {member.get('name','Unknown')}"
+                        
+                        # CRITICAL: Don't call st.rerun() inside button callback
+                        # Just update session state - page will rerender naturally
+                        if st.button(button_label, key=f"btn_{member_id}_{country_code}", type=button_type):
+                            st.session_state.selected_member = member_id
+                            # No st.rerun() needed - Streamlit reruns automatically after button click
 
-                render_member_card(member, is_selected, country_display)
+                        render_member_card(member, is_selected, country_display)
+                    else:  # Empty slot - render invisible placeholder button
+                        st.button("", key=f"btn_empty_{idx}_{country_code}", disabled=True)
 
     # Don't auto-select first member - causes widget state changes on every render
     # Only use selected member if one has been explicitly chosen
@@ -228,54 +258,78 @@ if page == "Advisory":
     # This ensures checkbox state is synced with session_state
     st.session_state.show_processing_logs = show_logs
     
-    # Display guardrail blocked message if present
-    if 'guardrail_blocked' in st.session_state:
-        blocked_info = st.session_state.guardrail_blocked
-        violations = blocked_info.get('violations', [])
-        st.error("🚫 Your query was blocked by safety policies")
-        st.warning(f"**Reason:** {', '.join(violations)}")
-        st.info("Please rephrase your question without including sensitive information like email addresses, phone numbers, or credit card details.")
-        # Don't delete here - will be cleared when new query is submitted
+    # CRITICAL: Use persistent container for guardrail messages to prevent widget index shifts
+    guardrail_container = st.container()
+    with guardrail_container:
+        # Display guardrail blocked message if present
+        if 'guardrail_blocked' in st.session_state:
+            blocked_info = st.session_state.guardrail_blocked
+            violations = blocked_info.get('violations', [])
+            st.error("🚫 Your query was blocked by safety policies")
+            st.warning(f"**Reason:** {', '.join(violations)}")
+            st.info("Please rephrase your question without including sensitive information like email addresses, phone numbers, or credit card details.")
+            # Don't delete here - will be cleared when new query is submitted
 
+    # CRITICAL: Ensure progress_placeholder always exists BEFORE button click
+    # This prevents widget creation inside button callback which causes index shifts
+    if 'progress_placeholder' not in st.session_state:
+        st.session_state.progress_placeholder = st.empty()
+    
     # CRITICAL: Show progress tracker if phases exist OR if query is executing
     # This ensures progress shows even when switching pages mid-execution
     has_phases = 'phases' in st.session_state and len(st.session_state.phases) > 0
     is_executing = st.session_state.get('query_executing', False)
 
-    # Show progress if checkbox is checked AND (phases exist OR query is executing)
-    # This ensures progress shows when switching back to Advisory page during execution
-    if (has_phases or is_executing) and show_logs:
-        # CRITICAL: Create placeholder for real-time updates
-        if 'progress_placeholder' not in st.session_state:
-            st.session_state.progress_placeholder = st.empty()
-        
-        # Render progress display (updates via direct placeholder updates during execution)
-        # No fragment needed - direct updates from mark_phase_running/complete work perfectly
-        from src.utils.progress import render_progress_fragment
-        try:
-            render_progress_fragment()
-        except:
-            pass
-        
-        # Show indicator if query is executing
-        if is_executing:
-            st.info("Query is currently processing... Progress will update in real-time.")
-    elif has_phases and not show_logs:
-        # CRITICAL: Hide logs when checkbox is unchecked
-        # Clear the placeholder to hide progress display
-        if 'progress_placeholder' in st.session_state:
-            st.session_state.progress_placeholder.empty()
+    # CRITICAL FIX: Use persistent containers to prevent widget index shifts
+    # These containers always exist, preventing "Bad 'setIn' index" errors
+    progress_container = st.container()
+    status_container = st.container()
     
-    # CRITICAL: Show status if query is executing but logs are hidden
-    if is_executing and not show_logs:
-        st.info("Query is currently processing... Enable 'Show Processing Logs' to see progress.")
+    with progress_container:
+        # Show progress if checkbox is checked AND (phases exist OR query is executing)
+        if (has_phases or is_executing) and show_logs:
+            # CRITICAL: Create placeholder for real-time updates
+            if 'progress_placeholder' not in st.session_state:
+                st.session_state.progress_placeholder = st.empty()
+            
+            # Render progress display (updates via direct placeholder updates during execution)
+            from src.utils.progress import render_progress_fragment
+            try:
+                render_progress_fragment()
+            except:
+                pass
+            
+            # Show indicator if query is executing
+            if is_executing:
+                st.info("Query is currently processing... Progress will update in real-time.")
+        elif has_phases and not show_logs:
+            # Clear the placeholder to hide progress display
+            if 'progress_placeholder' in st.session_state:
+                st.session_state.progress_placeholder.empty()
     
-    if st.button("Get Recommendation", type="primary"):
-        if not question:
-            st.warning("Please enter a question first.")
-        elif not st.session_state.selected_member:
-            st.warning("Please select a member profile first.")
-        else:
+    with status_container:
+        # Show status if query is executing but logs are hidden
+        if is_executing and not show_logs:
+            st.info("Query is currently processing... Enable 'Show Processing Logs' to see progress.")
+    
+    # CRITICAL: Use persistent container for button validation messages
+    button_validation_container = st.container()
+    
+    # CRITICAL: Initialize phases OUTSIDE button callback to prevent widget creation during rerun
+    # Check if we need to initialize (happens when button is clicked via flag)
+    if st.session_state.get('_needs_phase_init', False):
+        initialize_progress_tracker()
+        st.session_state._needs_phase_init = False
+    
+    # CRITICAL: Use stable key to prevent "Bad 'setIn' index" errors on st.rerun()
+    if st.button("Get Recommendation", key="get_recommendation_btn", type="primary"):
+        with button_validation_container:
+            if not question:
+                st.warning("Please enter a question first.")
+            elif not st.session_state.selected_member:
+                st.warning("Please select a member profile first.")
+        
+        if question and st.session_state.selected_member:
             # Clear any previous guardrail blocked message
             if 'guardrail_blocked' in st.session_state:
                 del st.session_state.guardrail_blocked
@@ -299,12 +353,11 @@ if page == "Advisory":
             st.session_state.show_processing_logs = True
 
             # CRITICAL: Clear old phases/logs for new query
-            # Delete phases so initialize_progress_tracker() recreates it properly
             if 'phases' in st.session_state:
                 del st.session_state.phases
 
-            # CRITICAL: Initialize phases FIRST (will trigger rerun)
-            initialize_progress_tracker()
+            # CRITICAL: Set flag to initialize phases on NEXT render (outside button callback)
+            st.session_state._needs_phase_init = True
             st.session_state.query_executing = True
             st.session_state.current_query = question  # Store query for execution block
 
@@ -549,43 +602,45 @@ elif page == "Governance":
         st.markdown("### Governance Dashboard")
         st.caption("Overview of system performance and audit trail")
 
-        # Model Registry Section
+        # Model Registry Section - wrapped in persistent container
         st.markdown("#### 📦 Model Registry Status")
         from src.monitoring import get_model_registry_info
 
         model_name = f"{UNITY_CATALOG}.{UNITY_SCHEMA}.pension_advisor"
         model_info = get_model_registry_info(model_name)
 
-        if "error" not in model_info:
-            col1, col2, col3 = st.columns([2, 1, 1])
+        model_registry_container = st.container()
+        with model_registry_container:
+            if "error" not in model_info:
+                col1, col2, col3 = st.columns([2, 1, 1])
 
-            with col1:
-                st.markdown(f"**Model:** `{model_info['model_name']}`")
-                st.caption(model_info.get('description', 'No description'))
+                with col1:
+                    st.markdown(f"**Model:** `{model_info['model_name']}`")
+                    st.caption(model_info.get('description', 'No description'))
 
-            with col2:
-                st.metric("Latest Version", model_info.get('latest_version', 'N/A'))
+                with col2:
+                    st.metric("Latest Version", model_info.get('latest_version', 'N/A'))
 
-            with col3:
-                champion_ver = model_info['aliases'].get('champion', {})
-                if champion_ver and isinstance(champion_ver, dict):
-                    st.metric("@champion", f"v{champion_ver.get('version', 'N/A')}")
-                else:
-                    st.metric("@champion", "Not set")
-
-            # Show aliases
-            if model_info.get('aliases'):
-                alias_info = []
-                for alias_name, alias_data in model_info['aliases'].items():
-                    if alias_data:
-                        alias_info.append(f"**@{alias_name}**: v{alias_data['version']}")
+                with col3:
+                    champion_ver = model_info['aliases'].get('champion', {})
+                    if champion_ver and isinstance(champion_ver, dict):
+                        st.metric("@champion", f"v{champion_ver.get('version', 'N/A')}")
                     else:
-                        alias_info.append(f"**@{alias_name}**: Not set")
+                        st.metric("@champion", "Not set")
 
-                if alias_info:
-                    st.caption(" | ".join(alias_info))
-        else:
-            st.warning(f"Model Registry: {model_info.get('error', 'Unknown error')}")
+                # Show aliases
+                if model_info.get('aliases'):
+                    alias_info = []
+                    for alias_name, alias_data in model_info['aliases'].items():
+                        if alias_data:
+                            alias_info.append(f"**@{alias_name}**: v{alias_data['version']}")
+                        else:
+                            alias_info.append(f"**@{alias_name}**: Not set")
+
+                    if alias_info:
+                        st.caption(" | ".join(alias_info))
+            else:
+                st.warning(f"Model Registry: {model_info.get('error', 'Unknown error')}")
 
         st.markdown("---")
 
@@ -604,73 +659,79 @@ elif page == "Governance":
         # Get data (cached for 60 seconds)
         df = get_dashboard_data()
         
-        if not df.empty:
-            # Calculate metrics
-            metrics = calculate_key_metrics(df)
-            
-            # Key Metrics Row (full width)
-            st.markdown("### Key Metrics (Last 24 Hours)")
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                render_metric_card(
-                    "Total Queries",
-                    f"{metrics['total_queries']:,}",
-                    "Last 24h",
-                    True
-                )
-            
-            with col2:
-                render_metric_card(
-                    "Pass Rate",
-                    f"{metrics['pass_rate']:.1%}",
-                    "Good" if metrics['pass_rate'] >= 0.8 else "Needs attention",
-                    metrics['pass_rate'] >= 0.8
-                )
-            
-            with col3:
-                render_metric_card(
-                    "Avg Cost",
-                    f"${metrics['avg_cost']:.4f}",
-                    "Per query",
-                    True
-                )
-            
-            with col4:
-                health_stars = render_health_stars(metrics['health_score'])
-                render_metric_card(
-                    "Health Score",
-                    health_stars,
-                    f"{metrics['health_score']}/100",
-                    metrics['health_score'] >= 80
-                )
-            
-            st.markdown("---")
-            
-            # System Status Banner
-            render_system_status(df)
-            
-            st.markdown("---")
-        else:
-            st.info("No data available for the last 24 hours. Run some queries to populate the dashboard!")
+        # CRITICAL: Use persistent container for dashboard metrics
+        dashboard_metrics_container = st.container()
+        with dashboard_metrics_container:
+            if not df.empty:
+                # Calculate metrics
+                metrics = calculate_key_metrics(df)
+                
+                # Key Metrics Row (full width)
+                st.markdown("### Key Metrics (Last 24 Hours)")
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    render_metric_card(
+                        "Total Queries",
+                        f"{metrics['total_queries']:,}",
+                        "Last 24h",
+                        True
+                    )
+                
+                with col2:
+                    render_metric_card(
+                        "Pass Rate",
+                        f"{metrics['pass_rate']:.1%}",
+                        "Good" if metrics['pass_rate'] >= 0.8 else "Needs attention",
+                        metrics['pass_rate'] >= 0.8
+                    )
+                
+                with col3:
+                    render_metric_card(
+                        "Avg Cost",
+                        f"${metrics['avg_cost']:.4f}",
+                        "Per query",
+                        True
+                    )
+                
+                with col4:
+                    health_stars = render_health_stars(metrics['health_score'])
+                    render_metric_card(
+                        "Health Score",
+                        health_stars,
+                        f"{metrics['health_score']}/100",
+                        metrics['health_score'] >= 80
+                    )
+                
+                st.markdown("---")
+                
+                # System Status Banner
+                render_system_status(df)
+                
+                st.markdown("---")
+            else:
+                st.info("No data available for the last 24 hours. Run some queries to populate the dashboard!")
         
         # Audit Trail with full width right under key metrics
         st.markdown("### 📋 Audit Trail")
         render_enhanced_audit_tab()
         
-        # Recent Activity Feed below Audit Trail (optional - can be removed if not needed)
-        if not df.empty:
-            st.markdown("---")
-            render_activity_feed(df, limit=10)
-            
-            st.markdown("---")
-            
-            # Quick Charts
-            st.markdown("### Trends")
-            render_quick_charts(df)
-            
-            # Trust Footer
-            render_trust_footer()
+        # CRITICAL: Use persistent container for activity feed and charts
+        activity_charts_container = st.container()
+        with activity_charts_container:
+            # Recent Activity Feed below Audit Trail (optional - can be removed if not needed)
+            if not df.empty:
+                st.markdown("---")
+                render_activity_feed(df, limit=10)
+                
+                st.markdown("---")
+                
+                # Quick Charts
+                st.markdown("### Trends")
+                render_quick_charts(df)
+                
+                # Trust Footer
+                render_trust_footer()
     
     with tab2:  # Config - Configuration settings
         render_configuration_tab()

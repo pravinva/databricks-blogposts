@@ -323,7 +323,7 @@ class ExampleAdvancedTab(MonitoringTab):
         st.markdown("---")
 
         # Data table
-        st.dataframe(df.head(20), width="stretch")
+        st.dataframe(df.head(20))
 
 
 # ============================================================================ #

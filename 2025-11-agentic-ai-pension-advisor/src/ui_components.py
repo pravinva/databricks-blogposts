@@ -170,7 +170,7 @@ def render_audit_table(df):
             return ""
         sty = df.style.applymap(color_verdict, subset=["judge_verdict"]) \
             if "judge_verdict" in df.columns else df.style
-        st.dataframe(sty, width="stretch")
+        st.dataframe(sty)
     except Exception as e:
         st.error(f"Audit table render error: {e}")
 
@@ -253,7 +253,7 @@ def render_mlflow_traces_tab():
             if metric_cols:
                 display_cols += metric_cols[:3]  # Show first 3 metrics
             
-            st.dataframe(runs[display_cols], width="stretch")
+            st.dataframe(runs[display_cols])
             
             st.markdown("---")
             
@@ -580,7 +580,7 @@ def render_cost_analysis_tab():
                 display_df['total_cost'] = display_df['total_cost'].apply(lambda x: f"${x:.4f}")
                 display_df['avg_cost'] = display_df['avg_cost'].apply(lambda x: f"${x:.5f}")
                 display_df['query_count'] = display_df['query_count'].astype(int)
-                st.dataframe(display_df, width="stretch")
+                st.dataframe(display_df)
             
         else:
             st.warning("⚠️ No cost data available yet. Run some queries first!")
@@ -707,7 +707,7 @@ def render_configuration_tab():
             st.info(f"📄 Uploaded: {uploaded_csv.name} ({len(df_preview)} rows)")
             
             with st.expander("Preview Data"):
-                st.dataframe(df_preview.head(10), width="stretch")
+                st.dataframe(df_preview.head(10))
             
             uploaded_csv.seek(0)
             
@@ -750,7 +750,7 @@ def render_configuration_tab():
                 "When can I access my pension?"
             ]
         })
-        st.dataframe(example_df, width="stretch")
+        st.dataframe(example_df)
         st.download_button(
             label="⬇️ Download Example CSV",
             data=example_df.to_csv(index=False),
