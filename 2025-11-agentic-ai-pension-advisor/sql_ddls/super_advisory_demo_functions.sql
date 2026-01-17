@@ -1070,7 +1070,7 @@ CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.us_calculate_401k_tax(
     member_id STRING,
     account_type STRING,
     withdrawal_amount DOUBLE,
-    member_age INT
+    member_age DOUBLE
 )
 RETURNS STRUCT<member_id: STRING, account_type: STRING, withdrawal_amount: DOUBLE, early_withdrawal_penalty: DOUBLE, income_tax_amount: DOUBLE, total_tax: DOUBLE, net_withdrawal: DOUBLE, status: STRING, regulation: STRING, authority: STRING>
 COMMENT 'Calculate 401k/IRA withdrawal tax with early penalty if under 59.5'
@@ -1084,7 +1084,7 @@ RETURN
   -- Early withdrawal penalty - CAST AS DOUBLE
   CAST(
     CASE 
-      WHEN member_age >= 59 THEN 0.0
+      WHEN member_age >= 59.5 THEN 0.0
       WHEN UPPER(account_type) = 'ROTH_IRA' THEN 0.0
       ELSE withdrawal_amount * 0.10
     END
@@ -1105,7 +1105,7 @@ RETURN
   -- Total tax - CAST AS DOUBLE
   CAST(
     (CASE 
-      WHEN member_age >= 59 THEN 0.0
+      WHEN member_age >= 59.5 THEN 0.0
       WHEN UPPER(account_type) = 'ROTH_IRA' THEN 0.0
       ELSE withdrawal_amount * 0.10
     END) + (CASE 
@@ -1122,7 +1122,7 @@ RETURN
   CAST(
     withdrawal_amount - (
       (CASE 
-        WHEN member_age >= 59 THEN 0.0
+        WHEN member_age >= 59.5 THEN 0.0
         WHEN UPPER(account_type) = 'ROTH_IRA' THEN 0.0
         ELSE withdrawal_amount * 0.10
       END) + (CASE 
@@ -1140,7 +1140,7 @@ RETURN
   CASE 
     WHEN UPPER(account_type) = 'ROTH_IRA' THEN 
       CONCAT('Tax-free withdrawal from Roth IRA (age ', CAST(member_age AS STRING), ')')
-    WHEN member_age >= 59 THEN 
+    WHEN member_age >= 59.5 THEN 
       CONCAT('Subject to income tax only (age ', CAST(member_age AS STRING), ' >= 59.5)')
     ELSE 
       CONCAT('Subject to 10% early withdrawal penalty and income tax (age ', CAST(member_age AS STRING), ' < 59.5)')
@@ -1157,11 +1157,11 @@ RETURN
 
 CREATE OR REPLACE FUNCTION pension_blog.pension_advisory.us_calculate_tax(
     member_id STRING,
-    member_age INT,
+    member_age DOUBLE,
     super_balance DOUBLE,
     withdrawal_amount DOUBLE
 )
-RETURNS STRUCT<member_id: STRING, member_age: INT, account_balance: DOUBLE, withdrawal_amount: DOUBLE, account_type: STRING, early_withdrawal_penalty: DOUBLE, income_tax_amount: DOUBLE, total_tax: DOUBLE, net_withdrawal: DOUBLE, status: STRING, regulation: STRING, authority: STRING>
+RETURNS STRUCT<member_id: STRING, member_age: DOUBLE, account_balance: DOUBLE, withdrawal_amount: DOUBLE, account_type: STRING, early_withdrawal_penalty: DOUBLE, income_tax_amount: DOUBLE, total_tax: DOUBLE, net_withdrawal: DOUBLE, status: STRING, regulation: STRING, authority: STRING>
 COMMENT 'Calculate 401k/IRA withdrawal tax with early penalty if under 59.5'
 LANGUAGE SQL
 RETURN
