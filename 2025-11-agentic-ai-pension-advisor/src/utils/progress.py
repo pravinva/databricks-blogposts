@@ -106,12 +106,14 @@ def initialize_progress_tracker():
                 'duration': None,
                 'error': None
             }
-    
-    # ✅ Always create placeholder (needed for toggle functionality)
-    if 'progress_placeholder' not in st.session_state:
-        st.session_state.progress_placeholder = st.empty()
-        st.session_state.progress_initialized = True
-    
+
+    # IMPORTANT:
+    # The placeholder position in Streamlit is determined by *where* `st.empty()` is created.
+    # We want the UI (app.py) to own that placement (below the "Get Recommendation" button),
+    # otherwise progress logs can render above the button and push it down during execution.
+    #
+    # So: do NOT create `progress_placeholder` here.
+
     # ✅ Note: Don't render here - let caller control when to render
     # This prevents double rendering when called from app.py
 
