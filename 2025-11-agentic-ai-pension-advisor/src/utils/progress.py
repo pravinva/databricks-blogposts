@@ -134,14 +134,16 @@ def reset_progress_tracker():
                 'duration': None,
                 'error': None
             }
-    
-    # Clear the progress placeholder to prevent stale UI
-    if 'progress_placeholder' in st.session_state:
-        st.session_state.progress_placeholder.empty()
-    
-    # Reinitialize fresh placeholder
-    st.session_state.progress_placeholder = st.empty()
-    st.session_state.progress_initialized = True
+
+    # IMPORTANT:
+    # The progress placeholder is owned by the Streamlit page (app.py) and is rendered inside
+    # persistent containers to avoid widget-index shifts. Recreating `st.empty()` here (during
+    # agent execution) can overwrite/clear the UI, causing logs to flash and immediately disappear.
+    #
+    # Only clear the placeholder when the user has explicitly hidden logs.
+    if not st.session_state.get('show_processing_logs', False):
+        if 'progress_placeholder' in st.session_state:
+            st.session_state.progress_placeholder.empty()
 
 
 # ============================================================================

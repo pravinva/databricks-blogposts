@@ -156,10 +156,20 @@ if page == "Advisory":
         
         members_df = get_members_by_country(country_code)
         if safe_dataframe_check(members_df):
-            if len(members_df) > 4:
-                # CRITICAL: Use fixed random_state to ensure same members are always selected
-                # random_state=None would pick different members on each rerun, causing widget key mismatches
-                members_df = members_df.sample(n=4, random_state=42)
+            # Always show up to 3 members.
+            # Use a stable per-country seed (per session) to avoid widget-key/index mismatch issues on reruns.
+            if "members_sample_seed" not in st.session_state:
+                st.session_state.members_sample_seed = 42
+            if "members_seed_country" not in st.session_state:
+                st.session_state.members_seed_country = None
+
+            if st.session_state.members_seed_country != country_code:
+                st.session_state.members_sample_seed = uuid.uuid4().int % (2**32 - 1)
+                st.session_state.members_seed_country = country_code
+
+            if len(members_df) > 3:
+                members_df = members_df.sample(n=3, random_state=st.session_state.members_sample_seed)
+
             st.session_state.members_list = members_df.to_dict("records")
         else:
             st.session_state.members_list = []
@@ -168,20 +178,20 @@ if page == "Advisory":
     
     members = st.session_state.members_list
     
-    # CRITICAL FIX: Always render EXACTLY 4 member slots to ensure stable widget indices
-    # This prevents widget index shifts when different countries have different member counts
+    # Always render EXACTLY 3 member slots to ensure stable widget indices.
+    # This avoids "Bad setIn index" issues when member counts differ by country.
     members_container = st.container()
     with members_container:
         if not members:
             st.warning(f"No members found for {country_display}.")
         else:
-            # Always create 4 columns (max members we show)
-            cols = st.columns(4)
+            # Always create 3 columns (max members we show)
+            cols = st.columns(3)
             
-            # Pad members list to always have 4 entries (use None for empty slots)
-            padded_members = members + [None] * (4 - len(members))
+            # Pad members list to always have 3 entries (use None for empty slots)
+            padded_members = members + [None] * (3 - len(members))
             
-            for idx, member in enumerate(padded_members[:4]):  # Always iterate exactly 4 times
+            for idx, member in enumerate(padded_members[:3]):  # Always iterate exactly 3 times
                 with cols[idx]:
                     if member:  # Real member
                         member_id = member.get('member_id')

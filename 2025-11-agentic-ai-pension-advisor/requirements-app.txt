@@ -2,6 +2,7 @@
 # Use this file for running the app locally or deploying to Databricks Apps
 
 # Core Framework
+# Note: Streamlit emits deprecation warnings for `use_container_width` (migrating to `width='stretch'`).
 streamlit==1.51.0
 
 # Databricks & MLflow
