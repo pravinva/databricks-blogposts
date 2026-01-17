@@ -500,14 +500,22 @@ display(result_in)
 
 # COMMAND ----------
 
-# Grant EXECUTE to all account users (customize as needed)
+# Grant EXECUTE on all calculator functions to all account users (customize as needed)
+# NOTE: This notebook creates multiple UC functions (AU/US/UK/IN). Granting only one function
+# will cause tool execution failures in the app unless permissions are managed elsewhere.
 try:
-    spark.sql(f"""
-    GRANT EXECUTE ON FUNCTION {catalog}.{functions_schema}.au_calculate_tax
-    TO `account users`
-    """)
-    print("✓ Granted EXECUTE permission to account users")
-    print("  You can customize this grant by changing 'account users' to your specific group")
+    funcs = spark.sql(f"SHOW USER FUNCTIONS IN {catalog}.{functions_schema}").collect()
+    granted = 0
+    for row in funcs:
+        # Databricks returns a fully-qualified function name in `row.function`
+        func_name = row["function"] if isinstance(row, dict) or hasattr(row, "__getitem__") else row.function
+        try:
+            spark.sql(f"GRANT EXECUTE ON FUNCTION {func_name} TO `account users`")
+            granted += 1
+        except Exception as inner_e:
+            print(f"Note: Error granting EXECUTE on {func_name}: {inner_e}")
+    print(f"✓ Granted EXECUTE on {granted} functions to `account users`")
+    print("  You can customize this grant by changing `account users` to your specific group")
 except Exception as e:
     print(f"Note: {e}")
     print("Permissions may need to be set via Account Console")
