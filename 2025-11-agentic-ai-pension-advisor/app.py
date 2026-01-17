@@ -258,23 +258,7 @@ if page == "Advisory":
                 st.session_state.query_input = q
     
     question = st.text_input("Your question:", key="query_input")
-    
-    # Show/Hide Logs Toggle (like the GitHub implementation)
-    # Initialize to False (not shown by default)
-    if 'show_processing_logs' not in st.session_state:
-        st.session_state.show_processing_logs = False
-    
-    # CRITICAL: Use session_state value directly for checkbox to ensure it respects our reset
-    show_logs = st.checkbox(
-        "🔍 Show Processing Logs",
-        value=st.session_state.show_processing_logs,
-        key="show_logs_checkbox"
-    )
-    
-    # CRITICAL: Update session_state from checkbox value
-    # This ensures checkbox state is synced with session_state
-    st.session_state.show_processing_logs = show_logs
-    
+
     # CRITICAL: Use persistent container for guardrail messages to prevent widget index shifts
     guardrail_container = st.container()
     with guardrail_container:
@@ -287,48 +271,6 @@ if page == "Advisory":
             st.info("Please rephrase your question without including sensitive information like email addresses, phone numbers, or credit card details.")
             # Don't delete here - will be cleared when new query is submitted
 
-    # CRITICAL: Ensure progress_placeholder always exists BEFORE button click
-    # This prevents widget creation inside button callback which causes index shifts
-    if 'progress_placeholder' not in st.session_state:
-        st.session_state.progress_placeholder = st.empty()
-    
-    # CRITICAL: Show progress tracker if phases exist OR if query is executing
-    # This ensures progress shows even when switching pages mid-execution
-    has_phases = 'phases' in st.session_state and len(st.session_state.phases) > 0
-    is_executing = st.session_state.get('query_executing', False)
-
-    # CRITICAL FIX: Use persistent containers to prevent widget index shifts
-    # These containers always exist, preventing "Bad 'setIn' index" errors
-    progress_container = st.container()
-    status_container = st.container()
-    
-    with progress_container:
-        # Show progress if checkbox is checked AND (phases exist OR query is executing)
-        if (has_phases or is_executing) and show_logs:
-            # CRITICAL: Create placeholder for real-time updates
-            if 'progress_placeholder' not in st.session_state:
-                st.session_state.progress_placeholder = st.empty()
-            
-            # Render progress display (updates via direct placeholder updates during execution)
-            from src.utils.progress import render_progress_fragment
-            try:
-                render_progress_fragment()
-            except:
-                pass
-            
-            # Show indicator if query is executing
-            if is_executing:
-                st.info("Query is currently processing... Progress will update in real-time.")
-        elif has_phases and not show_logs:
-            # Clear the placeholder to hide progress display
-            if 'progress_placeholder' in st.session_state:
-                st.session_state.progress_placeholder.empty()
-    
-    with status_container:
-        # Show status if query is executing but logs are hidden
-        if is_executing and not show_logs:
-            st.info("Query is currently processing... Enable 'Show Processing Logs' to see progress.")
-    
     # CRITICAL: Use persistent container for button validation messages
     button_validation_container = st.container()
     
@@ -380,6 +322,53 @@ if page == "Advisory":
 
             # CRITICAL: Force immediate rerun to show progress
             st.rerun()
+
+    # --- Logs panel (must appear BELOW the submit button) ---
+    # Show/Hide Logs Toggle (like the GitHub implementation)
+    # Initialize to False (not shown by default)
+    if 'show_processing_logs' not in st.session_state:
+        st.session_state.show_processing_logs = False
+
+    # Use session_state value directly for checkbox to ensure it respects our resets
+    show_logs = st.checkbox(
+        "🔍 Show Processing Logs",
+        value=st.session_state.show_processing_logs,
+        key="show_logs_checkbox"
+    )
+
+    # Sync checkbox -> session_state
+    st.session_state.show_processing_logs = show_logs
+
+    # Show progress tracker if phases exist OR if query is executing
+    has_phases = 'phases' in st.session_state and len(st.session_state.phases) > 0
+    is_executing = st.session_state.get('query_executing', False)
+
+    # Use persistent containers to prevent widget index shifts
+    progress_container = st.container()
+    status_container = st.container()
+
+    with progress_container:
+        if (has_phases or is_executing) and show_logs:
+            # Create placeholder for real-time updates
+            if 'progress_placeholder' not in st.session_state:
+                st.session_state.progress_placeholder = st.empty()
+
+            # Render progress display (updates via direct placeholder updates during execution)
+            from src.utils.progress import render_progress_fragment
+            try:
+                render_progress_fragment()
+            except:
+                pass
+
+            if is_executing:
+                st.info("Query is currently processing... Progress will update in real-time.")
+        elif has_phases and not show_logs:
+            if 'progress_placeholder' in st.session_state:
+                st.session_state.progress_placeholder.empty()
+
+    with status_container:
+        if is_executing and not show_logs:
+            st.info("Query is currently processing... Enable 'Show Processing Logs' to see progress.")
     
     # CRITICAL: Handle query execution (if query_executing flag is set)
     # This runs after st.rerun() when button is clicked
