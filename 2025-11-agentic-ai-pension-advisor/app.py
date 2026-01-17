@@ -206,7 +206,7 @@ if page == "Advisory":
                                 button_label,
                                 key=f"btn_{member_id}_{country_code}",
                                 type=button_type,
-                                width='stretch',
+                                use_container_width=True,
                             ):
                                 st.session_state.selected_member = member_id
                                 # Force immediate visual update (selected styling) on first click
