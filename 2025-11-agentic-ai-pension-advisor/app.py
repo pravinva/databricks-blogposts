@@ -209,8 +209,8 @@ if page == "Advisory":
                                 use_container_width=True,
                             ):
                                 st.session_state.selected_member = member_id
-                                # Force immediate visual update (selected styling) on first click
-                                st.rerun()
+                                # Let Streamlit's normal widget rerun refresh the UI in-place
+                                # (explicit st.rerun() causes a noticeable full-page refresh/jump)
 
                         render_member_card(member, is_selected, country_display)
                     else:  # Empty slot - render invisible placeholder button
