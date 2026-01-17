@@ -197,13 +197,20 @@ if page == "Advisory":
                         member_id = member.get('member_id')
                         is_selected = (st.session_state.selected_member == member_id)
                         button_type = "primary" if is_selected else "secondary"
-                        button_label = f"Select {member.get('name','Unknown')}"
+                        button_label = "Select"
                         
-                        # CRITICAL: Don't call st.rerun() inside button callback
-                        # Just update session state - page will rerender naturally
-                        if st.button(button_label, key=f"btn_{member_id}_{country_code}", type=button_type):
-                            st.session_state.selected_member = member_id
-                            # No st.rerun() needed - Streamlit reruns automatically after button click
+                        # Place the select button centered above the member card
+                        btn_cols = st.columns([1, 2, 1])
+                        with btn_cols[1]:
+                            if st.button(
+                                button_label,
+                                key=f"btn_{member_id}_{country_code}",
+                                type=button_type,
+                                width='stretch',
+                            ):
+                                st.session_state.selected_member = member_id
+                                # Force immediate visual update (selected styling) on first click
+                                st.rerun()
 
                         render_member_card(member, is_selected, country_display)
                     else:  # Empty slot - render invisible placeholder button

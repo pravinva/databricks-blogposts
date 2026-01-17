@@ -85,13 +85,17 @@ def render_member_card(member, is_selected=False, country="Australia"):
     # Format balance with country-specific currency
     bal_fmt = f"{t['currency']}{int(bal):,}"
     
-    # Render card
+    # Render card (center-aligned for cleaner layout)
     st.markdown(
         f"""
         <div style="background:{bg};border:{border};box-shadow:{shadow};
-                    border-radius:10px;padding:14px;margin-bottom:10px;">
-            <b>{t['flag']} {label}</b><br>
-            Age: {age} • Balance: {bal_fmt}
+                    border-radius:10px;padding:14px;margin-bottom:10px;text-align:center;">
+            <div style="font-weight:700;font-size:18px;margin-bottom:6px;">
+                {t['flag']} {label}
+            </div>
+            <div style="opacity:0.9;">
+                Age: {age} • Balance: {bal_fmt}
+            </div>
         </div>
         """,
         unsafe_allow_html=True
